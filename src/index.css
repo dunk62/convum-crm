@@ -1,0 +1,10 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-background text-primary-foreground font-sans antialiased;
+    color: #0f172a; /* Slate 900 */
+  }
+}
