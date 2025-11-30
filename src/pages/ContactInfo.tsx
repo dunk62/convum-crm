@@ -244,13 +244,13 @@ export default function ContactInfo() {
                     <table className="w-full text-left text-sm">
                         <thead className="bg-gray-50 border-b border-gray-200">
                             <tr>
-                                <th className="px-6 py-3 font-bold text-gray-500">담당자명</th>
-                                <th className="px-6 py-3 font-bold text-gray-500">업체명</th>
-                                <th className="px-6 py-3 font-bold text-gray-500">부서</th>
-                                <th className="px-6 py-3 font-bold text-gray-500">직급</th>
-                                <th className="px-6 py-3 font-bold text-gray-500">휴대전화</th>
-                                <th className="px-6 py-3 font-bold text-gray-500">이메일</th>
-                                <th className="px-6 py-3 font-bold text-gray-500">담당자</th>
+                                <th className="px-6 py-3 text-center text-base font-bold text-gray-700 whitespace-nowrap">담당자명</th>
+                                <th className="px-6 py-3 text-center text-base font-bold text-gray-700 whitespace-nowrap">업체명</th>
+                                <th className="px-6 py-3 text-center text-base font-bold text-gray-700 whitespace-nowrap">부서</th>
+                                <th className="px-6 py-3 text-center text-base font-bold text-gray-700 whitespace-nowrap">직급</th>
+                                <th className="px-6 py-3 text-center text-base font-bold text-gray-700 whitespace-nowrap">휴대전화</th>
+                                <th className="px-6 py-3 text-center text-base font-bold text-gray-700 whitespace-nowrap">이메일</th>
+                                <th className="px-6 py-3 text-center text-base font-bold text-gray-700 whitespace-nowrap">담당자</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">

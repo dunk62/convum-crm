@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ComposedChart, Line, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { DollarSign, Users, Briefcase, Activity, ArrowRight, Search } from 'lucide-react';
+import { DollarSign, Users, Briefcase, Activity, ArrowRight } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { cn } from '../lib/utils';
 
 const StatCard = ({ label, value, icon: Icon }: any) => (
     <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm h-full flex flex-col justify-between">
@@ -21,7 +22,6 @@ const StatCard = ({ label, value, icon: Icon }: any) => (
 
 export default function Dashboard() {
     const navigate = useNavigate();
-    const [searchQuery, setSearchQuery] = useState('');
     const [chartData, setChartData] = useState<{ name: string; revenue: number; target: number }[]>([]);
     const [currentMonthRevenue, setCurrentMonthRevenue] = useState(0);
     const [currentMonthTarget, setCurrentMonthTarget] = useState(0);
@@ -66,10 +66,6 @@ export default function Dashboard() {
         fetchExpectedRevenue();
     }, []);
 
-    const handleSearch = (e: React.FormEvent) => {
-        e.preventDefault();
-        fetchChartData();
-    };
 
     const fetchExpectedRevenue = async () => {
         try {
@@ -120,9 +116,6 @@ export default function Dashboard() {
                 .gte('shipment_date', '2025-01-01')
                 .in('sales_rep', ['탁현호', '임성렬']);
 
-            if (searchQuery.trim()) {
-                query = query.or(`company_name.ilike.%${searchQuery.trim()}%,distributor_name.ilike.%${searchQuery.trim()}%`);
-            }
 
             const { data, error } = await query;
 
@@ -181,26 +174,37 @@ export default function Dashboard() {
 
             <div className="grid gap-6 lg:grid-cols-3">
                 <div className="lg:col-span-2 bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                    <div className="flex items-center justify-between mb-6">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
                         <h2 className="text-lg font-bold text-gray-900">매출 실적 및 목표</h2>
-                        <form onSubmit={handleSearch} className="flex gap-2">
-                            <div className="relative">
-                                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
-                                <input
-                                    type="text"
-                                    placeholder="업체명 또는 판매점명 검색"
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="pl-9 pr-4 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-64"
-                                />
+                        <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-sm">
+                            <div className="flex items-center gap-2">
+                                <span className="w-2 h-2 rounded-full bg-blue-600"></span>
+                                <span className="text-gray-500">총 매출 목표</span>
+                                <span className="font-bold text-gray-900">
+                                    {new Intl.NumberFormat('ko-KR', { style: 'currency', currency: 'KRW' }).format(chartData.reduce((sum, item) => sum + (item.target || 0), 0))}
+                                </span>
                             </div>
-                            <button
-                                type="submit"
-                                className="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
-                            >
-                                검색
-                            </button>
-                        </form>
+                            <div className="flex items-center gap-2">
+                                <span className="w-2 h-2 rounded-full bg-gray-900"></span>
+                                <span className="text-gray-500">총 매출 실적</span>
+                                <span className="font-bold text-gray-900">
+                                    {new Intl.NumberFormat('ko-KR', { style: 'currency', currency: 'KRW' }).format(chartData.reduce((sum, item) => sum + (item.revenue || 0), 0))}
+                                </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <span className="text-gray-500">달성률</span>
+                                <span className={cn(
+                                    "font-bold",
+                                    (chartData.reduce((sum, item) => sum + (item.revenue || 0), 0) / chartData.reduce((sum, item) => sum + (item.target || 0), 0) * 100) >= 100 ? "text-green-600" : "text-blue-600"
+                                )}>
+                                    {(() => {
+                                        const totalTarget = chartData.reduce((sum, item) => sum + (item.target || 0), 0);
+                                        const totalRevenue = chartData.reduce((sum, item) => sum + (item.revenue || 0), 0);
+                                        return totalTarget > 0 ? (totalRevenue / totalTarget * 100).toFixed(1) : '0.0';
+                                    })()}%
+                                </span>
+                            </div>
+                        </div>
                     </div>
                     <div className="h-[300px]">
                         <ResponsiveContainer width="100%" height="100%">
@@ -248,7 +252,7 @@ export default function Dashboard() {
                                 />
                                 <Legend wrapperStyle={{ paddingTop: '20px' }} />
                                 <Area yAxisId="left" type="monotone" dataKey="revenue" name="매출 실적" stroke="#0f172a" strokeWidth={2} fillOpacity={1} fill="url(#colorRevenue)" />
-                                {!searchQuery && <Line yAxisId="left" type="monotone" dataKey="target" name="매출 목표" stroke="#2563eb" strokeWidth={2} dot={{ r: 4 }} />}
+                                <Line yAxisId="left" type="monotone" dataKey="target" name="매출 목표" stroke="#2563eb" strokeWidth={2} dot={{ r: 4 }} />
                             </ComposedChart>
                         </ResponsiveContainer>
                     </div>

@@ -147,74 +147,74 @@ export default function SalesPerformance() {
                         <thead className="bg-gray-50 border-b border-gray-200">
                             <tr>
                                 <th
-                                    className="px-6 py-3 font-bold text-gray-500 whitespace-nowrap cursor-pointer hover:bg-gray-100 transition-colors"
+                                    className="px-6 py-3 text-center text-base font-bold text-gray-700 whitespace-nowrap cursor-pointer hover:bg-gray-100 transition-colors"
                                     onClick={() => handleSort('shipment_date')}
                                 >
-                                    <div className="flex items-center gap-1">
+                                    <div className="flex items-center justify-center gap-1">
                                         출고일 <SortIcon columnKey="shipment_date" />
                                     </div>
                                 </th>
                                 <th
-                                    className="px-6 py-3 font-bold text-gray-500 whitespace-nowrap cursor-pointer hover:bg-gray-100 transition-colors"
+                                    className="px-6 py-3 text-center text-base font-bold text-gray-700 whitespace-nowrap cursor-pointer hover:bg-gray-100 transition-colors"
                                     onClick={() => handleSort('distributor_name')}
                                 >
-                                    <div className="flex items-center gap-1">
+                                    <div className="flex items-center justify-center gap-1">
                                         판매점명 <SortIcon columnKey="distributor_name" />
                                     </div>
                                 </th>
                                 <th
-                                    className="px-6 py-3 font-bold text-gray-500 whitespace-nowrap cursor-pointer hover:bg-gray-100 transition-colors"
+                                    className="px-6 py-3 text-center text-base font-bold text-gray-700 whitespace-nowrap cursor-pointer hover:bg-gray-100 transition-colors"
                                     onClick={() => handleSort('company_name')}
                                 >
-                                    <div className="flex items-center gap-1">
+                                    <div className="flex items-center justify-center gap-1">
                                         업체명 <SortIcon columnKey="company_name" />
                                     </div>
                                 </th>
                                 <th
-                                    className="px-6 py-3 font-bold text-gray-500 whitespace-nowrap cursor-pointer hover:bg-gray-100 transition-colors"
+                                    className="px-6 py-3 text-center text-base font-bold text-gray-700 whitespace-nowrap cursor-pointer hover:bg-gray-100 transition-colors"
                                     onClick={() => handleSort('sales_rep')}
                                 >
-                                    <div className="flex items-center gap-1">
+                                    <div className="flex items-center justify-center gap-1">
                                         영업담당자 <SortIcon columnKey="sales_rep" />
                                     </div>
                                 </th>
                                 <th
-                                    className="px-6 py-3 font-bold text-gray-500 whitespace-nowrap cursor-pointer hover:bg-gray-100 transition-colors"
+                                    className="px-6 py-3 text-center text-base font-bold text-gray-700 whitespace-nowrap cursor-pointer hover:bg-gray-100 transition-colors"
                                     onClick={() => handleSort('product_name')}
                                 >
-                                    <div className="flex items-center gap-1">
+                                    <div className="flex items-center justify-center gap-1">
                                         판매상품 <SortIcon columnKey="product_name" />
                                     </div>
                                 </th>
                                 <th
-                                    className="px-6 py-3 font-bold text-gray-500 whitespace-nowrap cursor-pointer hover:bg-gray-100 transition-colors"
+                                    className="px-6 py-3 text-center text-base font-bold text-gray-700 whitespace-nowrap cursor-pointer hover:bg-gray-100 transition-colors"
                                     onClick={() => handleSort('model_number')}
                                 >
-                                    <div className="flex items-center gap-1">
+                                    <div className="flex items-center justify-center gap-1">
                                         형번 <SortIcon columnKey="model_number" />
                                     </div>
                                 </th>
                                 <th
-                                    className="px-6 py-3 font-bold text-gray-500 whitespace-nowrap text-right cursor-pointer hover:bg-gray-100 transition-colors"
+                                    className="px-6 py-3 text-center text-base font-bold text-gray-700 whitespace-nowrap cursor-pointer hover:bg-gray-100 transition-colors"
                                     onClick={() => handleSort('quantity')}
                                 >
-                                    <div className="flex items-center justify-end gap-1">
+                                    <div className="flex items-center justify-center gap-1">
                                         수량 <SortIcon columnKey="quantity" />
                                     </div>
                                 </th>
                                 <th
-                                    className="px-6 py-3 font-bold text-gray-500 whitespace-nowrap text-right cursor-pointer hover:bg-gray-100 transition-colors"
+                                    className="px-6 py-3 text-center text-sm font-bold text-gray-700 whitespace-nowrap cursor-pointer hover:bg-gray-100 transition-colors"
                                     onClick={() => handleSort('unit_price')}
                                 >
-                                    <div className="flex items-center justify-end gap-1">
+                                    <div className="flex items-center justify-center gap-1">
                                         단가 <SortIcon columnKey="unit_price" />
                                     </div>
                                 </th>
                                 <th
-                                    className="px-6 py-3 font-bold text-gray-500 whitespace-nowrap text-right cursor-pointer hover:bg-gray-100 transition-colors"
+                                    className="px-6 py-3 text-center text-sm font-bold text-gray-700 whitespace-nowrap cursor-pointer hover:bg-gray-100 transition-colors"
                                     onClick={() => handleSort('sales_amount')}
                                 >
-                                    <div className="flex items-center justify-end gap-1">
+                                    <div className="flex items-center justify-center gap-1">
                                         판매금액 <SortIcon columnKey="sales_amount" />
                                     </div>
                                 </th>

@@ -1,12 +1,94 @@
-import React from 'react';
-import { Outlet, NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, Briefcase, Menu, X, BarChart2, LogOut, Package } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Outlet, NavLink, useNavigate } from 'react-router-dom';
+import { LayoutDashboard, Users, Briefcase, BarChart2, LogOut, Package, ChevronDown } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { useNavigate } from 'react-router-dom';
 import { cn } from '../lib/utils';
 
-const Sidebar = ({ isOpen, setIsOpen }: { isOpen: boolean; setIsOpen: (v: boolean) => void }) => {
-    const [expandedItems, setExpandedItems] = React.useState<string[]>(['/products']);
+const NavItem = ({ item }: { item: any }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const dropdownRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setIsOpen(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    if (item.children) {
+        return (
+            <div className="relative" ref={dropdownRef}>
+                <button
+                    onClick={() => setIsOpen(!isOpen)}
+                    className={cn(
+                        "flex items-center gap-2 px-1 py-2 text-sm font-bold transition-colors hover:text-blue-600",
+                        isOpen ? "text-blue-600" : "text-gray-600"
+                    )}
+                >
+                    <item.icon size={18} />
+                    {item.label}
+                    <ChevronDown size={14} className={cn("transition-transform", isOpen && "rotate-180")} />
+                </button>
+
+                {isOpen && (
+                    <div className="absolute top-full left-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-100 py-2 z-50 animate-in fade-in zoom-in-95 duration-100">
+                        {item.children.map((child: any) => (
+                            <NavLink
+                                key={child.path}
+                                to={child.path}
+                                onClick={() => setIsOpen(false)}
+                                className={({ isActive }) =>
+                                    cn(
+                                        "block px-4 py-2.5 text-sm transition-colors hover:bg-gray-50 hover:text-blue-600",
+                                        isActive ? "text-blue-600 font-bold bg-blue-50/50" : "text-gray-600 font-bold"
+                                    )
+                                }
+                            >
+                                {child.label}
+                            </NavLink>
+                        ))}
+                    </div>
+                )}
+            </div>
+        );
+    }
+
+    return (
+        <NavLink
+            to={item.path}
+            className={({ isActive }) =>
+                cn(
+                    "flex items-center gap-2 px-1 py-2 text-sm font-bold transition-colors hover:text-blue-600",
+                    isActive ? "text-blue-600" : "text-gray-600"
+                )
+            }
+        >
+            <item.icon size={18} />
+            {item.label}
+        </NavLink>
+    );
+};
+
+export default function DashboardLayout() {
+    const [userEmail, setUserEmail] = React.useState<string>('');
+    const navigate = useNavigate();
+
+    React.useEffect(() => {
+        supabase.auth.getUser().then(({ data: { user } }) => {
+            if (user?.email) {
+                setUserEmail(user.email);
+            }
+        });
+    }, []);
+
+    const handleLogout = async () => {
+        await supabase.auth.signOut();
+        navigate('/login');
+    };
 
     const navItems = [
         { icon: LayoutDashboard, label: '홈', path: '/' },
@@ -32,145 +114,48 @@ const Sidebar = ({ isOpen, setIsOpen }: { isOpen: boolean; setIsOpen: (v: boolea
         },
     ];
 
-    const toggleExpand = (path: string) => {
-        setExpandedItems(prev =>
-            prev.includes(path)
-                ? prev.filter(p => p !== path)
-                : [...prev, path]
-        );
-    };
-
     return (
-        <aside
-            className={cn(
-                "fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 transform transition-transform duration-200 ease-in-out lg:translate-x-0 lg:static lg:inset-0",
-                isOpen ? "translate-x-0" : "-translate-x-full"
-            )}
-        >
-            <div className="h-16 flex items-center justify-between px-6 border-b border-gray-100">
-                <span className="text-xl font-bold text-primary tracking-tight">Convum CRM</span>
-                <button onClick={() => setIsOpen(false)} className="lg:hidden text-gray-500">
-                    <X size={24} />
-                </button>
-            </div>
-            <nav className="p-4 space-y-1">
-                {navItems.map((item) => (
-                    <div key={item.path}>
-                        {item.children ? (
-                            <>
-                                <button
-                                    onClick={() => toggleExpand(item.path)}
-                                    className={cn(
-                                        "w-full flex items-center justify-between gap-3 px-4 py-3 rounded-lg text-lg font-bold transition-colors text-gray-900 hover:bg-gray-50 hover:text-black",
-                                        expandedItems.includes(item.path) && "bg-gray-50 text-black"
-                                    )}
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <item.icon size={24} />
-                                        {item.label}
-                                    </div>
-                                    <svg
-                                        className={cn("w-5 h-5 transition-transform", expandedItems.includes(item.path) ? "rotate-180" : "")}
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke="currentColor"
-                                    >
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                    </svg>
-                                </button>
-                                {expandedItems.includes(item.path) && (
-                                    <div className="pl-11 pr-2 py-1 space-y-1">
-                                        {item.children.map((child) => (
-                                            <NavLink
-                                                key={child.path}
-                                                to={child.path}
-                                                className={({ isActive }) =>
-                                                    cn(
-                                                        "block px-3 py-2 rounded-lg text-base transition-colors",
-                                                        isActive
-                                                            ? "text-blue-600 bg-blue-50 font-bold"
-                                                            : "text-gray-600 hover:text-gray-900 hover:bg-gray-50 font-medium"
-                                                    )
-                                                }
-                                            >
-                                                {child.label}
-                                            </NavLink>
-                                        ))}
-                                    </div>
-                                )}
-                            </>
-                        ) : (
-                            <NavLink
-                                to={item.path}
-                                className={({ isActive }) =>
-                                    cn(
-                                        "flex items-center gap-3 px-4 py-3 rounded-lg text-lg font-bold transition-colors",
-                                        isActive
-                                            ? "bg-primary text-primary-foreground"
-                                            : "text-gray-900 hover:bg-gray-50 hover:text-black"
-                                    )
-                                }
-                            >
-                                <item.icon size={24} />
-                                {item.label}
-                            </NavLink>
-                        )}
-                    </div>
-                ))}
-            </nav>
-        </aside>
-    );
-};
-
-export default function DashboardLayout() {
-    const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
-    const [userEmail, setUserEmail] = React.useState<string>('');
-    const navigate = useNavigate();
-
-    React.useEffect(() => {
-        supabase.auth.getUser().then(({ data: { user } }) => {
-            if (user?.email) {
-                setUserEmail(user.email);
-            }
-        });
-    }, []);
-
-    const handleLogout = async () => {
-        await supabase.auth.signOut();
-        navigate('/login');
-    };
-
-    return (
-        <div className="min-h-screen bg-background flex">
-            <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
-
-            <div className="flex-1 flex flex-col min-w-0">
-                <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 lg:px-8">
-                    <button
-                        onClick={() => setIsSidebarOpen(true)}
-                        className="lg:hidden text-gray-500 hover:text-gray-700"
-                    >
-                        <Menu size={24} />
-                    </button>
-                    <div className="flex items-center gap-4 ml-auto">
-                        <span className="text-sm text-gray-600 hidden md:block">{userEmail}</span>
-                        <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-medium">
-                            {userEmail ? userEmail[0].toUpperCase() : 'U'}
+        <div className="min-h-screen bg-gray-50 flex flex-col">
+            <header className="bg-white border-b border-gray-200 sticky top-0 z-40">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="flex h-16 items-center justify-between">
+                        {/* Logo */}
+                        <div className="flex-shrink-0 flex items-center">
+                            <span className="text-xl font-bold text-gray-900 tracking-tight">Convum CRM</span>
                         </div>
-                        <button
-                            onClick={handleLogout}
-                            className="p-2 text-gray-500 hover:text-red-600 transition-colors"
-                            title="로그아웃"
-                        >
-                            <LogOut size={20} />
-                        </button>
-                    </div>
-                </header>
 
-                <main className="flex-1 p-4 lg:p-8 overflow-auto">
-                    <Outlet />
-                </main>
-            </div>
+                        {/* Navigation */}
+                        <nav className="hidden md:flex items-center gap-8 ml-12">
+                            {navItems.map((item) => (
+                                <NavItem key={item.label} item={item} />
+                            ))}
+                        </nav>
+
+                        {/* User Profile */}
+                        <div className="flex items-center gap-4 ml-auto">
+                            <div className="flex items-center gap-3">
+                                <div className="text-right hidden sm:block">
+                                    <p className="text-sm font-medium text-gray-900">{userEmail}</p>
+                                </div>
+                                <div className="h-8 w-8 rounded-full bg-gray-900 text-white flex items-center justify-center text-sm font-medium">
+                                    {userEmail ? userEmail[0].toUpperCase() : 'U'}
+                                </div>
+                            </div>
+                            <button
+                                onClick={handleLogout}
+                                className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+                                title="로그아웃"
+                            >
+                                <LogOut size={20} />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                <Outlet />
+            </main>
         </div>
     );
 }

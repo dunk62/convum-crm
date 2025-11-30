@@ -309,8 +309,8 @@ export default function Accounts() {
                     <table className="w-full text-left text-sm">
                         <thead className="bg-gray-50 border-b border-gray-200">
                             <tr>
-                                <th className="px-6 py-3 font-bold text-gray-500">
-                                    <div className="flex items-center gap-2">
+                                <th className="px-6 py-3 text-center text-base font-bold text-gray-700 whitespace-nowrap">
+                                    <div className="flex items-center justify-center gap-2">
                                         <input
                                             type="checkbox"
                                             onChange={handleSelectAll}
@@ -320,12 +320,12 @@ export default function Accounts() {
                                         업체명
                                     </div>
                                 </th>
-                                <th className="px-6 py-3 font-bold text-gray-500">산업군</th>
-                                <th className="px-6 py-3 font-bold text-gray-500">대표전화</th>
-                                <th className="px-6 py-3 font-bold text-gray-500">홈페이지</th>
-                                <th className="px-6 py-3 font-bold text-gray-500">주소</th>
-                                <th className="px-6 py-3 font-bold text-gray-500">등록일</th>
-                                <th className="px-6 py-3 font-medium text-gray-500"></th>
+                                <th className="px-6 py-3 text-center text-base font-bold text-gray-700 whitespace-nowrap">산업군</th>
+                                <th className="px-6 py-3 text-center text-base font-bold text-gray-700 whitespace-nowrap">대표전화</th>
+                                <th className="px-6 py-3 text-center text-base font-bold text-gray-700 whitespace-nowrap">홈페이지</th>
+                                <th className="px-6 py-3 text-center text-base font-bold text-gray-700 whitespace-nowrap">주소</th>
+                                <th className="px-6 py-3 text-center text-base font-bold text-gray-700 whitespace-nowrap">등록일</th>
+                                <th className="px-6 py-3 text-center text-base font-bold text-gray-700 whitespace-nowrap"></th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">

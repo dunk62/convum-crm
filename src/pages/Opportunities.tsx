@@ -50,6 +50,9 @@ export default function Opportunities() {
     const fetchOpportunities = async () => {
         try {
             setLoading(true);
+            // Add a small delay to make the refresh action visible
+            await new Promise(resolve => setTimeout(resolve, 500));
+
             const { data, error } = await supabase
                 .from('opportunities')
                 .select('*')
@@ -802,10 +805,18 @@ ${content}`;
                             className="pl-8 pr-3 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:border-blue-500 w-64"
                         />
                     </div>
-                    <button className="p-1.5 text-gray-600 hover:bg-gray-200 rounded border border-gray-300 bg-white">
+                    <button
+                        className="p-1.5 text-gray-600 hover:bg-gray-200 rounded border border-gray-300 bg-white"
+                        onClick={() => alert("설정 기능은 준비 중입니다.")}
+                        title="설정"
+                    >
                         <Settings size={14} />
                     </button>
-                    <button className="p-1.5 text-gray-600 hover:bg-gray-200 rounded border border-gray-300 bg-white">
+                    <button
+                        className="p-1.5 text-gray-600 hover:bg-gray-200 rounded border border-gray-300 bg-white"
+                        onClick={() => alert("필터 기능은 준비 중입니다.")}
+                        title="필터"
+                    >
                         <Filter size={14} />
                     </button>
                     <button
@@ -865,48 +876,48 @@ ${content}`;
                                     onChange={toggleSelectAll}
                                 />
                             </th>
-                            <th className="p-2 border-b border-gray-200 text-sm font-bold text-gray-700 min-w-[200px]">
-                                <div className="flex items-center cursor-pointer hover:text-gray-700">
+                            <th className="p-2 border-b border-gray-200 text-center text-base font-bold text-gray-700 min-w-[200px]">
+                                <div className="flex items-center justify-center cursor-pointer hover:text-gray-700">
                                     안건 <ChevronDown size={12} className="ml-1" />
                                 </div>
                             </th>
-                            <th className="p-2 border-b border-gray-200 text-sm font-bold text-gray-700 min-w-[150px]">
-                                <div className="flex items-center cursor-pointer hover:text-gray-700">
+                            <th className="p-2 border-b border-gray-200 text-center text-base font-bold text-gray-700 min-w-[150px]">
+                                <div className="flex items-center justify-center cursor-pointer hover:text-gray-700">
                                     업체명 <ChevronDown size={12} className="ml-1" />
                                 </div>
                             </th>
-                            <th className="p-2 border-b border-gray-200 text-sm font-bold text-gray-700 min-w-[120px]">
-                                <div className="flex items-center cursor-pointer hover:text-gray-700">
+                            <th className="p-2 border-b border-gray-200 text-center text-base font-bold text-gray-700 min-w-[120px]">
+                                <div className="flex items-center justify-center cursor-pointer hover:text-gray-700">
                                     예상 매출액 <ChevronDown size={12} className="ml-1" />
                                 </div>
                             </th>
-                            <th className="p-2 border-b border-gray-200 text-sm font-bold text-gray-700 min-w-[120px]">
-                                <div className="flex items-center cursor-pointer hover:text-gray-700">
+                            <th className="p-2 border-b border-gray-200 text-center text-base font-bold text-gray-700 min-w-[120px]">
+                                <div className="flex items-center justify-center cursor-pointer hover:text-gray-700">
                                     진행 단계 <ChevronDown size={12} className="ml-1" />
                                 </div>
                             </th>
-                            <th className="p-2 border-b border-gray-200 text-sm font-bold text-gray-700 min-w-[100px]">
-                                <div className="flex items-center cursor-pointer hover:text-gray-700">
+                            <th className="p-2 border-b border-gray-200 text-center text-base font-bold text-gray-700 min-w-[100px]">
+                                <div className="flex items-center justify-center cursor-pointer hover:text-gray-700">
                                     성공 확률 <ChevronDown size={12} className="ml-1" />
                                 </div>
                             </th>
-                            <th className="p-2 border-b border-gray-200 text-sm font-bold text-gray-700 min-w-[100px]">
-                                <div className="flex items-center cursor-pointer hover:text-gray-700">
+                            <th className="p-2 border-b border-gray-200 text-center text-base font-bold text-gray-700 min-w-[100px]">
+                                <div className="flex items-center justify-center cursor-pointer hover:text-gray-700">
                                     마감 일자 <ChevronDown size={12} className="ml-1" />
                                 </div>
                             </th>
-                            <th className="p-2 border-b border-gray-200 text-sm font-bold text-gray-700 min-w-[100px]">
-                                <div className="flex items-center cursor-pointer hover:text-gray-700">
+                            <th className="p-2 border-b border-gray-200 text-center text-base font-bold text-gray-700 min-w-[100px]">
+                                <div className="flex items-center justify-center cursor-pointer hover:text-gray-700">
                                     미팅 일자 <ChevronDown size={12} className="ml-1" />
                                 </div>
                             </th>
-                            <th className="p-2 border-b border-gray-200 text-sm font-bold text-gray-700 min-w-[100px]">
-                                <div className="flex items-center cursor-pointer hover:text-gray-700">
+                            <th className="p-2 border-b border-gray-200 text-center text-base font-bold text-gray-700 min-w-[100px]">
+                                <div className="flex items-center justify-center cursor-pointer hover:text-gray-700">
                                     영업 담당자 <ChevronDown size={12} className="ml-1" />
                                 </div>
                             </th>
-                            <th className="p-2 border-b border-gray-200 text-sm font-bold text-gray-700 min-w-[100px]">
-                                <div className="flex items-center cursor-pointer hover:text-gray-700">
+                            <th className="p-2 border-b border-gray-200 text-center text-base font-bold text-gray-700 min-w-[100px]">
+                                <div className="flex items-center justify-center cursor-pointer hover:text-gray-700">
                                     등록일 <ChevronDown size={12} className="ml-1" />
                                 </div>
                             </th>

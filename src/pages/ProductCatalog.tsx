@@ -167,12 +167,12 @@ export default function ProductCatalog() {
                     <table className="w-full text-sm text-left">
                         <thead className="bg-gray-50 text-gray-700 font-medium border-b border-gray-200">
                             <tr>
-                                <th className="px-6 py-3">제품명</th>
-                                <th className="px-6 py-3">모델명</th>
-                                <th className="px-6 py-3">카테고리</th>
-                                <th className="px-6 py-3 text-right">단가</th>
-                                <th className="px-6 py-3">설명</th>
-                                <th className="px-6 py-3 text-center">관리</th>
+                                <th className="px-6 py-3 text-center text-base font-bold text-gray-700">제품명</th>
+                                <th className="px-6 py-3 text-center text-base font-bold text-gray-700">모델명</th>
+                                <th className="px-6 py-3 text-center text-base font-bold text-gray-700">카테고리</th>
+                                <th className="px-6 py-3 text-center text-base font-bold text-gray-700">단가</th>
+                                <th className="px-6 py-3 text-center text-base font-bold text-gray-700">설명</th>
+                                <th className="px-6 py-3 text-center text-base font-bold text-gray-700">관리</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
