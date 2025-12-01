@@ -2,6 +2,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { ChevronDown, Search, Filter, Settings, RefreshCw, Plus, X, AlertCircle, Calendar, Trash2, Building2, Mail, Sparkles } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import RentalManager from '../components/RentalManager';
 
 const STAGE_OPTIONS = ['발굴', '제안', '견적', '협상', '계약 대기', '수주(성공)', '실주(실패)'];
 const PROBABILITY_OPTIONS = ['10%', '30%', '50%', '80%', '100%'];
@@ -120,6 +121,7 @@ export default function Opportunities() {
     const [loadingAIForMemo, setLoadingAIForMemo] = useState<string | null>(null);
     const [editingMemoId, setEditingMemoId] = useState<string | null>(null);
     const [editingMemoContent, setEditingMemoContent] = useState('');
+    const [activeMenuMemoId, setActiveMenuMemoId] = useState<string | null>(null);
 
     const fetchMemos = async (opportunityId: string) => {
         try {
@@ -549,11 +551,29 @@ ${content}`;
 
             if (error) throw error;
 
-            setNewMemo('');
-            fetchMemos(editingOpportunity.id);
+            setEditingMemoId(null);
+            fetchMemos(editingOpportunity!.id);
         } catch (err: any) {
-            console.error('Error adding memo:', err);
-            alert('메모 저장 실패: ' + err.message);
+            console.error('Error updating memo:', err);
+            alert('메모 수정에 실패했습니다.');
+        }
+    };
+
+    const handleDeleteMemo = async (id: string) => {
+        if (!confirm('정말로 이 메모를 삭제하시겠습니까?')) return;
+
+        try {
+            const { error } = await supabase
+                .from('opportunity_memos')
+                .delete()
+                .eq('id', id);
+
+            if (error) throw error;
+
+            fetchMemos(editingOpportunity!.id);
+        } catch (err: any) {
+            console.error('Error deleting memo:', err);
+            alert('메모 삭제에 실패했습니다.');
         }
     };
 
@@ -653,6 +673,8 @@ ${content}`;
             const numericValue = value.replace(/,/g, '');
             if (isNaN(Number(numericValue))) return;
             newValue = numericValue === '' ? '' : Number(numericValue);
+        } else if (name === 'success_probability') {
+            newValue = parseInt(value.replace('%', ''));
         }
 
         setNewOpportunity(prev => ({
@@ -751,6 +773,8 @@ ${content}`;
             const numericValue = value.replace(/,/g, '');
             if (isNaN(Number(numericValue))) return;
             newValue = numericValue === '' ? '' : Number(numericValue);
+        } else if (name === 'success_probability') {
+            newValue = parseInt(value.replace('%', ''));
         }
 
         setEditingOpportunity(prev => ({
@@ -1137,7 +1161,7 @@ ${content}`;
                                         <label className="block text-sm font-medium text-gray-700 mb-1">성공 확률</label>
                                         <select
                                             name="success_probability"
-                                            value={newOpportunity.success_probability ? `${newOpportunity.success_probability}% ` : '10%'}
+                                            value={newOpportunity.success_probability ? `${newOpportunity.success_probability}%` : '10%'}
                                             onChange={handleCreateInputChange}
                                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                         >
@@ -1389,7 +1413,8 @@ ${content}`;
                                         </div>
 
                                         {/* Right Column: Memo Section */}
-                                        <div className="w-2/3 flex flex-col h-full border-l border-gray-200 pl-6">
+                                        {/* Center Column: Memo Section */}
+                                        <div className="w-1/3 flex flex-col h-full border-r border-gray-200 px-6">
                                             <h3 className="text-lg font-bold text-gray-900 mb-3">미팅 및 통화 메모</h3>
                                             <div className="flex-1 overflow-y-auto bg-gray-50 p-4 rounded-lg mb-4 space-y-3">
                                                 {isMemoLoading ? (
@@ -1445,13 +1470,38 @@ ${content}`;
                                                                                     )}
                                                                                     AI F/U 제안
                                                                                 </button>
-                                                                                <button
-                                                                                    onClick={() => startEditingMemo(memo)}
-                                                                                    className="p-1 text-gray-500 hover:text-gray-700 transition-colors"
-                                                                                    title="수정"
-                                                                                >
-                                                                                    <Settings size={16} />
-                                                                                </button>
+                                                                                <div className="relative">
+                                                                                    <button
+                                                                                        type="button"
+                                                                                        onClick={() => setActiveMenuMemoId(activeMenuMemoId === memo.id ? null : memo.id)}
+                                                                                        className="p-1 text-gray-500 hover:text-gray-700 transition-colors"
+                                                                                        title="설정"
+                                                                                    >
+                                                                                        <Settings size={16} />
+                                                                                    </button>
+                                                                                    {activeMenuMemoId === memo.id && (
+                                                                                        <div className="absolute right-0 mt-1 w-24 bg-white rounded-md shadow-lg border border-gray-200 z-10">
+                                                                                            <button
+                                                                                                onClick={() => {
+                                                                                                    startEditingMemo(memo);
+                                                                                                    setActiveMenuMemoId(null);
+                                                                                                }}
+                                                                                                className="block w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-100 first:rounded-t-md"
+                                                                                            >
+                                                                                                수정
+                                                                                            </button>
+                                                                                            <button
+                                                                                                onClick={() => {
+                                                                                                    handleDeleteMemo(memo.id);
+                                                                                                    setActiveMenuMemoId(null);
+                                                                                                }}
+                                                                                                className="block w-full text-left px-4 py-2 text-xs text-red-600 hover:bg-gray-100 last:rounded-b-md"
+                                                                                            >
+                                                                                                삭제
+                                                                                            </button>
+                                                                                        </div>
+                                                                                    )}
+                                                                                </div>
                                                                             </div>
                                                                         </div>
                                                                     </div>
@@ -1474,13 +1524,38 @@ ${content}`;
                                                                                 <Mail size={12} />
                                                                                 이메일 발송
                                                                             </button>
-                                                                            <button
-                                                                                onClick={() => startEditingMemo(reply)}
-                                                                                className="p-1 text-gray-500 hover:text-gray-700 transition-colors"
-                                                                                title="수정"
-                                                                            >
-                                                                                <Settings size={16} />
-                                                                            </button>
+                                                                            <div className="relative">
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={() => setActiveMenuMemoId(activeMenuMemoId === reply.id ? null : reply.id)}
+                                                                                    className="p-1 text-gray-500 hover:text-gray-700 transition-colors"
+                                                                                    title="설정"
+                                                                                >
+                                                                                    <Settings size={16} />
+                                                                                </button>
+                                                                                {activeMenuMemoId === reply.id && (
+                                                                                    <div className="absolute right-0 mt-1 w-24 bg-white rounded-md shadow-lg border border-gray-200 z-10">
+                                                                                        <button
+                                                                                            onClick={() => {
+                                                                                                startEditingMemo(reply);
+                                                                                                setActiveMenuMemoId(null);
+                                                                                            }}
+                                                                                            className="block w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-100 first:rounded-t-md"
+                                                                                        >
+                                                                                            수정
+                                                                                        </button>
+                                                                                        <button
+                                                                                            onClick={() => {
+                                                                                                handleDeleteMemo(reply.id);
+                                                                                                setActiveMenuMemoId(null);
+                                                                                            }}
+                                                                                            className="block w-full text-left px-4 py-2 text-xs text-red-600 hover:bg-gray-100 last:rounded-b-md"
+                                                                                        >
+                                                                                            삭제
+                                                                                        </button>
+                                                                                    </div>
+                                                                                )}
+                                                                            </div>
                                                                         </div>
                                                                     </div>
                                                                 </div>
@@ -1498,15 +1573,22 @@ ${content}`;
                                                     placeholder="메모를 입력하세요..."
                                                     className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none h-24"
                                                 />
-                                                <button
-                                                    type="button"
-                                                    onClick={handleAddMemo}
-                                                    disabled={!newMemo.trim()}
-                                                    className="px-3 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed h-24"
-                                                >
-                                                    등록
-                                                </button>
+                                                <div className="mt-4 flex justify-end">
+                                                    <button
+                                                        type="button"
+                                                        onClick={handleAddMemo}
+                                                        disabled={!newMemo.trim()}
+                                                        className="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium transition-colors"
+                                                    >
+                                                        등록
+                                                    </button>
+                                                </div>
                                             </div>
+                                        </div>
+
+                                        {/* Right Column: Rental Section */}
+                                        <div className="w-1/3 flex flex-col h-full px-6 overflow-y-auto">
+                                            <RentalManager opportunityId={editingOpportunity.id} />
                                         </div>
                                     </div>
                                 </div>
