@@ -121,7 +121,9 @@ export default function RentalManager({ opportunityId }: RentalManagerProps) {
         }
     };
 
-    const handleReturnRental = async (rentalId: string) => {
+    const handleReturnRental = async (e: React.MouseEvent, rentalId: string) => {
+        e.preventDefault();
+        e.stopPropagation();
         if (!confirm('반납 처리하시겠습니까?')) return;
 
         try {
@@ -142,7 +144,9 @@ export default function RentalManager({ opportunityId }: RentalManagerProps) {
         }
     };
 
-    const handleDeleteRental = async (rentalId: string) => {
+    const handleDeleteRental = async (e: React.MouseEvent, rentalId: string) => {
+        e.preventDefault();
+        e.stopPropagation();
         if (!confirm('대여 기록을 삭제하시겠습니까?')) return;
 
         try {
@@ -178,6 +182,7 @@ export default function RentalManager({ opportunityId }: RentalManagerProps) {
                 </h3>
                 {!isAdding && (
                     <button
+                        type="button"
                         onClick={() => setIsAdding(true)}
                         className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 shadow-sm"
                     >
@@ -348,14 +353,16 @@ export default function RentalManager({ opportunityId }: RentalManagerProps) {
                                         <div className="flex justify-end items-center gap-3">
                                             {rental.status === 'rented' && (
                                                 <button
-                                                    onClick={() => handleReturnRental(rental.id)}
+                                                    type="button"
+                                                    onClick={(e) => handleReturnRental(e, rental.id)}
                                                     className="text-blue-600 hover:text-blue-900 font-medium text-xs bg-blue-50 px-3 py-1.5 rounded-md hover:bg-blue-100 transition-colors"
                                                 >
                                                     반납
                                                 </button>
                                             )}
                                             <button
-                                                onClick={() => handleDeleteRental(rental.id)}
+                                                type="button"
+                                                onClick={(e) => handleDeleteRental(e, rental.id)}
                                                 className="text-gray-400 hover:text-red-600 transition-colors p-1 rounded-full hover:bg-red-50"
                                                 title="삭제"
                                             >

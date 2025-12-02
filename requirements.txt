@@ -1,0 +1,6 @@
+google-generativeai
+google-auth
+google-api-python-client
+supabase
+python-dotenv
+importlib-metadata

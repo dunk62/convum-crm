@@ -10,6 +10,7 @@ import ProductCatalog from './pages/ProductCatalog';
 import ProductDrawings from './pages/ProductDrawings';
 import Login from './pages/Login';
 import InventoryStatus from './pages/InventoryStatus';
+import DataManagement from './pages/DataManagement';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
@@ -24,6 +25,7 @@ function App() {
             <Route path="accounts" element={<Accounts />} />
             <Route path="opportunities" element={<Opportunities />} />
             <Route path="sales-performance" element={<SalesPerformance />} />
+            <Route path="data-management" element={<DataManagement />} />
             <Route path="inventory/southern-sales" element={<InventoryStatus />} />
             <Route path="products/catalog" element={<ProductCatalog />} />
             <Route path="products/drawings" element={<ProductDrawings />} />

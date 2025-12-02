@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, Briefcase, BarChart2, LogOut, Package, ChevronDown, ClipboardList } from 'lucide-react';
+import { LayoutDashboard, Users, Briefcase, BarChart2, LogOut, Package, ChevronDown, ClipboardList, Database } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { cn } from '../lib/utils';
 
@@ -102,6 +102,7 @@ export default function DashboardLayout() {
                 { label: '남부전략영업소 영업용 재고', path: '/inventory/southern-sales' }
             ]
         },
+        { icon: Database, label: '데이터 관리', path: '/data-management' },
         {
             icon: Package,
             label: '제품 정보',

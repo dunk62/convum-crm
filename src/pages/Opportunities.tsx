@@ -3,6 +3,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { ChevronDown, Search, Filter, Settings, RefreshCw, Plus, X, AlertCircle, Calendar, Trash2, Building2, Mail, Sparkles } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import RentalManager from '../components/RentalManager';
+import CompanyNews from '../components/CompanyNews';
+import TodoList from '../components/TodoList';
 
 const STAGE_OPTIONS = ['발굴', '제안', '견적', '협상', '계약 대기', '수주(성공)', '실주(실패)'];
 const PROBABILITY_OPTIONS = ['10%', '30%', '50%', '80%', '100%'];
@@ -1412,78 +1414,132 @@ ${content}`;
                                             {/* Company Sales Chart */}
                                         </div>
 
-                                        {/* Right Column: Memo Section */}
-                                        {/* Center Column: Memo Section */}
-                                        <div className="w-1/3 flex flex-col h-full border-r border-gray-200 px-6">
-                                            <h3 className="text-lg font-bold text-gray-900 mb-3">미팅 및 통화 메모</h3>
-                                            <div className="flex-1 overflow-y-auto bg-gray-50 p-4 rounded-lg mb-4 space-y-3">
-                                                {isMemoLoading ? (
-                                                    <p className="text-xs text-gray-500 text-center">로딩 중...</p>
-                                                ) : memos.length > 0 ? (
-                                                    memos.filter(m => !m.parent_id).map(memo => (
-                                                        <div key={memo.id} className="space-y-2">
-                                                            <div className="bg-white p-2 rounded border border-gray-200 shadow-sm group relative">
-                                                                {editingMemoId === memo.id ? (
-                                                                    <div className="space-y-2">
-                                                                        <textarea
-                                                                            value={editingMemoContent}
-                                                                            onChange={(e) => setEditingMemoContent(e.target.value)}
-                                                                            className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
-                                                                            rows={3}
-                                                                        />
-                                                                        <div className="flex justify-end gap-2 mt-2">
-                                                                            <button
-                                                                                onClick={() => setEditingMemoId(null)}
-                                                                                className="px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
-                                                                            >
-                                                                                취소
-                                                                            </button>
-                                                                            <button
-                                                                                onClick={() => handleUpdateMemo(memo.id)}
-                                                                                className="px-3 py-1.5 text-xs font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors"
-                                                                            >
-                                                                                저장
-                                                                            </button>
+                                        {/* Center Column: Memo Section & Todo List */}
+                                        <div className="w-1/3 border-r border-gray-100 px-6 flex flex-col h-full overflow-hidden pb-2">
+                                            <div className="flex-1 min-h-0 flex flex-col mb-4">
+                                                <h3 className="text-lg font-bold text-gray-900 mb-3">미팅 및 통화 메모</h3>
+                                                <div className="flex-1 overflow-y-auto bg-gray-50 p-4 rounded-lg mb-4 space-y-3">
+                                                    {isMemoLoading ? (
+                                                        <p className="text-xs text-gray-500 text-center">로딩 중...</p>
+                                                    ) : memos.length > 0 ? (
+                                                        memos.filter(m => !m.parent_id).map(memo => (
+                                                            <div key={memo.id} className="space-y-2">
+                                                                <div className="bg-white p-2 rounded border border-gray-200 shadow-sm group relative">
+                                                                    {editingMemoId === memo.id ? (
+                                                                        <div className="space-y-2">
+                                                                            <textarea
+                                                                                value={editingMemoContent}
+                                                                                onChange={(e) => setEditingMemoContent(e.target.value)}
+                                                                                className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
+                                                                                rows={3}
+                                                                            />
+                                                                            <div className="flex justify-end gap-2 mt-2">
+                                                                                <button
+                                                                                    onClick={() => setEditingMemoId(null)}
+                                                                                    className="px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
+                                                                                >
+                                                                                    취소
+                                                                                </button>
+                                                                                <button
+                                                                                    onClick={() => handleUpdateMemo(memo.id)}
+                                                                                    className="px-3 py-1.5 text-xs font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors"
+                                                                                >
+                                                                                    저장
+                                                                                </button>
+                                                                            </div>
                                                                         </div>
-                                                                    </div>
-                                                                ) : (
-                                                                    <div>
-                                                                        <p className="text-sm text-gray-800 whitespace-pre-wrap pr-6">{memo.content}</p>
+                                                                    ) : (
+                                                                        <div>
+                                                                            <p className="text-sm text-gray-800 whitespace-pre-wrap pr-6">{memo.content}</p>
+                                                                            <div className="flex items-center justify-between mt-1">
+                                                                                <p className="text-xs text-gray-400">
+                                                                                    {new Date(memo.created_at).toLocaleString()}
+                                                                                    {memo.updated_at && ` (수정됨: ${new Date(memo.updated_at).toLocaleString()})`}
+                                                                                </p>
+
+
+                                                                                <div className="flex items-center gap-2">
+                                                                                    <button
+                                                                                        onClick={() => handleAIFollowUp(memo.id, memo.content)}
+                                                                                        disabled={loadingAIForMemo === memo.id}
+                                                                                        className="flex items-center gap-1 text-xs text-purple-600 hover:text-purple-700 bg-purple-50 px-2 py-0.5 rounded transition-colors"
+                                                                                        title="AI F/U 제안"
+                                                                                    >
+                                                                                        {loadingAIForMemo === memo.id ? (
+                                                                                            <RefreshCw size={12} className="animate-spin" />
+                                                                                        ) : (
+                                                                                            <Sparkles size={12} />
+                                                                                        )}
+                                                                                        AI F/U 제안
+                                                                                    </button>
+                                                                                    <div className="relative">
+                                                                                        <button
+                                                                                            type="button"
+                                                                                            onClick={() => setActiveMenuMemoId(activeMenuMemoId === memo.id ? null : memo.id)}
+                                                                                            className="p-1 text-gray-500 hover:text-gray-700 transition-colors"
+                                                                                            title="설정"
+                                                                                        >
+                                                                                            <Settings size={16} />
+                                                                                        </button>
+                                                                                        {activeMenuMemoId === memo.id && (
+                                                                                            <div className="absolute right-0 mt-1 w-24 bg-white rounded-md shadow-lg border border-gray-200 z-10">
+                                                                                                <button
+                                                                                                    onClick={() => {
+                                                                                                        startEditingMemo(memo);
+                                                                                                        setActiveMenuMemoId(null);
+                                                                                                    }}
+                                                                                                    className="block w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-100 first:rounded-t-md"
+                                                                                                >
+                                                                                                    수정
+                                                                                                </button>
+                                                                                                <button
+                                                                                                    onClick={() => {
+                                                                                                        handleDeleteMemo(memo.id);
+                                                                                                        setActiveMenuMemoId(null);
+                                                                                                    }}
+                                                                                                    className="block w-full text-left px-4 py-2 text-xs text-red-600 hover:bg-gray-100 last:rounded-b-md"
+                                                                                                >
+                                                                                                    삭제
+                                                                                                </button>
+                                                                                            </div>
+                                                                                        )}
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                                {/* Replies */}
+                                                                {memos.filter(reply => reply.parent_id === memo.id).map(reply => (
+                                                                    <div key={reply.id} className="ml-6 bg-purple-50 p-2 rounded border border-purple-100 shadow-sm relative">
+                                                                        <p className="text-sm text-gray-800 whitespace-pre-wrap">{reply.content}</p>
                                                                         <div className="flex items-center justify-between mt-1">
                                                                             <p className="text-xs text-gray-400">
-                                                                                {new Date(memo.created_at).toLocaleString()}
-                                                                                {memo.updated_at && ` (수정됨: ${new Date(memo.updated_at).toLocaleString()})`}
+                                                                                {new Date(reply.created_at).toLocaleString()}
                                                                             </p>
-
-
                                                                             <div className="flex items-center gap-2">
                                                                                 <button
-                                                                                    onClick={() => handleAIFollowUp(memo.id, memo.content)}
-                                                                                    disabled={loadingAIForMemo === memo.id}
-                                                                                    className="flex items-center gap-1 text-xs text-purple-600 hover:text-purple-700 bg-purple-50 px-2 py-0.5 rounded transition-colors"
-                                                                                    title="AI F/U 제안"
+                                                                                    onClick={() => handleSendEmail(reply.content)}
+                                                                                    className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 bg-blue-50 px-2 py-0.5 rounded transition-colors"
+                                                                                    title="이메일 발송"
                                                                                 >
-                                                                                    {loadingAIForMemo === memo.id ? (
-                                                                                        <RefreshCw size={12} className="animate-spin" />
-                                                                                    ) : (
-                                                                                        <Sparkles size={12} />
-                                                                                    )}
-                                                                                    AI F/U 제안
+                                                                                    <Mail size={12} />
+                                                                                    이메일 발송
                                                                                 </button>
                                                                                 <div className="relative">
                                                                                     <button
                                                                                         type="button"
-                                                                                        onClick={() => setActiveMenuMemoId(activeMenuMemoId === memo.id ? null : memo.id)}
+                                                                                        onClick={() => setActiveMenuMemoId(activeMenuMemoId === reply.id ? null : reply.id)}
                                                                                         className="p-1 text-gray-500 hover:text-gray-700 transition-colors"
                                                                                         title="설정"
                                                                                     >
                                                                                         <Settings size={16} />
                                                                                     </button>
-                                                                                    {activeMenuMemoId === memo.id && (
+                                                                                    {activeMenuMemoId === reply.id && (
                                                                                         <div className="absolute right-0 mt-1 w-24 bg-white rounded-md shadow-lg border border-gray-200 z-10">
                                                                                             <button
                                                                                                 onClick={() => {
-                                                                                                    startEditingMemo(memo);
+                                                                                                    startEditingMemo(reply);
                                                                                                     setActiveMenuMemoId(null);
                                                                                                 }}
                                                                                                 className="block w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-100 first:rounded-t-md"
@@ -1492,7 +1548,7 @@ ${content}`;
                                                                                             </button>
                                                                                             <button
                                                                                                 onClick={() => {
-                                                                                                    handleDeleteMemo(memo.id);
+                                                                                                    handleDeleteMemo(reply.id);
                                                                                                     setActiveMenuMemoId(null);
                                                                                                 }}
                                                                                                 className="block w-full text-left px-4 py-2 text-xs text-red-600 hover:bg-gray-100 last:rounded-b-md"
@@ -1505,90 +1561,46 @@ ${content}`;
                                                                             </div>
                                                                         </div>
                                                                     </div>
-                                                                )}
+                                                                ))}
                                                             </div>
-                                                            {/* Replies */}
-                                                            {memos.filter(reply => reply.parent_id === memo.id).map(reply => (
-                                                                <div key={reply.id} className="ml-6 bg-purple-50 p-2 rounded border border-purple-100 shadow-sm relative">
-                                                                    <p className="text-sm text-gray-800 whitespace-pre-wrap">{reply.content}</p>
-                                                                    <div className="flex items-center justify-between mt-1">
-                                                                        <p className="text-xs text-gray-400">
-                                                                            {new Date(reply.created_at).toLocaleString()}
-                                                                        </p>
-                                                                        <div className="flex items-center gap-2">
-                                                                            <button
-                                                                                onClick={() => handleSendEmail(reply.content)}
-                                                                                className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 bg-blue-50 px-2 py-0.5 rounded transition-colors"
-                                                                                title="이메일 발송"
-                                                                            >
-                                                                                <Mail size={12} />
-                                                                                이메일 발송
-                                                                            </button>
-                                                                            <div className="relative">
-                                                                                <button
-                                                                                    type="button"
-                                                                                    onClick={() => setActiveMenuMemoId(activeMenuMemoId === reply.id ? null : reply.id)}
-                                                                                    className="p-1 text-gray-500 hover:text-gray-700 transition-colors"
-                                                                                    title="설정"
-                                                                                >
-                                                                                    <Settings size={16} />
-                                                                                </button>
-                                                                                {activeMenuMemoId === reply.id && (
-                                                                                    <div className="absolute right-0 mt-1 w-24 bg-white rounded-md shadow-lg border border-gray-200 z-10">
-                                                                                        <button
-                                                                                            onClick={() => {
-                                                                                                startEditingMemo(reply);
-                                                                                                setActiveMenuMemoId(null);
-                                                                                            }}
-                                                                                            className="block w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-100 first:rounded-t-md"
-                                                                                        >
-                                                                                            수정
-                                                                                        </button>
-                                                                                        <button
-                                                                                            onClick={() => {
-                                                                                                handleDeleteMemo(reply.id);
-                                                                                                setActiveMenuMemoId(null);
-                                                                                            }}
-                                                                                            className="block w-full text-left px-4 py-2 text-xs text-red-600 hover:bg-gray-100 last:rounded-b-md"
-                                                                                        >
-                                                                                            삭제
-                                                                                        </button>
-                                                                                    </div>
-                                                                                )}
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    ))
-                                                ) : (
-                                                    <p className="text-xs text-gray-400 text-center">등록된 메모가 없습니다.</p>
-                                                )}
-                                            </div>
-                                            <div className="flex gap-2 mt-auto">
-                                                <textarea
-                                                    value={newMemo}
-                                                    onChange={(e) => setNewMemo(e.target.value)}
-                                                    placeholder="메모를 입력하세요..."
-                                                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none h-24"
-                                                />
-                                                <div className="mt-4 flex justify-end">
-                                                    <button
-                                                        type="button"
-                                                        onClick={handleAddMemo}
-                                                        disabled={!newMemo.trim()}
-                                                        className="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium transition-colors"
-                                                    >
-                                                        등록
-                                                    </button>
+                                                        ))
+                                                    ) : (
+                                                        <p className="text-xs text-gray-400 text-center">등록된 메모가 없습니다.</p>
+                                                    )}
                                                 </div>
+                                                <div className="flex gap-2 mt-auto">
+                                                    <textarea
+                                                        value={newMemo}
+                                                        onChange={(e) => setNewMemo(e.target.value)}
+                                                        placeholder="메모를 입력하세요..."
+                                                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none h-24"
+                                                    />
+                                                    <div className="mt-4 flex justify-end">
+                                                        <button
+                                                            type="button"
+                                                            onClick={handleAddMemo}
+                                                            disabled={!newMemo.trim()}
+                                                            className="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium transition-colors"
+                                                        >
+                                                            등록
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="h-[300px] min-h-0">
+                                                <TodoList opportunityId={editingOpportunity.id} />
                                             </div>
                                         </div>
 
                                         {/* Right Column: Rental Section */}
-                                        <div className="w-1/3 flex flex-col h-full px-6 overflow-y-auto">
-                                            <RentalManager opportunityId={editingOpportunity.id} />
+                                        {/* Right Column: Rental Section & Company News */}
+                                        <div className="w-1/3 flex flex-col h-full px-6 overflow-hidden pb-2">
+                                            <div className="flex-1 min-h-0 mb-4">
+                                                <RentalManager opportunityId={editingOpportunity.id} />
+                                            </div>
+                                            <div className="h-[300px] min-h-0">
+                                                <CompanyNews companyName={editingOpportunity.company} />
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -1607,12 +1619,12 @@ ${content}`;
                                         저장
                                     </button>
                                 </div>
-                            </form>
-                        </div>
-                    </div>
+                            </form >
+                        </div >
+                    </div >
                 )
             }
-        </div>
+        </div >
     );
 }
 
