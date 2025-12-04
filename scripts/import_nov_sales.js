@@ -29,6 +29,20 @@ async function importSales() {
 
     console.log(`Found ${records.length} records to import.`);
 
+    // Delete existing records for November 2025 to avoid duplicates
+    console.log('Deleting existing November 2025 records...');
+    const { error: deleteError } = await supabase
+        .from('sales_performance')
+        .delete()
+        .gte('shipment_date', '2025-11-01')
+        .lte('shipment_date', '2025-11-30');
+
+    if (deleteError) {
+        console.error('Error deleting existing records:', deleteError);
+        return;
+    }
+    console.log('Existing records deleted.');
+
     const chunkSize = 100;
     for (let i = 0; i < records.length; i += chunkSize) {
         const chunk = records.slice(i, i + chunkSize);

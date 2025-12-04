@@ -74,6 +74,19 @@ export default function Opportunities() {
     const [searchQuery, setSearchQuery] = useState('');
     const [isMenuOpen, setIsMenuOpen] = useState(false);
 
+    // Sorting State
+    const [sortConfig, setSortConfig] = useState<{ key: keyof Opportunity; direction: 'asc' | 'desc' } | null>(null);
+
+    // Filter State
+    const [showFilters, setShowFilters] = useState(false);
+    const [filters, setFilters] = useState<Record<string, string>>({});
+
+    // Column Visibility State
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    const [visibleColumns, setVisibleColumns] = useState<Set<string>>(new Set([
+        'title', 'company', 'value', 'stage', 'success_probability', 'date', 'meeting_date', 'owner', 'created_at'
+    ]));
+
     // Modal States
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -368,6 +381,32 @@ export default function Opportunities() {
         }
     };
 
+    const handleSort = (key: keyof Opportunity) => {
+        setSortConfig(current => {
+            if (current?.key === key) {
+                return { key, direction: current.direction === 'asc' ? 'desc' : 'asc' };
+            }
+            return { key, direction: 'asc' };
+        });
+    };
+
+    const toggleColumnVisibility = (columnKey: string) => {
+        const newVisibleColumns = new Set(visibleColumns);
+        if (newVisibleColumns.has(columnKey)) {
+            newVisibleColumns.delete(columnKey);
+        } else {
+            newVisibleColumns.add(columnKey);
+        }
+        setVisibleColumns(newVisibleColumns);
+    };
+
+    const handleFilterChange = (key: string, value: string) => {
+        setFilters(prev => ({
+            ...prev,
+            [key]: value
+        }));
+    };
+
     const saveOpportunityData = async () => {
         if (!editingOpportunity) return false;
 
@@ -580,13 +619,47 @@ ${content}`;
     };
 
     const filteredOpportunities = useMemo(() => {
-        if (!searchQuery) return opportunities;
-        const lowerQuery = searchQuery.toLowerCase();
-        return opportunities.filter(op =>
-            op.title.toLowerCase().includes(lowerQuery) ||
-            op.company.toLowerCase().includes(lowerQuery)
-        );
-    }, [opportunities, searchQuery]);
+        // Start with all opportunities
+        let data = [...opportunities];
+
+        // Global search filter
+        if (searchQuery) {
+            const lowerQuery = searchQuery.toLowerCase();
+            data = data.filter(op =>
+                op.title.toLowerCase().includes(lowerQuery) ||
+                op.company.toLowerCase().includes(lowerQuery)
+            );
+        }
+
+        // Column-specific filters
+        Object.entries(filters).forEach(([key, value]) => {
+            if (!value) return;
+            const lowerValue = value.toLowerCase();
+            data = data.filter(op => {
+                const field = (op as any)[key];
+                if (field === undefined || field === null) return false;
+                return String(field).toLowerCase().includes(lowerValue);
+            });
+        });
+
+        // Sorting
+        if (sortConfig) {
+            const { key, direction } = sortConfig;
+            data.sort((a, b) => {
+                const aVal = (a as any)[key];
+                const bVal = (b as any)[key];
+                if (typeof aVal === 'number' && typeof bVal === 'number') {
+                    return direction === 'asc' ? aVal - bVal : bVal - aVal;
+                }
+                return direction === 'asc'
+                    ? String(aVal).localeCompare(String(bVal))
+                    : String(bVal).localeCompare(String(aVal));
+            });
+        }
+
+        return data;
+    }, [opportunities, searchQuery, filters, sortConfig]);
+    // Removed duplicate filteredOpportunities definition; sorting and filters are now handled in the primary useMemo above.
 
     const formatCurrency = (value: number | string) => {
         if (value === '' || value === 0) return '0원';
@@ -831,16 +904,46 @@ ${content}`;
                             className="pl-8 pr-3 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:border-blue-500 w-64"
                         />
                     </div>
+                    <div className="relative">
+                        <button
+                            className={`p-1.5 text-gray-600 hover:bg-gray-200 rounded border border-gray-300 bg-white ${isSettingsOpen ? 'bg-gray-200' : ''}`}
+                            onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+                            title="설정"
+                        >
+                            <Settings size={14} />
+                        </button>
+                        {isSettingsOpen && (
+                            <div className="absolute left-0 top-full mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 p-2 z-50">
+                                <div className="text-xs font-semibold text-gray-500 mb-2 px-2">표시할 열 선택</div>
+                                <div className="space-y-1">
+                                    {[
+                                        { key: 'title', label: '안건' },
+                                        { key: 'company', label: '업체명' },
+                                        { key: 'value', label: '예상 매출액' },
+                                        { key: 'stage', label: '진행 단계' },
+                                        { key: 'success_probability', label: '성공 확률' },
+                                        { key: 'date', label: '마감 일자' },
+                                        { key: 'meeting_date', label: '미팅 일자' },
+                                        { key: 'owner', label: '영업 담당자' },
+                                        { key: 'created_at', label: '등록일' }
+                                    ].map(col => (
+                                        <label key={col.key} className="flex items-center gap-2 px-2 py-1 hover:bg-gray-50 rounded cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={visibleColumns.has(col.key)}
+                                                onChange={() => toggleColumnVisibility(col.key)}
+                                                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                            />
+                                            <span className="text-sm text-gray-700">{col.label}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
                     <button
-                        className="p-1.5 text-gray-600 hover:bg-gray-200 rounded border border-gray-300 bg-white"
-                        onClick={() => alert("설정 기능은 준비 중입니다.")}
-                        title="설정"
-                    >
-                        <Settings size={14} />
-                    </button>
-                    <button
-                        className="p-1.5 text-gray-600 hover:bg-gray-200 rounded border border-gray-300 bg-white"
-                        onClick={() => alert("필터 기능은 준비 중입니다.")}
+                        className={`p-1.5 text-gray-600 hover:bg-gray-200 rounded border border-gray-300 bg-white ${showFilters ? 'bg-blue-50 border-blue-200 text-blue-600' : ''}`}
+                        onClick={() => setShowFilters(!showFilters)}
                         title="필터"
                     >
                         <Filter size={14} />
@@ -854,7 +957,7 @@ ${content}`;
                     </button>
                 </div>
                 <div className="flex items-center gap-2">
-                    <span className="text-xs text-gray-500 mr-2">{filteredOpportunities.length}개 항목 • 정렬 기준: 기회 이름</span>
+                    <span className="text-xs text-gray-500 mr-2">{filteredOpportunities.length}개 항목 • 정렬 기준: {sortConfig ? (sortConfig.direction === 'asc' ? '오름차순' : '내림차순') : '기본'}</span>
                     <div className="relative">
                         <button
                             onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -902,53 +1005,228 @@ ${content}`;
                                     onChange={toggleSelectAll}
                                 />
                             </th>
-                            <th className="p-2 border-b border-gray-200 text-center text-base font-bold text-gray-700 min-w-[200px]">
-                                <div className="flex items-center justify-center cursor-pointer hover:text-gray-700">
-                                    안건 <ChevronDown size={12} className="ml-1" />
-                                </div>
-                            </th>
-                            <th className="p-2 border-b border-gray-200 text-center text-base font-bold text-gray-700 min-w-[150px]">
-                                <div className="flex items-center justify-center cursor-pointer hover:text-gray-700">
-                                    업체명 <ChevronDown size={12} className="ml-1" />
-                                </div>
-                            </th>
-                            <th className="p-2 border-b border-gray-200 text-center text-base font-bold text-gray-700 min-w-[120px]">
-                                <div className="flex items-center justify-center cursor-pointer hover:text-gray-700">
-                                    예상 매출액 <ChevronDown size={12} className="ml-1" />
-                                </div>
-                            </th>
-                            <th className="p-2 border-b border-gray-200 text-center text-base font-bold text-gray-700 min-w-[120px]">
-                                <div className="flex items-center justify-center cursor-pointer hover:text-gray-700">
-                                    진행 단계 <ChevronDown size={12} className="ml-1" />
-                                </div>
-                            </th>
-                            <th className="p-2 border-b border-gray-200 text-center text-base font-bold text-gray-700 min-w-[100px]">
-                                <div className="flex items-center justify-center cursor-pointer hover:text-gray-700">
-                                    성공 확률 <ChevronDown size={12} className="ml-1" />
-                                </div>
-                            </th>
-                            <th className="p-2 border-b border-gray-200 text-center text-base font-bold text-gray-700 min-w-[100px]">
-                                <div className="flex items-center justify-center cursor-pointer hover:text-gray-700">
-                                    마감 일자 <ChevronDown size={12} className="ml-1" />
-                                </div>
-                            </th>
-                            <th className="p-2 border-b border-gray-200 text-center text-base font-bold text-gray-700 min-w-[100px]">
-                                <div className="flex items-center justify-center cursor-pointer hover:text-gray-700">
-                                    미팅 일자 <ChevronDown size={12} className="ml-1" />
-                                </div>
-                            </th>
-                            <th className="p-2 border-b border-gray-200 text-center text-base font-bold text-gray-700 min-w-[100px]">
-                                <div className="flex items-center justify-center cursor-pointer hover:text-gray-700">
-                                    영업 담당자 <ChevronDown size={12} className="ml-1" />
-                                </div>
-                            </th>
-                            <th className="p-2 border-b border-gray-200 text-center text-base font-bold text-gray-700 min-w-[100px]">
-                                <div className="flex items-center justify-center cursor-pointer hover:text-gray-700">
-                                    등록일 <ChevronDown size={12} className="ml-1" />
-                                </div>
-                            </th>
+                            {visibleColumns.has('title') && (
+                                <th className="p-2 border-b border-gray-200 text-center text-base font-bold text-gray-700 min-w-[200px]" onClick={() => handleSort('title')}>
+                                    <div className="flex items-center justify-center cursor-pointer hover:text-gray-900 group">
+                                        안건
+                                        {sortConfig?.key === 'title' ? (
+                                            <ChevronDown size={12} className={`ml-1 transition-transform ${sortConfig.direction === 'asc' ? 'rotate-180' : ''}`} />
+                                        ) : (
+                                            <ChevronDown size={12} className="ml-1 opacity-0 group-hover:opacity-50" />
+                                        )}
+                                    </div>
+                                </th>
+                            )}
+                            {visibleColumns.has('company') && (
+                                <th className="p-2 border-b border-gray-200 text-center text-base font-bold text-gray-700 min-w-[150px]" onClick={() => handleSort('company')}>
+                                    <div className="flex items-center justify-center cursor-pointer hover:text-gray-900 group">
+                                        업체명
+                                        {sortConfig?.key === 'company' ? (
+                                            <ChevronDown size={12} className={`ml-1 transition-transform ${sortConfig.direction === 'asc' ? 'rotate-180' : ''}`} />
+                                        ) : (
+                                            <ChevronDown size={12} className="ml-1 opacity-0 group-hover:opacity-50" />
+                                        )}
+                                    </div>
+                                </th>
+                            )}
+                            {visibleColumns.has('value') && (
+                                <th className="p-2 border-b border-gray-200 text-center text-base font-bold text-gray-700 min-w-[120px]" onClick={() => handleSort('value')}>
+                                    <div className="flex items-center justify-center cursor-pointer hover:text-gray-900 group">
+                                        예상 매출액
+                                        {sortConfig?.key === 'value' ? (
+                                            <ChevronDown size={12} className={`ml-1 transition-transform ${sortConfig.direction === 'asc' ? 'rotate-180' : ''}`} />
+                                        ) : (
+                                            <ChevronDown size={12} className="ml-1 opacity-0 group-hover:opacity-50" />
+                                        )}
+                                    </div>
+                                </th>
+                            )}
+                            {visibleColumns.has('stage') && (
+                                <th className="p-2 border-b border-gray-200 text-center text-base font-bold text-gray-700 min-w-[120px]" onClick={() => handleSort('stage')}>
+                                    <div className="flex items-center justify-center cursor-pointer hover:text-gray-900 group">
+                                        진행 단계
+                                        {sortConfig?.key === 'stage' ? (
+                                            <ChevronDown size={12} className={`ml-1 transition-transform ${sortConfig.direction === 'asc' ? 'rotate-180' : ''}`} />
+                                        ) : (
+                                            <ChevronDown size={12} className="ml-1 opacity-0 group-hover:opacity-50" />
+                                        )}
+                                    </div>
+                                </th>
+                            )}
+                            {visibleColumns.has('success_probability') && (
+                                <th className="p-2 border-b border-gray-200 text-center text-base font-bold text-gray-700 min-w-[100px]" onClick={() => handleSort('success_probability')}>
+                                    <div className="flex items-center justify-center cursor-pointer hover:text-gray-900 group">
+                                        성공 확률
+                                        {sortConfig?.key === 'success_probability' ? (
+                                            <ChevronDown size={12} className={`ml-1 transition-transform ${sortConfig.direction === 'asc' ? 'rotate-180' : ''}`} />
+                                        ) : (
+                                            <ChevronDown size={12} className="ml-1 opacity-0 group-hover:opacity-50" />
+                                        )}
+                                    </div>
+                                </th>
+                            )}
+                            {visibleColumns.has('date') && (
+                                <th className="p-2 border-b border-gray-200 text-center text-base font-bold text-gray-700 min-w-[100px]" onClick={() => handleSort('date')}>
+                                    <div className="flex items-center justify-center cursor-pointer hover:text-gray-900 group">
+                                        마감 일자
+                                        {sortConfig?.key === 'date' ? (
+                                            <ChevronDown size={12} className={`ml-1 transition-transform ${sortConfig.direction === 'asc' ? 'rotate-180' : ''}`} />
+                                        ) : (
+                                            <ChevronDown size={12} className="ml-1 opacity-0 group-hover:opacity-50" />
+                                        )}
+                                    </div>
+                                </th>
+                            )}
+                            {visibleColumns.has('meeting_date') && (
+                                <th className="p-2 border-b border-gray-200 text-center text-base font-bold text-gray-700 min-w-[100px]" onClick={() => handleSort('meeting_date')}>
+                                    <div className="flex items-center justify-center cursor-pointer hover:text-gray-900 group">
+                                        미팅 일자
+                                        {sortConfig?.key === 'meeting_date' ? (
+                                            <ChevronDown size={12} className={`ml-1 transition-transform ${sortConfig.direction === 'asc' ? 'rotate-180' : ''}`} />
+                                        ) : (
+                                            <ChevronDown size={12} className="ml-1 opacity-0 group-hover:opacity-50" />
+                                        )}
+                                    </div>
+                                </th>
+                            )}
+                            {visibleColumns.has('owner') && (
+                                <th className="p-2 border-b border-gray-200 text-center text-base font-bold text-gray-700 min-w-[100px]" onClick={() => handleSort('owner')}>
+                                    <div className="flex items-center justify-center cursor-pointer hover:text-gray-900 group">
+                                        영업 담당자
+                                        {sortConfig?.key === 'owner' ? (
+                                            <ChevronDown size={12} className={`ml-1 transition-transform ${sortConfig.direction === 'asc' ? 'rotate-180' : ''}`} />
+                                        ) : (
+                                            <ChevronDown size={12} className="ml-1 opacity-0 group-hover:opacity-50" />
+                                        )}
+                                    </div>
+                                </th>
+                            )}
+                            {visibleColumns.has('created_at') && (
+                                <th className="p-2 border-b border-gray-200 text-center text-base font-bold text-gray-700 min-w-[100px]" onClick={() => handleSort('created_at')}>
+                                    <div className="flex items-center justify-center cursor-pointer hover:text-gray-900 group">
+                                        등록일
+                                        {sortConfig?.key === 'created_at' ? (
+                                            <ChevronDown size={12} className={`ml-1 transition-transform ${sortConfig.direction === 'asc' ? 'rotate-180' : ''}`} />
+                                        ) : (
+                                            <ChevronDown size={12} className="ml-1 opacity-0 group-hover:opacity-50" />
+                                        )}
+                                    </div>
+                                </th>
+                            )}
                             <th className="p-2 border-b border-gray-200 w-10"></th>
                         </tr>
+                        {/* Filter Row */}
+                        {showFilters && (
+                            <tr className="bg-gray-50">
+                                <th className="p-2 border-b border-gray-200"></th>
+                                {visibleColumns.has('title') && (
+                                    <th className="p-2 border-b border-gray-200">
+                                        <input
+                                            type="text"
+                                            placeholder="필터..."
+                                            value={filters.title || ''}
+                                            onChange={(e) => handleFilterChange('title', e.target.value)}
+                                            className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                                        />
+                                    </th>
+                                )}
+                                {visibleColumns.has('company') && (
+                                    <th className="p-2 border-b border-gray-200">
+                                        <input
+                                            type="text"
+                                            placeholder="필터..."
+                                            value={filters.company || ''}
+                                            onChange={(e) => handleFilterChange('company', e.target.value)}
+                                            className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                                        />
+                                    </th>
+                                )}
+                                {visibleColumns.has('value') && (
+                                    <th className="p-2 border-b border-gray-200">
+                                        <input
+                                            type="text"
+                                            placeholder="필터..."
+                                            value={filters.value || ''}
+                                            onChange={(e) => handleFilterChange('value', e.target.value)}
+                                            className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                                        />
+                                    </th>
+                                )}
+                                {visibleColumns.has('stage') && (
+                                    <th className="p-2 border-b border-gray-200">
+                                        <select
+                                            value={filters.stage || ''}
+                                            onChange={(e) => handleFilterChange('stage', e.target.value)}
+                                            className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                                        >
+                                            <option value="">전체</option>
+                                            {STAGE_OPTIONS.map(opt => (
+                                                <option key={opt} value={opt}>{opt}</option>
+                                            ))}
+                                        </select>
+                                    </th>
+                                )}
+                                {visibleColumns.has('success_probability') && (
+                                    <th className="p-2 border-b border-gray-200">
+                                        <input
+                                            type="text"
+                                            placeholder="필터..."
+                                            value={filters.success_probability || ''}
+                                            onChange={(e) => handleFilterChange('success_probability', e.target.value)}
+                                            className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                                        />
+                                    </th>
+                                )}
+                                {visibleColumns.has('date') && (
+                                    <th className="p-2 border-b border-gray-200">
+                                        <input
+                                            type="text"
+                                            placeholder="필터..."
+                                            value={filters.date || ''}
+                                            onChange={(e) => handleFilterChange('date', e.target.value)}
+                                            className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                                        />
+                                    </th>
+                                )}
+                                {visibleColumns.has('meeting_date') && (
+                                    <th className="p-2 border-b border-gray-200">
+                                        <input
+                                            type="text"
+                                            placeholder="필터..."
+                                            value={filters.meeting_date || ''}
+                                            onChange={(e) => handleFilterChange('meeting_date', e.target.value)}
+                                            className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                                        />
+                                    </th>
+                                )}
+                                {visibleColumns.has('owner') && (
+                                    <th className="p-2 border-b border-gray-200">
+                                        <select
+                                            value={filters.owner || ''}
+                                            onChange={(e) => handleFilterChange('owner', e.target.value)}
+                                            className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                                        >
+                                            <option value="">전체</option>
+                                            {OWNER_OPTIONS.map(opt => (
+                                                <option key={opt} value={opt}>{opt}</option>
+                                            ))}
+                                        </select>
+                                    </th>
+                                )}
+                                {visibleColumns.has('created_at') && (
+                                    <th className="p-2 border-b border-gray-200">
+                                        <input
+                                            type="text"
+                                            placeholder="필터..."
+                                            value={filters.created_at || ''}
+                                            onChange={(e) => handleFilterChange('created_at', e.target.value)}
+                                            className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                                        />
+                                    </th>
+                                )}
+                                <th className="p-2 border-b border-gray-200"></th>
+                            </tr>
+                        )}
                     </thead>
                     <tbody className="divide-y divide-gray-200">
                         {filteredOpportunities.map((op) => (
@@ -961,68 +1239,86 @@ ${content}`;
                                         onChange={() => toggleSelectItem(String(op.id))}
                                     />
                                 </td>
-                                <td className="p-2 font-medium text-blue-600 hover:underline cursor-pointer" onClick={() => handleTitleClick(op)}>
-                                    {op.title}
-                                </td>
-                                <td className="p-2">
-                                    <button
-                                        onClick={() => handleCompanyClick(op.company)}
-                                        className="text-gray-700 hover:text-blue-600 hover:underline text-left"
-                                    >
-                                        {op.company}
-                                    </button>
-                                </td>
-                                <td className="p-2 text-gray-700">
-                                    {formatCurrency(op.value)}
-                                </td>
-                                <td className="p-2">
-                                    <div className="relative group/edit">
-                                        <select
-                                            value={op.stage}
-                                            onChange={(e) => handleStageChange(String(op.id), e.target.value)}
-                                            className="appearance-none bg-transparent w-full pr-6 py-1 text-gray-700 focus:outline-none focus:bg-white focus:ring-1 focus:ring-blue-500 rounded cursor-pointer"
+                                {visibleColumns.has('title') && (
+                                    <td className="p-2 font-medium text-blue-600 hover:underline cursor-pointer" onClick={() => handleTitleClick(op)}>
+                                        {op.title}
+                                    </td>
+                                )}
+                                {visibleColumns.has('company') && (
+                                    <td className="p-2">
+                                        <button
+                                            onClick={() => handleCompanyClick(op.company)}
+                                            className="text-gray-700 hover:text-blue-600 hover:underline text-left"
                                         >
-                                            {STAGE_OPTIONS.map(opt => (
-                                                <option key={opt} value={opt}>{opt}</option>
-                                            ))}
-                                        </select>
-                                        <div className="absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 opacity-0 group-hover/edit:opacity-100">
-                                            <Settings size={12} />
+                                            {op.company}
+                                        </button>
+                                    </td>
+                                )}
+                                {visibleColumns.has('value') && (
+                                    <td className="p-2 text-gray-700">
+                                        {formatCurrency(op.value)}
+                                    </td>
+                                )}
+                                {visibleColumns.has('stage') && (
+                                    <td className="p-2">
+                                        <div className="relative group/edit">
+                                            <select
+                                                value={op.stage}
+                                                onChange={(e) => handleStageChange(String(op.id), e.target.value)}
+                                                className="appearance-none bg-transparent w-full pr-6 py-1 text-gray-700 focus:outline-none focus:bg-white focus:ring-1 focus:ring-blue-500 rounded cursor-pointer"
+                                            >
+                                                {STAGE_OPTIONS.map(opt => (
+                                                    <option key={opt} value={opt}>{opt}</option>
+                                                ))}
+                                            </select>
+                                            <div className="absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 opacity-0 group-hover/edit:opacity-100">
+                                                <Settings size={12} />
+                                            </div>
                                         </div>
-                                    </div>
-                                </td>
-                                <td className="p-2 text-gray-700">
-                                    {op.success_probability ? `${op.success_probability}% ` : '-'}
-                                </td>
-                                <td className="p-2 text-gray-700">
-                                    {op.date}
-                                </td>
-                                <td className="p-2 text-gray-700">
-                                    {op.meeting_date ? (() => {
-                                        const date = new Date(op.meeting_date);
-                                        const offset = date.getTimezoneOffset() * 60000;
-                                        return new Date(date.getTime() - offset).toISOString().slice(0, 16).replace('T', ' ');
-                                    })() : '-'}
-                                </td>
-                                <td className="p-2">
-                                    <div className="relative group/edit">
-                                        <select
-                                            value={op.owner}
-                                            onChange={(e) => handleOwnerChange(String(op.id), e.target.value)}
-                                            className="appearance-none bg-transparent w-full pr-6 py-1 text-blue-600 focus:outline-none focus:bg-white focus:ring-1 focus:ring-blue-500 rounded cursor-pointer"
-                                        >
-                                            {OWNER_OPTIONS.map(opt => (
-                                                <option key={opt} value={opt}>{opt}</option>
-                                            ))}
-                                        </select>
-                                        <div className="absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 opacity-0 group-hover/edit:opacity-100">
-                                            <Settings size={12} />
+                                    </td>
+                                )}
+                                {visibleColumns.has('success_probability') && (
+                                    <td className="p-2 text-gray-700">
+                                        {op.success_probability ? `${op.success_probability}% ` : '-'}
+                                    </td>
+                                )}
+                                {visibleColumns.has('date') && (
+                                    <td className="p-2 text-gray-700">
+                                        {op.date}
+                                    </td>
+                                )}
+                                {visibleColumns.has('meeting_date') && (
+                                    <td className="p-2 text-gray-700">
+                                        {op.meeting_date ? (() => {
+                                            const date = new Date(op.meeting_date);
+                                            const offset = date.getTimezoneOffset() * 60000;
+                                            return new Date(date.getTime() - offset).toISOString().slice(0, 16).replace('T', ' ');
+                                        })() : '-'}
+                                    </td>
+                                )}
+                                {visibleColumns.has('owner') && (
+                                    <td className="p-2">
+                                        <div className="relative group/edit">
+                                            <select
+                                                value={op.owner}
+                                                onChange={(e) => handleOwnerChange(String(op.id), e.target.value)}
+                                                className="appearance-none bg-transparent w-full pr-6 py-1 text-blue-600 focus:outline-none focus:bg-white focus:ring-1 focus:ring-blue-500 rounded cursor-pointer"
+                                            >
+                                                {OWNER_OPTIONS.map(opt => (
+                                                    <option key={opt} value={opt}>{opt}</option>
+                                                ))}
+                                            </select>
+                                            <div className="absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 opacity-0 group-hover/edit:opacity-100">
+                                                <Settings size={12} />
+                                            </div>
                                         </div>
-                                    </div>
-                                </td>
-                                <td className="p-2 text-gray-700">
-                                    {op.created_at ? new Date(op.created_at).toISOString().split('T')[0] : '-'}
-                                </td>
+                                    </td>
+                                )}
+                                {visibleColumns.has('created_at') && (
+                                    <td className="p-2 text-gray-700">
+                                        {op.created_at ? new Date(op.created_at).toISOString().split('T')[0] : '-'}
+                                    </td>
+                                )}
                                 <td className="p-2 text-center">
                                     <button className="text-gray-400 hover:text-blue-600 border border-gray-300 rounded p-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                                         <ChevronDown size={12} />
@@ -1222,9 +1518,9 @@ ${content}`;
             {/* Edit Modal */}
             {
                 isEditModalOpen && editingOpportunity && (
-                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                        <div className="bg-white rounded-xl shadow-xl w-full max-w-[95vw] h-[90vh] overflow-hidden animate-in flex flex-col">
-                            <div className="flex justify-between items-center p-6 border-b border-gray-100">
+                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2">
+                        <div className="bg-white rounded-xl shadow-xl w-full max-w-[99vw] h-[98vh] overflow-hidden animate-in flex flex-col">
+                            <div className="flex justify-between items-center p-4 border-b border-gray-100">
                                 <h2 className="text-xl font-bold text-gray-900">기회 수정</h2>
                                 <button onClick={() => setIsEditModalOpen(false)} className="text-gray-400 hover:text-gray-600">
                                     <X size={24} />
@@ -1587,7 +1883,7 @@ ${content}`;
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div className="h-[300px] min-h-0">
+                                            <div className="h-[150px] min-h-0">
                                                 <TodoList opportunityId={editingOpportunity.id} />
                                             </div>
                                         </div>

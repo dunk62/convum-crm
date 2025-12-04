@@ -23,3 +23,9 @@ dist-ssr
 *.sln
 *.sw?
 .vercel
+
+# Security
+service_account.json
+
+# Local DB
+processed_files.db

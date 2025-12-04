@@ -93,7 +93,7 @@ export default function DashboardLayout() {
     const navItems = [
         { icon: LayoutDashboard, label: '홈', path: '/' },
         { icon: Briefcase, label: '영업 기회', path: '/opportunities' },
-        { icon: BarChart2, label: '판매 실적', path: '/sales-performance' },
+        { icon: BarChart2, label: '실적 관리', path: '/sales-performance' },
         {
             icon: ClipboardList,
             label: '재고 현황',

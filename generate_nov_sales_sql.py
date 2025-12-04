@@ -51,7 +51,8 @@ def generate_sql():
                 except:
                     pass
 
-            company_name = escape_sql(clean_value(row[2]))
+            distributor_name = escape_sql(clean_value(row[2]))
+            company_name = escape_sql(clean_value(row[4])) # Col 4 is the actual company name
             sales_rep = escape_sql(clean_value(row[6]))
             product_name = escape_sql(clean_value(row[10])) # Assuming Col 10 is product category/name
             model_number = escape_sql(clean_value(row[12]))
@@ -67,14 +68,10 @@ def generate_sql():
             if quantity > 0:
                 unit_price = float(sales_amount) / float(quantity)
             
-            # Distributor name is missing, setting to NULL or same as company?
-            # Setting to NULL for now to be safe
-            distributor_name = None
-
             record = {
                 "shipment_date": shipment_date.strip("'") if shipment_date != "NULL" else None,
-                "distributor_name": distributor_name,
-                "company_name": row[2] if pd.notna(row[2]) else None,
+                "distributor_name": row[2] if pd.notna(row[2]) else None,
+                "company_name": row[4] if pd.notna(row[4]) else None,
                 "sales_rep": row[6] if pd.notna(row[6]) else None,
                 "product_name": row[10] if pd.notna(row[10]) else None,
                 "model_number": row[12] if pd.notna(row[12]) else None,

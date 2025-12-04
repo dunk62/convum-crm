@@ -25,7 +25,7 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # Initialize Gemini
 genai.configure(api_key=GEMINI_API_KEY)
-model = genai.GenerativeModel('gemini-flash-latest') # Using gemini-flash-latest as 1.5-flash alias was not found
+model = genai.GenerativeModel('gemini-flash-latest')
 
 # Initialize Local DB
 def init_db():
@@ -53,16 +53,12 @@ def mark_processed(file_id, file_name):
 
 # Google Drive Service
 def get_drive_service():
-    # Assuming user has credentials.json or service_account.json
-    # For simplicity, using service_account.json if available, else standard auth flow could be added
     SCOPES = ['https://www.googleapis.com/auth/drive.readonly']
     
     if os.path.exists('service_account.json'):
         creds = service_account.Credentials.from_service_account_file(
             'service_account.json', scopes=SCOPES)
     else:
-        # Fallback to standard credentials.json (User might need to run quickstart flow once to generate token.json)
-        # For this script, we'll assume service_account.json is the preferred server-side method
         print("Error: service_account.json not found.")
         return None
 
@@ -77,26 +73,38 @@ def download_file(service, file_id):
         status, done = downloader.next_chunk()
     return file_content
 
-def analyze_audio(file_content, file_name):
+def analyze_text(file_content, file_name):
     print(f"Analyzing {file_name} with Gemini...")
     
-    temp_filename = f"temp_{file_name}"
-    with open(temp_filename, "wb") as f:
-        f.write(file_content.getbuffer())
+    encodings = ['utf-8', 'euc-kr', 'cp949', 'utf-16']
+    text_content = None
+    
+    for encoding in encodings:
+        try:
+            text_content = file_content.getvalue().decode(encoding)
+            break
+        except UnicodeDecodeError:
+            continue
+            
+    if text_content is None:
+        print(f"Error decoding file {file_name}. Tried utf-8, euc-kr, cp949, utf-16.")
+        print(f"First 50 bytes: {file_content.getvalue()[:50]}")
+        return None
 
     max_retries = 3
     retry_delay = 30
 
     for attempt in range(max_retries):
         try:
-            # Upload to Gemini
-            audio_file = genai.upload_file(path=temp_filename)
-            
-            prompt = """
-            Analyze this sales call recording and extract the following information in JSON format.
+            prompt = f"""
+            Analyze this conversation transcript and extract the following information in JSON format.
             IMPORTANT: All values must be in Korean (한국어).
 
-            {
+            Transcript:
+            {text_content}
+
+            Output JSON Structure:
+            {{
                 "summary": "3-line summary of the conversation (in Korean)",
                 "sentiment_score": 0-100 (integer, higher is better),
                 "customer_intent": "구매/거절/보류/정보수집 (Choose one in Korean)",
@@ -106,7 +114,7 @@ def analyze_audio(file_content, file_name):
                 "company_name": "Company name mentioned (or from filename)",
                 "contact_name": "Contact person name (or from filename)",
                 "keywords": ["Keyword1", "Keyword2", "Keyword3" (in Korean)]
-            }
+            }}
             
             Logic for Company/Contact Name:
             1. Prioritize filename if it contains [Company]Name format.
@@ -114,12 +122,8 @@ def analyze_audio(file_content, file_name):
             3. If unknown, use "미확인".
             """
 
-            response = model.generate_content([prompt, audio_file])
+            response = model.generate_content(prompt)
             
-            # Cleanup
-            audio_file.delete()
-            os.remove(temp_filename)
-
             # Parse JSON
             try:
                 text = response.text.replace('```json', '').replace('```', '').strip()
@@ -138,14 +142,10 @@ def analyze_audio(file_content, file_name):
                 time.sleep(retry_delay)
                 retry_delay *= 2 # Exponential backoff
             else:
-                print(f"Error analyzing audio: {e}")
-                if os.path.exists(temp_filename):
-                    os.remove(temp_filename)
+                print(f"Error analyzing text: {e}")
                 return None
     
     print("Max retries reached. Skipping file.")
-    if os.path.exists(temp_filename):
-        os.remove(temp_filename)
     return None
 
 def main():
@@ -154,19 +154,23 @@ def main():
     if not service:
         return
 
-    print(f"Monitoring folder: {DRIVE_FOLDER_ID}")
+    print(f"Monitoring folder: {DRIVE_FOLDER_ID} for text files...")
 
     while True:
         try:
-            # List files in folder
-            results = service.files().list(
-                q=f"'{DRIVE_FOLDER_ID}' in parents and trashed = false and (mimeType contains 'audio/')",
-                fields="nextPageToken, files(id, name, webViewLink)").execute()
-            items = results.get('files', [])
-
-            if not items:
-                print("No files found.")
-            else:
+            # List files in folder - Filter for text files, sort by newest first, handle pagination
+            page_token = None
+            while True:
+                results = service.files().list(
+                    q=f"'{DRIVE_FOLDER_ID}' in parents and trashed = false and (mimeType = 'text/plain' or name contains '.txt')",
+                    orderBy='createdTime desc',
+                    pageSize=100,
+                    fields="nextPageToken, files(id, name, webViewLink)",
+                    pageToken=page_token
+                ).execute()
+                
+                items = results.get('files', [])
+                
                 for item in items:
                     if not is_processed(item['id']):
                         print(f"New file detected: {item['name']}")
@@ -175,14 +179,23 @@ def main():
                         file_content = download_file(service, item['id'])
                         
                         # Analyze
-                        analysis = analyze_audio(file_content, item['name'])
+                        analysis = analyze_text(file_content, item['name'])
                         
+                        # Determine type based on filename
+                        record_type = "meeting" # Default
+                        if "통화 녹음" in item['name']:
+                            record_type = "call"
+                        elif "미팅 녹음" in item['name']:
+                            record_type = "meeting"
+                        elif "이메일" in item['name']:
+                            record_type = "email"
+
                         if analysis:
                             # Insert into Supabase
                             data = {
-                                "type": "call",
+                                "type": record_type,
                                 "title": item['name'],
-                                "content": analysis.get('summary', 'No summary'), # Storing summary in content as fallback or main text
+                                "content": analysis.get('summary', 'No summary'),
                                 "company_name": analysis.get('company_name'),
                                 "contact_name": analysis.get('contact_name'),
                                 "summary": analysis.get('summary'),
@@ -199,6 +212,10 @@ def main():
                             mark_processed(item['id'], item['name'])
                         else:
                             print(f"Skipping {item['name']} due to analysis failure")
+                
+                page_token = results.get('nextPageToken')
+                if not page_token:
+                    break
 
             time.sleep(60) # Poll every minute
 

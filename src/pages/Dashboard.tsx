@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ComposedChart, Line, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { DollarSign, Users, Briefcase, Activity, ArrowRight } from 'lucide-react';
+import { DollarSign, Users, Briefcase, Activity, ArrowRight, TrendingUp } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { cn } from '../lib/utils';
 
@@ -25,6 +25,7 @@ export default function Dashboard() {
     const [chartData, setChartData] = useState<{ name: string; revenue: number; target: number }[]>([]);
     const [currentMonthRevenue, setCurrentMonthRevenue] = useState(0);
     const [currentMonthTarget, setCurrentMonthTarget] = useState(0);
+    const [currentMonthOrderPerformance, setCurrentMonthOrderPerformance] = useState(0);
     const [currentMonthLabel, setCurrentMonthLabel] = useState('');
     const [expectedRevenue, setExpectedRevenue] = useState(0);
     const [recentOpportunities, setRecentOpportunities] = useState<any[]>([]);
@@ -48,6 +49,7 @@ export default function Dashboard() {
 
     const stats = [
         { label: `${currentMonthLabel} 매출 실적`, value: new Intl.NumberFormat('ko-KR', { style: 'currency', currency: 'KRW' }).format(currentMonthRevenue), icon: DollarSign, isRightAligned: true },
+        { label: `${currentMonthLabel} 수주 실적`, value: new Intl.NumberFormat('ko-KR', { style: 'currency', currency: 'KRW' }).format(currentMonthOrderPerformance), icon: TrendingUp, isRightAligned: true },
         { label: `${currentMonthLabel} 매출 목표`, value: new Intl.NumberFormat('ko-KR', { style: 'currency', currency: 'KRW' }).format(currentMonthTarget), icon: Briefcase, isRightAligned: true },
         { label: '추가 예상 매출액', value: new Intl.NumberFormat('ko-KR', { style: 'currency', currency: 'KRW' }).format(expectedRevenue), icon: Activity, isRightAligned: true },
         { label: '접촉 횟수', value: `${contactCount}건`, icon: Users, isRightAligned: true },
@@ -64,6 +66,7 @@ export default function Dashboard() {
 
         fetchChartData();
         fetchExpectedRevenue();
+        fetchOrderPerformance();
     }, []);
 
 
@@ -156,6 +159,28 @@ export default function Dashboard() {
             setChartData(formattedData);
         } catch (err) {
             console.error('Error fetching chart data:', err);
+        }
+    };
+
+    const fetchOrderPerformance = async () => {
+        try {
+            const today = new Date();
+            const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1).toISOString();
+            const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString();
+
+            const { data, error } = await supabase
+                .from('order_performance')
+                .select('total_amount, sales_rep')
+                .gte('order_date', startOfMonth)
+                .lte('order_date', endOfMonth)
+                .in('sales_rep', ['탁현호', '임성렬']);
+
+            if (error) throw error;
+
+            const total = data?.reduce((sum, item) => sum + (item.total_amount || 0), 0) || 0;
+            setCurrentMonthOrderPerformance(total);
+        } catch (err) {
+            console.error('Error fetching order performance:', err);
         }
     };
 

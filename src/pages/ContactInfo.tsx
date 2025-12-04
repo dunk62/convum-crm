@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, RefreshCw, Mail, Phone, Building2, Loader2, AlertCircle, ChevronLeft, ChevronRight, PhoneCall, MessageSquare, X, ChevronDown, Plus, Trash2 } from 'lucide-react';
+import { Search, RefreshCw, Mail, Phone, Building2, Loader2, AlertCircle, ChevronLeft, ChevronRight, PhoneCall, MessageSquare, X, ChevronDown, Plus, Trash2, Send } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { cn } from '../lib/utils';
 
@@ -21,6 +21,7 @@ interface Contact {
     memo: string;
     sales_rep: string;
     status: string; // Added status
+    intro_mail_status?: string; // Added intro_mail_status
     accounts?: {
         name: string;
     };
@@ -32,6 +33,9 @@ export default function ContactInfo() {
     const [error, setError] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
+    const [pageInput, setPageInput] = useState('1');
+    const [selectedContactIds, setSelectedContactIds] = useState<Set<string>>(new Set());
+    const [isSendingEmails, setIsSendingEmails] = useState(false);
     const [activePhonePopover, setActivePhonePopover] = useState<string | null>(null);
     const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -58,6 +62,10 @@ export default function ContactInfo() {
     useEffect(() => {
         fetchContacts();
     }, []);
+
+    useEffect(() => {
+        setPageInput(String(currentPage));
+    }, [currentPage]);
 
     const fetchContacts = async () => {
         try {
@@ -143,6 +151,52 @@ export default function ContactInfo() {
         }
     };
 
+    const handleCheckboxChange = (id: string) => {
+        const newSelected = new Set(selectedContactIds);
+        if (newSelected.has(id)) {
+            newSelected.delete(id);
+        } else {
+            newSelected.add(id);
+        }
+        setSelectedContactIds(newSelected);
+    };
+
+    const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.checked) {
+            setSelectedContactIds(new Set(paginatedContacts.map(c => c.id)));
+        } else {
+            setSelectedContactIds(new Set());
+        }
+    };
+
+    const handleSendEmails = async () => {
+        if (selectedContactIds.size === 0) return;
+
+        if (!confirm(`총 ${selectedContactIds.size}명에게 회사소개서 메일을 발송하시겠습니까?`)) return;
+
+        try {
+            setIsSendingEmails(true);
+            const queueItems = Array.from(selectedContactIds).map(contactId => ({
+                contact_id: contactId,
+                status: 'pending'
+            }));
+
+            const { error } = await supabase
+                .from('email_queue')
+                .insert(queueItems);
+
+            if (error) throw error;
+
+            alert('메일 발송 요청이 대기열에 등록되었습니다.\n순차적으로 발송됩니다.');
+            setSelectedContactIds(new Set());
+        } catch (err: any) {
+            console.error('Error queuing emails:', err);
+            alert('메일 발송 요청 중 오류가 발생했습니다: ' + err.message);
+        } finally {
+            setIsSendingEmails(false);
+        }
+    };
+
     const filteredContacts = contacts.filter(contact => {
         const term = searchTerm.toLowerCase();
         const matchesSearch = (
@@ -178,6 +232,14 @@ export default function ContactInfo() {
                         title="새로고침"
                     >
                         {isLoading ? <Loader2 size={20} className="animate-spin" /> : <RefreshCw size={20} />}
+                    </button>
+                    <button
+                        onClick={handleSendEmails}
+                        disabled={isSendingEmails || selectedContactIds.size === 0}
+                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {isSendingEmails ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+                        메일 발송 {selectedContactIds.size > 0 ? `(${selectedContactIds.size})` : ''}
                     </button>
                     <div className="relative">
                         <button
@@ -244,25 +306,45 @@ export default function ContactInfo() {
                     <table className="w-full text-left text-sm">
                         <thead className="bg-gray-50 border-b border-gray-200">
                             <tr>
-                                <th className="px-6 py-3 text-center text-base font-bold text-gray-700 whitespace-nowrap">담당자명</th>
+                                <th className="px-6 py-3 text-center text-base font-bold text-gray-700 whitespace-nowrap">
+                                    <div className="flex items-center justify-center gap-2">
+                                        <input
+                                            type="checkbox"
+                                            onChange={handleSelectAll}
+                                            checked={paginatedContacts.length > 0 && selectedContactIds.size === paginatedContacts.length}
+                                            className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                                        />
+                                        담당자명
+                                    </div>
+                                </th>
                                 <th className="px-6 py-3 text-center text-base font-bold text-gray-700 whitespace-nowrap">업체명</th>
                                 <th className="px-6 py-3 text-center text-base font-bold text-gray-700 whitespace-nowrap">부서</th>
                                 <th className="px-6 py-3 text-center text-base font-bold text-gray-700 whitespace-nowrap">직급</th>
                                 <th className="px-6 py-3 text-center text-base font-bold text-gray-700 whitespace-nowrap">휴대전화</th>
                                 <th className="px-6 py-3 text-center text-base font-bold text-gray-700 whitespace-nowrap">이메일</th>
                                 <th className="px-6 py-3 text-center text-base font-bold text-gray-700 whitespace-nowrap">담당자</th>
+                                <th className="px-6 py-3 text-center text-base font-bold text-gray-700 whitespace-nowrap">회사소개서 발송</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
                             {paginatedContacts.map((contact) => (
                                 <tr key={contact.id} className="hover:bg-gray-50 transition-colors">
                                     <td className="px-6 py-4 font-medium text-gray-900">
-                                        <button
-                                            onClick={() => setSelectedContact(contact)}
-                                            className="hover:text-blue-600 hover:underline text-left"
-                                        >
-                                            {contact.name || '-'}
-                                        </button>
+                                        <div className="flex items-center gap-4">
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedContactIds.has(contact.id)}
+                                                onChange={() => handleCheckboxChange(contact.id)}
+                                                className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                                                onClick={(e) => e.stopPropagation()}
+                                            />
+                                            <button
+                                                onClick={() => setSelectedContact(contact)}
+                                                className="hover:text-blue-600 hover:underline text-left"
+                                            >
+                                                {contact.name || '-'}
+                                            </button>
+                                        </div>
                                     </td>
                                     <td className="px-6 py-4 text-gray-600">
                                         <div className="flex items-center gap-2">
@@ -326,6 +408,16 @@ export default function ContactInfo() {
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 text-gray-600">{contact.sales_rep || '-'}</td>
+                                    <td className="px-6 py-4 text-center">
+                                        <span className={cn(
+                                            "px-2 py-1 rounded-full text-xs font-medium",
+                                            contact.intro_mail_status === '발송완료'
+                                                ? "bg-green-100 text-green-700"
+                                                : "bg-gray-100 text-gray-500"
+                                        )}>
+                                            {contact.intro_mail_status || '미발송'}
+                                        </span>
+                                    </td>
                                 </tr>
                             ))}
                         </tbody>
@@ -334,7 +426,7 @@ export default function ContactInfo() {
 
                 <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex items-center justify-between text-sm text-gray-500">
                     <span>Showing {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredContacts.length)} of {filteredContacts.length} contacts</span>
-                    <div className="flex gap-2">
+                    <div className="flex items-center gap-2">
                         <button
                             onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                             disabled={currentPage === 1}
@@ -343,6 +435,35 @@ export default function ContactInfo() {
                             <ChevronLeft size={16} />
                             Previous
                         </button>
+
+                        <div className="flex items-center gap-2">
+                            <input
+                                type="text"
+                                value={pageInput}
+                                onChange={(e) => setPageInput(e.target.value)}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                        const val = parseInt(pageInput);
+                                        if (!isNaN(val) && val >= 1 && val <= totalPages) {
+                                            setCurrentPage(val);
+                                        } else {
+                                            setPageInput(String(currentPage));
+                                        }
+                                    }
+                                }}
+                                onBlur={() => {
+                                    const val = parseInt(pageInput);
+                                    if (!isNaN(val) && val >= 1 && val <= totalPages) {
+                                        setCurrentPage(val);
+                                    } else {
+                                        setPageInput(String(currentPage));
+                                    }
+                                }}
+                                className="w-12 px-2 py-1 text-center border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                            />
+                            <span className="text-gray-400">/ {totalPages}</span>
+                        </div>
+
                         <button
                             onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                             disabled={currentPage === totalPages}

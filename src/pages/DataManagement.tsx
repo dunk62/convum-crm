@@ -59,6 +59,23 @@ export default function DataManagement() {
 
     useEffect(() => {
         fetchRecords();
+
+        const subscription = supabase
+            .channel('data_records_changes')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'data_records' }, (payload) => {
+                if (payload.eventType === 'INSERT') {
+                    setRecords((prev) => [payload.new as DataRecord, ...prev]);
+                } else if (payload.eventType === 'UPDATE') {
+                    setRecords((prev) => prev.map((record) => (record.id === payload.new.id ? (payload.new as DataRecord) : record)));
+                } else if (payload.eventType === 'DELETE') {
+                    setRecords((prev) => prev.filter((record) => record.id !== payload.old.id));
+                }
+            })
+            .subscribe();
+
+        return () => {
+            subscription.unsubscribe();
+        };
     }, []);
 
     const fetchRecords = async () => {

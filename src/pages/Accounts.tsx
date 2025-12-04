@@ -43,6 +43,7 @@ export default function Accounts() {
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
+    const [pageInput, setPageInput] = useState('1');
 
     // const [activePhonePopover, setActivePhonePopover] = useState<string | null>(null);
 
@@ -75,6 +76,10 @@ export default function Accounts() {
     useEffect(() => {
         fetchAccounts();
     }, []);
+
+    useEffect(() => {
+        setPageInput(String(currentPage));
+    }, [currentPage]);
 
     const fetchAccounts = async () => {
         try {
@@ -380,7 +385,7 @@ export default function Accounts() {
 
                 <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex items-center justify-between text-sm text-gray-500">
                     <span>Showing {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredAccounts.length)} of {filteredAccounts.length} accounts</span>
-                    <div className="flex gap-2">
+                    <div className="flex items-center gap-2">
                         <button
                             onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                             disabled={currentPage === 1}
@@ -389,6 +394,35 @@ export default function Accounts() {
                             <ChevronLeft size={16} />
                             Previous
                         </button>
+
+                        <div className="flex items-center gap-2">
+                            <input
+                                type="text"
+                                value={pageInput}
+                                onChange={(e) => setPageInput(e.target.value)}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                        const val = parseInt(pageInput);
+                                        if (!isNaN(val) && val >= 1 && val <= totalPages) {
+                                            setCurrentPage(val);
+                                        } else {
+                                            setPageInput(String(currentPage));
+                                        }
+                                    }
+                                }}
+                                onBlur={() => {
+                                    const val = parseInt(pageInput);
+                                    if (!isNaN(val) && val >= 1 && val <= totalPages) {
+                                        setCurrentPage(val);
+                                    } else {
+                                        setPageInput(String(currentPage));
+                                    }
+                                }}
+                                className="w-12 px-2 py-1 text-center border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                            />
+                            <span className="text-gray-400">/ {totalPages}</span>
+                        </div>
+
                         <button
                             onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                             disabled={currentPage === totalPages}

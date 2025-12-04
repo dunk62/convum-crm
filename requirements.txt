@@ -4,3 +4,5 @@ google-api-python-client
 supabase
 python-dotenv
 importlib-metadata
+beautifulsoup4
+requests
