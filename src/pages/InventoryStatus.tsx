@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { Plus, Search, Edit2, X } from 'lucide-react';
+import { Plus, Search, Edit2, X, Trash2 } from 'lucide-react';
 
 interface InventoryItem {
     id: string;
@@ -91,6 +91,24 @@ export default function InventoryStatus() {
         } catch (error) {
             console.error('Error updating item:', error);
             alert('Failed to update item');
+        }
+    };
+
+    const handleDeleteItem = async (id: string, modelCode: string) => {
+        if (!confirm(`정말로 ${modelCode} 항목을 삭제하시겠습니까?`)) return;
+
+        try {
+            const { error } = await supabase
+                .from('sample_inventory')
+                .delete()
+                .eq('id', id);
+
+            if (error) throw error;
+
+            fetchInventory();
+        } catch (error) {
+            console.error('Error deleting item:', error);
+            alert('Failed to delete item');
         }
     };
 
@@ -197,6 +215,13 @@ export default function InventoryStatus() {
                                                 title="수정"
                                             >
                                                 <Edit2 size={22} />
+                                            </button>
+                                            <button
+                                                onClick={() => handleDeleteItem(item.id, item.model_code)}
+                                                className="p-2 text-red-600 hover:text-red-900 hover:bg-red-50 rounded-full transition-colors ml-1"
+                                                title="삭제"
+                                            >
+                                                <Trash2 size={22} />
                                             </button>
                                         </td>
                                     </tr>

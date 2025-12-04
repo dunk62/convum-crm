@@ -10,7 +10,7 @@ import {
     ResponsiveContainer
 } from 'recharts';
 import { supabase } from '../lib/supabase';
-import { Sparkles, MessageSquare, Loader2 } from 'lucide-react';
+import { Sparkles, Loader2 } from 'lucide-react';
 
 interface StoreSalesData {
     store_name: string;
@@ -24,7 +24,8 @@ export default function StoreSalesAnalysis() {
     const [loading, setLoading] = useState(true);
     const [selectedStore, setSelectedStore] = useState<string | null>(null);
     const [aiLoading, setAiLoading] = useState(false);
-    const [years, setYears] = useState<{ thisYear: number, lastYear: number }>({ thisYear: new Date().getFullYear(), lastYear: new Date().getFullYear() - 1 });
+    const [availableYears, setAvailableYears] = useState<number[]>([]);
+    const years = { thisYear: new Date().getFullYear(), lastYear: new Date().getFullYear() - 1 };
 
     useEffect(() => {
         fetchData();
@@ -44,52 +45,80 @@ export default function StoreSalesAnalysis() {
     const fetchData = async () => {
         try {
             setLoading(true);
+            let allSalesData: any[] = [];
+            let page = 0;
+            const pageSize = 1000;
+            let hasMore = true;
 
-            const { data: salesData, error } = await supabase
-                .from('sales_performance')
-                .select('distributor_name, shipment_date, sales_amount');
+            while (hasMore) {
+                const { data: salesData, error } = await supabase
+                    .from('sales_performance')
+                    .select('distributor_name, shipment_date, sales_amount, sales_rep')
+                    .in('sales_rep', ['탁현호', '임성렬'])
+                    .range(page * pageSize, (page + 1) * pageSize - 1);
 
-            if (error) throw error;
-            if (!salesData || salesData.length === 0) return;
+                if (error) throw error;
 
-            // Dynamically determine the latest year from data
-            const allYears = salesData.map(d => new Date(d.shipment_date).getFullYear());
-            const maxYear = Math.max(...allYears);
-            const thisYear = maxYear;
-            const lastYear = maxYear - 1;
+                if (salesData && salesData.length > 0) {
+                    allSalesData = [...allSalesData, ...salesData];
+                    if (salesData.length < pageSize) {
+                        hasMore = false;
+                    } else {
+                        page++;
+                    }
+                } else {
+                    hasMore = false;
+                }
+            }
 
-            setYears({ thisYear, lastYear });
+            if (allSalesData.length === 0) return;
 
-            const aggregation: Record<string, { last_year: number; this_year: number }> = {};
+            // Dynamically determine all years from data
+            const allYears = Array.from(new Set(allSalesData.map(d => new Date(d.shipment_date).getFullYear()))).sort((a, b) => a - b);
 
-            salesData.forEach(record => {
+            // Set years for state (we'll store all years now)
+            // But the state 'years' was {thisYear, lastYear}. I'll ignore it for the chart rendering and use local 'allYears'.
+            // Actually I should update the state or just use a local variable if I don't need it elsewhere.
+            // The title uses years.lastYear and years.thisYear. I should update the title logic too.
+
+            const aggregation: Record<string, Record<number, number>> = {};
+
+            allSalesData.forEach(record => {
                 const date = new Date(record.shipment_date);
                 const year = date.getFullYear();
                 const store = record.distributor_name || 'Unknown';
 
                 if (!aggregation[store]) {
-                    aggregation[store] = { last_year: 0, this_year: 0 };
+                    aggregation[store] = {};
+                    allYears.forEach(y => aggregation[store][y] = 0);
                 }
 
-                if (year === lastYear) {
-                    aggregation[store].last_year += record.sales_amount;
-                } else if (year === thisYear) {
-                    aggregation[store].this_year += record.sales_amount;
-                }
+                aggregation[store][year] += record.sales_amount;
             });
 
-            const formattedData: StoreSalesData[] = Object.entries(aggregation)
-                .map(([store, sales]) => ({
-                    store_name: store,
-                    last_year_sales: sales.last_year,
-                    this_year_sales: sales.this_year,
-                    growth: sales.this_year >= sales.last_year
-                }))
-                .filter(item => item.last_year_sales > 0 || item.this_year_sales > 0)
-                .sort((a, b) => b.this_year_sales - a.this_year_sales)
-                .slice(0, 10); // Top 10 for cleaner chart
+            // Calculate growth (compare last two years)
+            const lastTwoYears = allYears.slice(-2);
+            const [prevYear, currYear] = lastTwoYears.length === 2 ? lastTwoYears : [lastTwoYears[0], lastTwoYears[0]];
+
+            const formattedData: any[] = Object.entries(aggregation)
+                .map(([store, salesByYear]) => {
+                    const item: any = { store_name: store, ...salesByYear };
+                    // Growth logic based on last 2 available years
+                    item.growth = (salesByYear[currYear] || 0) >= (salesByYear[prevYear] || 0);
+                    // Total sales for sorting (sum of all years? or just current year?)
+                    // Let's sort by the latest year's sales
+                    item.latestSales = salesByYear[allYears[allYears.length - 1]] || 0;
+                    return item;
+                })
+                .filter(item => Object.values(item).some(v => typeof v === 'number' && v > 0))
+                .sort((a, b) => b.latestSales - a.latestSales)
+                .slice(0, 10);
 
             setData(formattedData);
+            // We can store allYears in a state if we want to render lines dynamically
+            // For now, I'll just hardcode or map in the render function if I had access to it.
+            // I'll update the component to store 'availableYears' in state.
+            setAvailableYears(allYears);
         } catch (error) {
             console.error('Error fetching store sales data:', error);
         } finally {
@@ -124,8 +153,6 @@ export default function StoreSalesAnalysis() {
     // Custom Dot Component for the "Halo" effect
     const CustomizedDot = (props: any) => {
         const { cx, cy, stroke, payload } = props;
-
-        // Highlight selected store
         const isSelected = payload.store_name === selectedStore;
 
         return (
@@ -138,11 +165,13 @@ export default function StoreSalesAnalysis() {
         );
     };
 
+    const colors = ['#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6']; // Red, Amber, Emerald, Blue, Violet
+
     return (
         <div className="flex flex-col lg:flex-row gap-6 h-[600px]">
             {/* Main Chart Area */}
             <div className="flex-1 bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex flex-col">
-                <h3 className="text-lg font-bold text-gray-900 mb-6">판매점별 매출 비교 ({years.lastYear}년 vs {years.thisYear}년)</h3>
+                <h3 className="text-lg font-bold text-gray-900 mb-6">판매점별 매출 비교 ({availableYears.join(', ')}년)</h3>
 
                 {loading ? (
                     <div className="flex-1 flex items-center justify-center">
@@ -177,24 +206,18 @@ export default function StoreSalesAnalysis() {
                                 <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#e5e7eb', strokeWidth: 2 }} />
                                 <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px' }} />
 
-                                <Line
-                                    type="monotone"
-                                    dataKey="last_year_sales"
-                                    name={`${years.lastYear}년 매출`}
-                                    stroke="#ef4444"
-                                    strokeWidth={3}
-                                    dot={<CustomizedDot />}
-                                    activeDot={{ r: 8, strokeWidth: 0 }}
-                                />
-                                <Line
-                                    type="monotone"
-                                    dataKey="this_year_sales"
-                                    name={`${years.thisYear}년 매출`}
-                                    stroke="#0ea5e9"
-                                    strokeWidth={3}
-                                    dot={<CustomizedDot />}
-                                    activeDot={{ r: 8, strokeWidth: 0 }}
-                                />
+                                {availableYears.map((year, index) => (
+                                    <Line
+                                        key={year}
+                                        type="monotone"
+                                        dataKey={year}
+                                        name={`${year}년 매출`}
+                                        stroke={colors[index % colors.length]}
+                                        strokeWidth={3}
+                                        dot={<CustomizedDot />}
+                                        activeDot={{ r: 8, strokeWidth: 0 }}
+                                    />
+                                ))}
                             </LineChart>
                         </ResponsiveContainer>
                         <p className="text-xs text-gray-500 text-center mt-4">* 상위 10개 판매점 표시 | 차트의 포인트를 클릭하여 상세 분석 확인</p>
@@ -263,14 +286,7 @@ export default function StoreSalesAnalysis() {
                     )}
                 </div>
 
-                <button
-                    className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                    disabled={!selectedStore}
-                    onClick={() => alert(`${selectedStore} 점장님에게 메시지를 보냅니다.`)}
-                >
-                    <MessageSquare size={18} />
-                    점장에게 메시지 보내기
-                </button>
+
             </div>
         </div>
     );

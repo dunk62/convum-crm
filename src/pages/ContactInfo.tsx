@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, RefreshCw, Mail, Phone, Building2, Loader2, AlertCircle, ChevronLeft, ChevronRight, PhoneCall, MessageSquare, X, ChevronDown, Plus, Trash2, Send } from 'lucide-react';
+import { Search, RefreshCw, Mail, Phone, Building2, Loader2, AlertCircle, ChevronLeft, ChevronRight, PhoneCall, MessageSquare, X, ChevronDown, Plus, Trash2, Send, ArrowUpDown } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { cn } from '../lib/utils';
 
@@ -45,6 +45,7 @@ export default function ContactInfo() {
         status: 'Active', registrationDate: '', mainPhone: '', website: '', address: '',
         department: '', position: '', contactName: '', grade: '', note: ''
     });
+    const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null);
 
     const itemsPerPage = 10;
 
@@ -212,10 +213,42 @@ export default function ContactInfo() {
         return matchesSearch;
     });
 
+    // Sorting Logic
+    const handleSort = (key: string) => {
+        let direction: 'asc' | 'desc' = 'asc';
+        if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+            direction = 'desc';
+        }
+        setSortConfig({ key, direction });
+    };
+
+    const sortedContacts = [...filteredContacts].sort((a, b) => {
+        if (!sortConfig) return 0;
+        const { key, direction } = sortConfig;
+
+        let aValue = '';
+        let bValue = '';
+
+        if (key === 'name') {
+            aValue = a.name || '';
+            bValue = b.name || '';
+        } else if (key === 'company') {
+            aValue = a.accounts?.name || '';
+            bValue = b.accounts?.name || '';
+        } else if (key === 'intro_mail_status') {
+            aValue = a.intro_mail_status || '';
+            bValue = b.intro_mail_status || '';
+        }
+
+        if (aValue < bValue) return direction === 'asc' ? -1 : 1;
+        if (aValue > bValue) return direction === 'asc' ? 1 : -1;
+        return 0;
+    });
+
     // Pagination Logic
-    const totalPages = Math.ceil(filteredContacts.length / itemsPerPage);
+    const totalPages = Math.ceil(sortedContacts.length / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
-    const paginatedContacts = filteredContacts.slice(startIndex, startIndex + itemsPerPage);
+    const paginatedContacts = sortedContacts.slice(startIndex, startIndex + itemsPerPage);
 
     return (
         <div className="space-y-6">
@@ -307,23 +340,35 @@ export default function ContactInfo() {
                         <thead className="bg-gray-50 border-b border-gray-200">
                             <tr>
                                 <th className="px-6 py-3 text-center text-base font-bold text-gray-700 whitespace-nowrap">
-                                    <div className="flex items-center justify-center gap-2">
+                                    <div className="flex items-center justify-center gap-2 cursor-pointer" onClick={() => handleSort('name')}>
                                         <input
                                             type="checkbox"
                                             onChange={handleSelectAll}
                                             checked={paginatedContacts.length > 0 && selectedContactIds.size === paginatedContacts.length}
                                             className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                                            onClick={(e) => e.stopPropagation()}
                                         />
                                         담당자명
+                                        <ArrowUpDown size={14} className="text-gray-400" />
                                     </div>
                                 </th>
-                                <th className="px-6 py-3 text-center text-base font-bold text-gray-700 whitespace-nowrap">업체명</th>
+                                <th className="px-6 py-3 text-center text-base font-bold text-gray-700 whitespace-nowrap cursor-pointer hover:bg-gray-100" onClick={() => handleSort('company')}>
+                                    <div className="flex items-center justify-center gap-1">
+                                        업체명
+                                        <ArrowUpDown size={14} className="text-gray-400" />
+                                    </div>
+                                </th>
                                 <th className="px-6 py-3 text-center text-base font-bold text-gray-700 whitespace-nowrap">부서</th>
                                 <th className="px-6 py-3 text-center text-base font-bold text-gray-700 whitespace-nowrap">직급</th>
                                 <th className="px-6 py-3 text-center text-base font-bold text-gray-700 whitespace-nowrap">휴대전화</th>
                                 <th className="px-6 py-3 text-center text-base font-bold text-gray-700 whitespace-nowrap">이메일</th>
-                                <th className="px-6 py-3 text-center text-base font-bold text-gray-700 whitespace-nowrap">담당자</th>
-                                <th className="px-6 py-3 text-center text-base font-bold text-gray-700 whitespace-nowrap">회사소개서 발송</th>
+                                <th className="px-6 py-3 text-center text-base font-bold text-gray-700 whitespace-nowrap">영업 담당자</th>
+                                <th className="px-6 py-3 text-center text-base font-bold text-gray-700 whitespace-nowrap cursor-pointer hover:bg-gray-100" onClick={() => handleSort('intro_mail_status')}>
+                                    <div className="flex items-center justify-center gap-1">
+                                        회사소개서 발송
+                                        <ArrowUpDown size={14} className="text-gray-400" />
+                                    </div>
+                                </th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">

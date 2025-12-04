@@ -40,6 +40,7 @@ export default function Accounts() {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedAccount, setSelectedAccount] = useState<Account | null>(null);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [isEditMode, setIsEditMode] = useState(false);
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
@@ -226,13 +227,36 @@ export default function Accounts() {
             if (error) throw error;
 
             setSelectedIds(new Set());
-            setSelectedIds(new Set());
             await fetchAccounts();
             setIsMenuOpen(false);
             alert('삭제되었습니다.');
         } catch (err: any) {
             console.error('Error deleting accounts:', err);
             alert('삭제 중 오류가 발생했습니다: ' + err.message);
+        }
+    };
+
+    const handleEditSelected = () => {
+        if (selectedIds.size !== 1) {
+            alert('수정할 항목을 하나만 선택해주세요.');
+            return;
+        }
+
+        const accountId = Array.from(selectedIds)[0];
+        const accountToEdit = accounts.find(a => a.id === accountId);
+
+        if (accountToEdit) {
+            setNewAccount({
+                name: accountToEdit.name,
+                industry: accountToEdit.industry,
+                registrationDate: accountToEdit.registrationDate || '',
+                mainPhone: accountToEdit.mainPhone || '',
+                website: accountToEdit.website || '',
+                address: accountToEdit.address || ''
+            });
+            setIsEditMode(true);
+            setIsCreateModalOpen(true);
+            setIsMenuOpen(false);
         }
     };
 
@@ -264,6 +288,10 @@ export default function Accounts() {
                             <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-10">
                                 <button
                                     onClick={() => {
+                                        setIsEditMode(false);
+                                        setNewAccount({
+                                            name: '', industry: '', registrationDate: '', mainPhone: '', website: '', address: ''
+                                        });
                                         setIsCreateModalOpen(true);
                                         setIsMenuOpen(false);
                                     }}
@@ -271,6 +299,13 @@ export default function Accounts() {
                                 >
                                     <Plus size={16} />
                                     새로 만들기
+                                </button>
+                                <button
+                                    onClick={handleEditSelected}
+                                    className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                                >
+                                    <Edit2 size={16} />
+                                    수정
                                 </button>
                                 <button
                                     onClick={handleDeleteSelected}
@@ -496,7 +531,7 @@ export default function Accounts() {
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                                             <DetailItem label="No" value={selectedAccount.id} />
                                             <DetailItem label="등록일" value={selectedAccount.registrationDate || '-'} />
-                                            <DetailItem label="업종" value={selectedAccount.industry} />
+                                            <DetailItem label="산업군" value={selectedAccount.industry} />
                                             <DetailItem label="업체명" value={selectedAccount.name} />
                                             <DetailItem label="대표전화" value={selectedAccount.mainPhone || '-'} />
                                             <DetailItem label="홈페이지" value={selectedAccount.website || '-'} />
@@ -626,7 +661,7 @@ export default function Accounts() {
                     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
                         <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
                             <div className="flex items-center justify-between p-6 border-b border-gray-100">
-                                <h2 className="text-xl font-semibold text-gray-900">새 고객 정보 등록</h2>
+                                <h2 className="text-xl font-semibold text-gray-900">{isEditMode ? '업체 정보 수정' : '새 고객 정보 등록'}</h2>
                                 <button
                                     onClick={() => setIsCreateModalOpen(false)}
                                     className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -638,15 +673,7 @@ export default function Accounts() {
                             <form onSubmit={async (e) => {
                                 e.preventDefault();
                                 try {
-                                    // Find max ID and increment
-                                    const maxId = accounts.reduce((max, acc) => {
-                                        const num = parseInt(acc.id.replace('C-', ''));
-                                        return isNaN(num) ? max : Math.max(max, num);
-                                    }, 0);
-                                    const id = `C-${String(maxId + 1).padStart(3, '0')}`;
-
                                     const insertPayload = {
-                                        id,
                                         name: newAccount.name,
                                         industry: newAccount.industry,
                                         registration_date: newAccount.registrationDate,
@@ -655,19 +682,37 @@ export default function Accounts() {
                                         address: newAccount.address
                                     };
 
-                                    const { error } = await supabase.from('accounts').insert([insertPayload]);
+                                    if (isEditMode) {
+                                        const accountId = Array.from(selectedIds)[0];
+                                        const { error } = await supabase
+                                            .from('accounts')
+                                            .update(insertPayload)
+                                            .eq('id', accountId);
+                                        if (error) throw error;
+                                    } else {
+                                        // Find max ID and increment
+                                        const maxId = accounts.reduce((max, acc) => {
+                                            const num = parseInt(acc.id.replace('C-', ''));
+                                            return isNaN(num) ? max : Math.max(max, num);
+                                        }, 0);
+                                        const id = `C-${String(maxId + 1).padStart(3, '0')}`;
 
-                                    if (error) throw error;
+                                        const { error } = await supabase
+                                            .from('accounts')
+                                            .insert([{ ...insertPayload, id }]);
+                                        if (error) throw error;
+                                    }
 
                                     await fetchAccounts();
                                     setIsCreateModalOpen(false);
                                     setNewAccount({
                                         name: '', industry: '', registrationDate: '', mainPhone: '', website: '', address: ''
                                     });
+                                    setIsEditMode(false);
                                     alert('성공적으로 저장되었습니다.');
                                 } catch (err: any) {
-                                    console.error('Error creating account:', err);
-                                    alert('Failed to create account: ' + err.message);
+                                    console.error('Error saving account:', err);
+                                    alert('Failed to save account: ' + err.message);
                                 }
                             }}>
                                 <div className="p-6 overflow-y-auto max-h-[70vh] grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -676,8 +721,20 @@ export default function Accounts() {
                                         <input required type="text" className="w-full p-2 border rounded text-sm" value={newAccount.name} onChange={e => setNewAccount({ ...newAccount, name: e.target.value })} />
                                     </div>
                                     <div className="space-y-1">
-                                        <label className="text-xs font-medium text-gray-500 uppercase">업종</label>
-                                        <input type="text" className="w-full p-2 border rounded text-sm" value={newAccount.industry} onChange={e => setNewAccount({ ...newAccount, industry: e.target.value })} />
+                                        <label className="text-xs font-medium text-gray-500 uppercase">산업군</label>
+                                        <select
+                                            className="w-full p-2 border rounded text-sm bg-white"
+                                            value={newAccount.industry}
+                                            onChange={e => setNewAccount({ ...newAccount, industry: e.target.value })}
+                                        >
+                                            <option value="">선택하세요</option>
+                                            <option value="로봇">로봇</option>
+                                            <option value="식품">식품</option>
+                                            <option value="자동차">자동차</option>
+                                            <option value="자동화">자동화</option>
+                                            <option value="전기,전자">전기,전자</option>
+                                            <option value="반도체">반도체</option>
+                                        </select>
                                     </div>
                                     <div className="space-y-1">
                                         <label className="text-xs font-medium text-gray-500 uppercase">등록일</label>

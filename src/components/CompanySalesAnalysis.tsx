@@ -39,21 +39,43 @@ export default function CompanySalesAnalysis() {
         try {
             setLoading(true);
 
-            // Fetch data
-            const { data, error } = await supabase
-                .from('sales_performance')
-                .select('company_name, shipment_date, sales_amount')
-                .order('shipment_date', { ascending: true });
+            // Fetch data with chunked loading to get all records
+            let allSalesData: any[] = [];
+            let page = 0;
+            const pageSize = 1000;
+            let hasMore = true;
 
-            if (error) throw error;
-            if (!data) return;
+            while (hasMore) {
+                const { data: salesData, error } = await supabase
+                    .from('sales_performance')
+                    .select('company_name, shipment_date, sales_amount, sales_rep')
+                    .in('sales_rep', ['탁현호', '임성렬'])
+                    .range(page * pageSize, (page + 1) * pageSize - 1);
+
+                if (error) throw error;
+
+                if (salesData && salesData.length > 0) {
+                    allSalesData = [...allSalesData, ...salesData];
+                    if (salesData.length < pageSize) {
+                        hasMore = false;
+                    } else {
+                        page++;
+                    }
+                } else {
+                    hasMore = false;
+                }
+            }
+
+            if (allSalesData.length === 0) return;
 
             // Extract available years
-            const years = Array.from(new Set(data.map(d => new Date(d.shipment_date).getFullYear()))).sort((a, b) => b - a);
+            const detectedYears = Array.from(new Set(allSalesData.map(d => new Date(d.shipment_date).getFullYear())));
+            // Ensure 2022-2025 are included as requested
+            const years = Array.from(new Set([...detectedYears, 2022, 2023, 2024, 2025])).sort((a, b) => b - a);
             setAvailableYears(years);
 
             // Filter by selected year
-            const filteredData = data.filter(d => new Date(d.shipment_date).getFullYear() === selectedYear);
+            const filteredData = allSalesData.filter(d => new Date(d.shipment_date).getFullYear() === selectedYear);
 
             // 1. Identify Top 5 Companies by Total Sales in the selected year
             const companyTotals: Record<string, number> = {};
@@ -72,42 +94,59 @@ export default function CompanySalesAnalysis() {
 
             setTopCompanies(sortedCompanies);
 
-            // 2. Aggregate Data for Chart (only for Top 5 companies)
-            const topCompanyNames = sortedCompanies.map(c => c.name);
+            // 2. Aggregate Data for Chart (Monthly/Quarterly Top 5)
             const periods = periodType === 'monthly'
                 ? Array.from({ length: 12 }, (_, i) => `${i + 1}월`)
                 : ['1분기', '2분기', '3분기', '4분기'];
 
-            const chartDataMap: Record<string, AggregatedData> = {};
+            const chartDataList: any[] = [];
 
-            // Initialize chart data structure
-            periods.forEach(p => {
-                chartDataMap[p] = { period: p };
-                topCompanyNames.forEach(name => {
-                    chartDataMap[p][name] = 0;
-                });
-            });
-
-            filteredData.forEach(d => {
-                if (!topCompanyNames.includes(d.company_name)) return;
-
-                const date = new Date(d.shipment_date);
-                let periodKey = '';
-
+            periods.forEach((p, index) => {
+                // Find start and end month for the period
+                let startMonth: number, endMonth: number;
                 if (periodType === 'monthly') {
-                    periodKey = `${date.getMonth() + 1}월`;
+                    startMonth = index;
+                    endMonth = index;
                 } else {
-                    const month = date.getMonth() + 1;
-                    const quarter = Math.ceil(month / 3);
-                    periodKey = `${quarter}분기`;
+                    startMonth = index * 3;
+                    endMonth = index * 3 + 2;
                 }
 
-                if (chartDataMap[periodKey]) {
-                    chartDataMap[periodKey][d.company_name] = (chartDataMap[periodKey][d.company_name] as number) + d.sales_amount;
+                // Filter data for this period
+                const periodData = filteredData.filter(d => {
+                    const date = new Date(d.shipment_date);
+                    const month = date.getMonth();
+                    return month >= startMonth && month <= endMonth;
+                });
+
+                // Calculate totals for this period
+                const periodTotals: Record<string, number> = {};
+                periodData.forEach(d => {
+                    periodTotals[d.company_name] = (periodTotals[d.company_name] || 0) + d.sales_amount;
+                });
+
+                // Sort and take Top 5
+                const top5InPeriod = Object.entries(periodTotals)
+                    .sort(([, a], [, b]) => b - a)
+                    .slice(0, 5);
+
+                // Construct data point
+                const dataPoint: any = { period: p };
+                top5InPeriod.forEach(([name, sales], i) => {
+                    dataPoint[`rank${i + 1}`] = sales;
+                    dataPoint[`rank${i + 1}_name`] = name;
+                });
+
+                // Fill remaining ranks with 0 if less than 5 companies
+                for (let i = top5InPeriod.length; i < 5; i++) {
+                    dataPoint[`rank${i + 1}`] = 0;
+                    dataPoint[`rank${i + 1}_name`] = '-';
                 }
+
+                chartDataList.push(dataPoint);
             });
 
-            setChartData(Object.values(chartDataMap));
+            setChartData(chartDataList);
 
         } catch (error) {
             console.error('Error fetching company sales data:', error);
@@ -122,13 +161,40 @@ export default function CompanySalesAnalysis() {
 
     const colors = ['#2563eb', '#7c3aed', '#db2777', '#ea580c', '#16a34a'];
 
+    const CustomTooltip = ({ active, payload, label }: any) => {
+        if (active && payload && payload.length) {
+            return (
+                <div className="bg-white p-4 rounded-lg shadow-lg border border-gray-200">
+                    <p className="font-bold text-gray-900 mb-2">{label} 매출 Top 5</p>
+                    <div className="space-y-2">
+                        {payload.map((entry: any, index: number) => {
+                            const rank = entry.dataKey.replace('rank', '');
+                            const companyName = entry.payload[`rank${rank}_name`];
+                            if (!companyName || companyName === '-') return null;
+
+                            return (
+                                <div key={index} className="flex items-center gap-2 text-sm">
+                                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
+                                    <span className="font-bold text-gray-700">{rank}위:</span>
+                                    <span className="text-gray-600 truncate max-w-[100px]" title={companyName}>{companyName}</span>
+                                    <span className="font-mono font-medium text-gray-900 ml-auto">{formatCurrency(entry.value)}</span>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            );
+        }
+        return null;
+    };
+
     return (
         <div className="space-y-6">
             {/* Controls */}
             <div className="flex flex-wrap items-center justify-between gap-4 bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
                 <div className="flex items-center gap-2">
                     <TrendingUp className="text-blue-600" size={24} />
-                    <h2 className="text-lg font-bold text-gray-900">업체별 매출 분석</h2>
+                    <h2 className="text-lg font-bold text-gray-900">상위 5개 업체 매출 분석</h2>
                 </div>
 
                 <div className="flex items-center gap-3">
@@ -171,7 +237,7 @@ export default function CompanySalesAnalysis() {
                 </div>
             ) : (
                 <>
-                    {/* Top 5 Cards */}
+                    {/* Top 5 Cards (Annual) */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                         {topCompanies.map((company, index) => (
                             <div key={company.name} className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm relative overflow-hidden group hover:shadow-md transition-shadow">
@@ -204,16 +270,14 @@ export default function CompanySalesAnalysis() {
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} />
                                     <XAxis dataKey="period" />
                                     <YAxis tickFormatter={(value) => `${value / 1000000}M`} />
-                                    <Tooltip
-                                        formatter={(value: number) => formatCurrency(value)}
-                                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                    />
+                                    <Tooltip content={<CustomTooltip />} />
                                     <Legend />
-                                    {topCompanies.map((company, index) => (
+                                    {[1, 2, 3, 4, 5].map((rank, index) => (
                                         <Line
-                                            key={company.name}
+                                            key={rank}
                                             type="monotone"
-                                            dataKey={company.name}
+                                            dataKey={`rank${rank}`}
+                                            name={`${rank}위`}
                                             stroke={colors[index]}
                                             strokeWidth={2}
                                             dot={{ r: 4 }}

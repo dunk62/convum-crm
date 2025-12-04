@@ -3,6 +3,7 @@ import { Search, RefreshCw, AlertCircle, Loader2, ChevronUp, ChevronDown, BarCha
 import { supabase } from '../lib/supabase';
 import StoreSalesAnalysis from '../components/StoreSalesAnalysis';
 import CompanySalesAnalysis from '../components/CompanySalesAnalysis';
+import CompanyDetailAnalysis from '../components/CompanyDetailAnalysis';
 
 interface SalesRecord {
     id: string;
@@ -21,7 +22,7 @@ interface SalesRecord {
 }
 
 export default function SalesPerformance() {
-    const [activeTab, setActiveTab] = useState<'list' | 'analysis' | 'company_analysis' | 'order_performance'>('list');
+    const [activeTab, setActiveTab] = useState<'list' | 'analysis' | 'company_analysis' | 'order_performance' | 'detail_analysis'>('list');
     const [salesData, setSalesData] = useState<SalesRecord[]>([]);
     const [orderData, setOrderData] = useState<SalesRecord[]>([]); // Added for order performance data
     const [isLoading, setIsLoading] = useState(true);
@@ -573,6 +574,18 @@ export default function SalesPerformance() {
                         `}
                     >
                         <PieChart size={18} />
+                        상위 5개 업체 매출 분석
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('detail_analysis')}
+                        className={`
+                            whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2
+                            ${activeTab === 'detail_analysis'
+                                ? 'border-blue-500 text-blue-600'
+                                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}
+                        `}
+                    >
+                        <PieChart size={18} />
                         업체별 매출 분석
                     </button>
                 </nav>
@@ -591,8 +604,10 @@ export default function SalesPerformance() {
                 renderTable(paginatedData, 'order')
             ) : activeTab === 'analysis' ? (
                 <StoreSalesAnalysis />
-            ) : (
+            ) : activeTab === 'company_analysis' ? (
                 <CompanySalesAnalysis />
+            ) : (
+                <CompanyDetailAnalysis />
             )}
         </div>
     );
