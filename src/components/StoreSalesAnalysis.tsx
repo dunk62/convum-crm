@@ -170,12 +170,12 @@ export default function StoreSalesAnalysis() {
     return (
         <div className="flex flex-col lg:flex-row gap-6 h-[600px]">
             {/* Main Chart Area */}
-            <div className="flex-1 bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex flex-col">
-                <h3 className="text-lg font-bold text-gray-900 mb-6">판매점별 매출 비교 ({availableYears.join(', ')}년)</h3>
+            <div className="flex-1 bg-card p-6 rounded-xl border border-border shadow-sm flex flex-col">
+                <h3 className="text-lg font-bold text-white mb-6">판매점별 매출 비교 ({availableYears.join(', ')}년)</h3>
 
                 {loading ? (
                     <div className="flex-1 flex items-center justify-center">
-                        <Loader2 className="animate-spin text-blue-600" size={32} />
+                        <Loader2 className="animate-spin text-accent" size={32} />
                     </div>
                 ) : (
                     <div className="flex-1 min-h-0">
@@ -220,45 +220,45 @@ export default function StoreSalesAnalysis() {
                                 ))}
                             </LineChart>
                         </ResponsiveContainer>
-                        <p className="text-xs text-gray-500 text-center mt-4">* 상위 10개 판매점 표시 | 차트의 포인트를 클릭하여 상세 분석 확인</p>
+                        <p className="text-xs text-muted-foreground text-center mt-4">* 상위 10개 판매점 표시 | 차트의 포인트를 클릭하여 상세 분석 확인</p>
                     </div>
                 )}
             </div>
 
             {/* Side Panel: AI Analysis */}
-            <div className="w-full lg:w-[30%] bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex flex-col">
+            <div className="w-full lg:w-[30%] bg-card p-6 rounded-xl border border-border shadow-sm flex flex-col">
                 <div className="flex items-center gap-2 mb-6">
                     <div className="p-2 bg-purple-100 rounded-lg">
                         <Sparkles className="text-purple-600" size={20} />
                     </div>
-                    <h3 className="text-lg font-bold text-gray-900">Gemini AI 분석</h3>
+                    <h3 className="text-lg font-bold text-white">Gemini AI 분석</h3>
                 </div>
 
-                <div className="flex-1 bg-gray-50 rounded-xl p-4 mb-4 overflow-y-auto">
+                <div className="flex-1 bg-secondary/30 rounded-xl p-4 mb-4 overflow-y-auto">
                     {selectedStore ? (
                         aiLoading ? (
-                            <div className="flex flex-col items-center justify-center h-full text-gray-500 space-y-3">
+                            <div className="flex flex-col items-center justify-center h-full text-muted-foreground space-y-3">
                                 <Loader2 className="animate-spin" size={24} />
                                 <p className="text-sm">매출 데이터를 분석하고 있습니다...</p>
                             </div>
                         ) : (
                             <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2">
                                 <div>
-                                    <h4 className="font-bold text-gray-900 text-lg mb-1">{selectedStore}</h4>
+                                    <h4 className="font-bold text-white text-lg mb-1">{selectedStore}</h4>
                                     <div className="flex items-center gap-2 text-sm mb-3">
-                                        <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs font-medium">주요 파트너</span>
+                                        <span className="px-2 py-0.5 bg-blue-100 text-accent rounded text-xs font-medium">주요 파트너</span>
                                         {data.find(d => d.store_name === selectedStore)?.growth ? (
-                                            <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded text-xs font-medium">성장세</span>
+                                            <span className="px-2 py-0.5 bg-green-100 text-success rounded text-xs font-medium">성장세</span>
                                         ) : (
-                                            <span className="px-2 py-0.5 bg-red-100 text-red-700 rounded text-xs font-medium">감소세</span>
+                                            <span className="px-2 py-0.5 bg-red-100 text-danger rounded text-xs font-medium">감소세</span>
                                         )}
                                     </div>
                                 </div>
 
-                                <div className="prose prose-sm text-gray-700">
+                                <div className="prose prose-sm text-muted-foreground">
                                     <p>
                                         <strong>📈 매출 추이:</strong><br />
-                                        {years.lastYear}년 대비 <span className={data.find(d => d.store_name === selectedStore)?.growth ? "text-green-600 font-bold" : "text-red-600 font-bold"}>
+                                        {years.lastYear}년 대비 <span className={data.find(d => d.store_name === selectedStore)?.growth ? "text-success font-bold" : "text-danger font-bold"}>
                                             {data.find(d => d.store_name === selectedStore)?.growth ? "증가" : "감소"}
                                         </span>했습니다.
                                         {data.find(d => d.store_name === selectedStore)?.growth
@@ -275,8 +275,8 @@ export default function StoreSalesAnalysis() {
                             </div>
                         )
                     ) : (
-                        <div className="flex flex-col items-center justify-center h-full text-gray-400 space-y-3">
-                            <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center">
+                        <div className="flex flex-col items-center justify-center h-full text-muted-foreground space-y-3">
+                            <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center">
                                 <Sparkles size={20} />
                             </div>
                             <p className="text-sm text-center">

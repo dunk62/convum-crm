@@ -241,8 +241,8 @@ export default function SalesPerformance() {
     const SortIcon = ({ columnKey }: { columnKey: keyof SalesRecord }) => {
         if (sortConfig?.key !== columnKey) return <div className="w-4 h-4 ml-1 inline-block" />;
         return sortConfig.direction === 'asc' ?
-            <ChevronUp size={16} className="ml-1 inline-block text-blue-600" /> :
-            <ChevronDown size={16} className="ml-1 inline-block text-blue-600" />;
+            <ChevronUp size={16} className="ml-1 inline-block text-accent" /> :
+            <ChevronDown size={16} className="ml-1 inline-block text-accent" />;
     };
 
     const formatDate = (dateString: string) => {
@@ -260,15 +260,15 @@ export default function SalesPerformance() {
 
     // Render Table Helper
     const renderTable = (data: any[], type: 'sales' | 'order') => (
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
             {/* Search Input Only */}
-            <div className="p-4 border-b border-gray-200 flex flex-col sm:flex-row gap-4">
+            <div className="p-4 border-b border-border flex flex-col sm:flex-row gap-4">
                 <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={20} />
                     <input
                         type="text"
                         placeholder="업체명, 판매점, 상품군, 형번, 영업담당자 검색..."
-                        className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                        className="w-full pl-10 pr-4 py-2 bg-secondary text-white border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent transition-colors"
                         value={searchTerm}
                         onChange={(e) => {
                             setSearchTerm(e.target.value);
@@ -279,62 +279,62 @@ export default function SalesPerformance() {
 
             <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm">
-                    <thead className="bg-gray-50 border-b border-gray-200">
+                    <thead className="bg-secondary/30 border-b border-border">
                         <tr>
-                            <th className="px-6 py-3 text-center text-base font-bold text-gray-700 whitespace-nowrap cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => handleSort(type === 'sales' ? 'shipment_date' : 'order_date')}>
+                            <th className="px-6 py-3 text-center text-base font-bold text-muted-foreground whitespace-nowrap cursor-pointer hover:bg-secondary/50 transition-colors" onClick={() => handleSort(type === 'sales' ? 'shipment_date' : 'order_date')}>
                                 <div className="flex items-center justify-center gap-1">
                                     {type === 'sales' ? '출고일' : '수주일'} <SortIcon columnKey={type === 'sales' ? 'shipment_date' : 'order_date'} />
                                 </div>
                             </th>
-                            <th className="px-6 py-3 text-center text-base font-bold text-gray-700 whitespace-nowrap cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => handleSort('distributor_name')}>
+                            <th className="px-6 py-3 text-center text-base font-bold text-muted-foreground whitespace-nowrap cursor-pointer hover:bg-secondary/50 transition-colors" onClick={() => handleSort('distributor_name')}>
                                 <div className="flex items-center justify-center gap-1">
                                     판매점명 <SortIcon columnKey="distributor_name" />
                                 </div>
                             </th>
-                            <th className="px-6 py-3 text-center text-base font-bold text-gray-700 whitespace-nowrap cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => handleSort('company_name')}>
+                            <th className="px-6 py-3 text-center text-base font-bold text-muted-foreground whitespace-nowrap cursor-pointer hover:bg-secondary/50 transition-colors" onClick={() => handleSort('company_name')}>
                                 <div className="flex items-center justify-center gap-1">
                                     업체명 <SortIcon columnKey="company_name" />
                                 </div>
                             </th>
-                            <th className="px-6 py-3 text-center text-base font-bold text-gray-700 whitespace-nowrap cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => handleSort('sales_rep')}>
+                            <th className="px-6 py-3 text-center text-base font-bold text-muted-foreground whitespace-nowrap cursor-pointer hover:bg-secondary/50 transition-colors" onClick={() => handleSort('sales_rep')}>
                                 <div className="flex items-center justify-center gap-1">
                                     영업담당자 <SortIcon columnKey="sales_rep" />
                                 </div>
                             </th>
-                            <th className="px-6 py-3 text-center text-base font-bold text-gray-700 whitespace-nowrap cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => handleSort('product_name')}>
+                            <th className="px-6 py-3 text-center text-base font-bold text-muted-foreground whitespace-nowrap cursor-pointer hover:bg-secondary/50 transition-colors" onClick={() => handleSort('product_name')}>
                                 <div className="flex items-center justify-center gap-1">
                                     상품군 <SortIcon columnKey="product_name" />
                                 </div>
                             </th>
-                            <th className="px-6 py-3 text-center text-base font-bold text-gray-700 whitespace-nowrap cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => handleSort('model_number')}>
+                            <th className="px-6 py-3 text-center text-base font-bold text-muted-foreground whitespace-nowrap cursor-pointer hover:bg-secondary/50 transition-colors" onClick={() => handleSort('model_number')}>
                                 <div className="flex items-center justify-center gap-1">
                                     형번 <SortIcon columnKey="model_number" />
                                 </div>
                             </th>
-                            <th className="px-6 py-3 text-center text-base font-bold text-gray-700 whitespace-nowrap cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => handleSort('quantity')}>
+                            <th className="px-6 py-3 text-center text-base font-bold text-muted-foreground whitespace-nowrap cursor-pointer hover:bg-secondary/50 transition-colors" onClick={() => handleSort('quantity')}>
                                 <div className="flex items-center justify-center gap-1">
                                     수량 <SortIcon columnKey="quantity" />
                                 </div>
                             </th>
-                            <th className="px-6 py-3 text-center text-sm font-bold text-gray-700 whitespace-nowrap cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => handleSort('unit_price')}>
+                            <th className="px-6 py-3 text-center text-sm font-bold text-muted-foreground whitespace-nowrap cursor-pointer hover:bg-secondary/50 transition-colors" onClick={() => handleSort('unit_price')}>
                                 <div className="flex items-center justify-center gap-1">
                                     단가 <SortIcon columnKey="unit_price" />
                                 </div>
                             </th>
-                            <th className="px-6 py-3 text-center text-sm font-bold text-gray-700 whitespace-nowrap cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => handleSort(type === 'sales' ? 'sales_amount' : 'total_amount')}>
+                            <th className="px-6 py-3 text-center text-sm font-bold text-muted-foreground whitespace-nowrap cursor-pointer hover:bg-secondary/50 transition-colors" onClick={() => handleSort(type === 'sales' ? 'sales_amount' : 'total_amount')}>
                                 <div className="flex items-center justify-center gap-1">
                                     {type === 'sales' ? '판매금액' : '수주금액'} <SortIcon columnKey={type === 'sales' ? 'sales_amount' : 'total_amount'} />
                                 </div>
                             </th>
                         </tr>
                         {/* Filter Row */}
-                        <tr className="bg-gray-50 border-b border-gray-200">
+                        <tr className="bg-secondary/30 border-b border-border">
                             <th className="px-2 py-2">
                                 <div className="flex gap-1">
                                     <select
                                         value={filters.year}
                                         onChange={(e) => handleFilterChange('year', e.target.value)}
-                                        className="w-1/2 px-1 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                        className="w-1/2 px-1 py-1 text-xs border border-border rounded focus:outline-none focus:ring-1 focus:ring-accent"
                                     >
                                         <option value="all">전체</option>
                                         <option value="2025">2025</option>
@@ -345,7 +345,7 @@ export default function SalesPerformance() {
                                     <select
                                         value={filters.month}
                                         onChange={(e) => handleFilterChange('month', e.target.value)}
-                                        className="w-1/2 px-1 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                        className="w-1/2 px-1 py-1 text-xs border border-border rounded focus:outline-none focus:ring-1 focus:ring-accent"
                                         disabled={filters.year === 'all'}
                                     >
                                         <option value="all">전체</option>
@@ -359,7 +359,7 @@ export default function SalesPerformance() {
                                 <select
                                     value={filters.distributor_name}
                                     onChange={(e) => handleFilterChange('distributor_name', e.target.value)}
-                                    className="w-full px-1 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    className="w-full px-1 py-1 text-xs border border-border rounded focus:outline-none focus:ring-1 focus:ring-accent"
                                 >
                                     <option value="all">전체</option>
                                     {distributorNames.map(name => (
@@ -372,7 +372,7 @@ export default function SalesPerformance() {
                                     type="text"
                                     value={filters.company_name}
                                     onChange={(e) => handleFilterChange('company_name', e.target.value)}
-                                    className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    className="w-full px-2 py-1 text-xs bg-secondary text-white border border-border rounded focus:outline-none focus:ring-1 focus:ring-accent"
                                     placeholder="업체명"
                                 />
                             </th>
@@ -380,7 +380,7 @@ export default function SalesPerformance() {
                                 <select
                                     value={filters.sales_rep}
                                     onChange={(e) => handleFilterChange('sales_rep', e.target.value)}
-                                    className="w-full px-1 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    className="w-full px-1 py-1 text-xs border border-border rounded focus:outline-none focus:ring-1 focus:ring-accent"
                                 >
                                     <option value="all">전체</option>
                                     {salesReps.map(rep => (
@@ -392,7 +392,7 @@ export default function SalesPerformance() {
                                 <select
                                     value={filters.product_name}
                                     onChange={(e) => handleFilterChange('product_name', e.target.value)}
-                                    className="w-full px-1 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    className="w-full px-1 py-1 text-xs border border-border rounded focus:outline-none focus:ring-1 focus:ring-accent"
                                 >
                                     <option value="all">전체</option>
                                     {productNames.map(name => (
@@ -405,7 +405,7 @@ export default function SalesPerformance() {
                                     type="text"
                                     value={filters.model_number}
                                     onChange={(e) => handleFilterChange('model_number', e.target.value)}
-                                    className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    className="w-full px-2 py-1 text-xs bg-secondary text-white border border-border rounded focus:outline-none focus:ring-1 focus:ring-accent"
                                     placeholder="형번"
                                 />
                             </th>
@@ -417,27 +417,27 @@ export default function SalesPerformance() {
                     <tbody className="divide-y divide-gray-200">
                         {isLoading ? (
                             <tr>
-                                <td colSpan={9} className="px-6 py-8 text-center text-gray-500">
+                                <td colSpan={9} className="px-6 py-8 text-center text-muted-foreground">
                                     데이터를 불러오는 중입니다...
                                 </td>
                             </tr>
                         ) : data.length > 0 ? (
                             data.map((item) => (
-                                <tr key={item.id} className="hover:bg-gray-50 transition-colors">
+                                <tr key={item.id} className="hover:bg-secondary/30 transition-colors">
                                     <td className="px-6 py-4 whitespace-nowrap">{formatDate(type === 'sales' ? item.shipment_date : item.order_date)}</td>
                                     <td className="px-6 py-4 whitespace-nowrap">{item.distributor_name}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">{item.company_name}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap font-medium text-white">{item.company_name}</td>
                                     <td className="px-6 py-4 whitespace-nowrap">{item.sales_rep}</td>
                                     <td className="px-6 py-4 whitespace-nowrap">{item.product_name}</td>
                                     <td className="px-6 py-4 whitespace-nowrap">{item.model_number}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-right">{(item.quantity || 0).toLocaleString()}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-right">{formatCurrency(item.unit_price || 0)}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-right font-medium text-blue-600">{formatCurrency((type === 'sales' ? item.sales_amount : item.total_amount) || 0)}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-right font-medium text-accent">{formatCurrency((type === 'sales' ? item.sales_amount : item.total_amount) || 0)}</td>
                                 </tr>
                             ))
                         ) : (
                             <tr>
-                                <td colSpan={9} className="px-6 py-8 text-center text-gray-500">
+                                <td colSpan={9} className="px-6 py-8 text-center text-muted-foreground">
                                     데이터가 없습니다.
                                 </td>
                             </tr>
@@ -447,15 +447,15 @@ export default function SalesPerformance() {
             </div>
 
             {/* Pagination and Total */}
-            <div className="p-4 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div className="text-sm text-gray-500">
+            <div className="p-4 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="text-sm text-muted-foreground">
                     총 {filteredData.length}개 중 {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredData.length)} 표시
                 </div>
 
                 <div className="flex items-center gap-6">
                     <div className="text-sm">
-                        <span className="text-gray-500 mr-2">합계:</span>
-                        <span className="font-bold text-lg text-blue-600">
+                        <span className="text-muted-foreground mr-2">합계:</span>
+                        <span className="font-bold text-lg text-accent">
                             {formatCurrency(filteredData.reduce((sum, item) => sum + ((type === 'sales' ? item.sales_amount : item.total_amount) || 0), 0))}
                         </span>
                     </div>
@@ -464,14 +464,14 @@ export default function SalesPerformance() {
                         <button
                             onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                             disabled={currentPage === 1}
-                            className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="px-3 py-1 border border-border rounded hover:bg-secondary/30 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             이전
                         </button>
                         <button
                             onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                             disabled={currentPage === totalPages}
-                            className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="px-3 py-1 border border-border rounded hover:bg-secondary/30 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             다음
                         </button>
@@ -486,8 +486,8 @@ export default function SalesPerformance() {
             {/* ... (Header and Tabs) ... */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-gray-900">실적 관리</h1>
-                    <p className="text-gray-500 mt-1">영업 성과 및 실적을 확인하고 관리합니다.</p>
+                    <h1 className="text-3xl font-bold tracking-tight text-white">실적 관리</h1>
+                    <p className="text-muted-foreground mt-1">영업 성과 및 실적을 확인하고 관리합니다.</p>
                 </div>
                 <div className="flex gap-2">
                     <button
@@ -495,7 +495,7 @@ export default function SalesPerformance() {
                             if (activeTab === 'list') fetchSalesData(searchTerm);
                             if (activeTab === 'order_performance') fetchOrderData(searchTerm);
                         }}
-                        className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                        className="p-2 text-muted-foreground hover:text-muted-foreground hover:bg-secondary/50 rounded-lg transition-colors"
                         title="새로고침"
                     >
                         {isLoading ? <Loader2 size={20} className="animate-spin" /> : <RefreshCw size={20} />}
@@ -504,7 +504,7 @@ export default function SalesPerformance() {
             </div>
 
             {/* Tabs */}
-            <div className="border-b border-gray-200">
+            <div className="border-b border-border">
                 <nav className="-mb-px flex space-x-8" aria-label="Tabs">
                     <button
                         onClick={() => {
@@ -522,8 +522,8 @@ export default function SalesPerformance() {
                         className={`
                             whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2
                             ${activeTab === 'list'
-                                ? 'border-blue-500 text-blue-600'
-                                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}
+                                ? 'border-blue-500 text-accent'
+                                : 'border-transparent text-muted-foreground hover:text-muted-foreground hover:border-border'}
                         `}
                     >
                         <List size={18} />
@@ -545,8 +545,8 @@ export default function SalesPerformance() {
                         className={`
                             whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2
                             ${activeTab === 'order_performance'
-                                ? 'border-blue-500 text-blue-600'
-                                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}
+                                ? 'border-blue-500 text-accent'
+                                : 'border-transparent text-muted-foreground hover:text-muted-foreground hover:border-border'}
                         `}
                     >
                         <TrendingUp size={18} />
@@ -557,8 +557,8 @@ export default function SalesPerformance() {
                         className={`
                             whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2
                             ${activeTab === 'analysis'
-                                ? 'border-blue-500 text-blue-600'
-                                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}
+                                ? 'border-blue-500 text-accent'
+                                : 'border-transparent text-muted-foreground hover:text-muted-foreground hover:border-border'}
                         `}
                     >
                         <BarChart2 size={18} />
@@ -569,8 +569,8 @@ export default function SalesPerformance() {
                         className={`
                             whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2
                             ${activeTab === 'company_analysis'
-                                ? 'border-blue-500 text-blue-600'
-                                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}
+                                ? 'border-blue-500 text-accent'
+                                : 'border-transparent text-muted-foreground hover:text-muted-foreground hover:border-border'}
                         `}
                     >
                         <PieChart size={18} />
@@ -581,8 +581,8 @@ export default function SalesPerformance() {
                         className={`
                             whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2
                             ${activeTab === 'detail_analysis'
-                                ? 'border-blue-500 text-blue-600'
-                                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}
+                                ? 'border-blue-500 text-accent'
+                                : 'border-transparent text-muted-foreground hover:text-muted-foreground hover:border-border'}
                         `}
                     >
                         <PieChart size={18} />
@@ -592,7 +592,7 @@ export default function SalesPerformance() {
             </div>
 
             {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center gap-2">
+                <div className="bg-danger/10 border border-danger/20 text-danger px-4 py-3 rounded-lg flex items-center gap-2">
                     <AlertCircle size={20} />
                     <p>{error}</p>
                 </div>

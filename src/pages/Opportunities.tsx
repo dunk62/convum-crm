@@ -191,34 +191,34 @@ export default function Opportunities() {
 
     const DetailItem = ({ label, value, className = '' }: { label: string; value: string | number; className?: string }) => (
         <div className={`space-y-1 ${className}`}>
-            <label className="text-xs font-medium text-gray-500 uppercase">{label}</label>
-            <div className="text-sm text-gray-900 font-medium break-words">{value}</div>
+            <label className="text-xs font-medium text-muted-foreground uppercase">{label}</label>
+            <div className="text-sm text-white font-medium break-words">{value}</div>
             {/* Account Details Modal */}
             {selectedAccountForPopup && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200">
-                        <div className="flex items-center justify-between p-6 border-b border-gray-100">
-                            <h2 className="text-xl font-semibold text-gray-900">업체 정보</h2>
+                    <div className="bg-card rounded-xl shadow-xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200">
+                        <div className="flex items-center justify-between p-6 border-b border-border">
+                            <h2 className="text-xl font-semibold text-white">업체 정보</h2>
                             <button
                                 onClick={() => setSelectedAccountForPopup(null)}
-                                className="text-gray-400 hover:text-gray-600 transition-colors"
+                                className="text-muted-foreground hover:text-muted-foreground transition-colors"
                             >
                                 <X size={20} />
                             </button>
                         </div>
 
                         <div className="p-6 overflow-y-auto max-h-[80vh]">
-                            <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg border border-gray-100 mb-6">
-                                <div className="w-12 h-12 rounded-lg bg-white border border-gray-200 flex items-center justify-center text-primary shadow-sm">
+                            <div className="flex items-center gap-4 p-4 bg-secondary/30 rounded-lg border border-border mb-6">
+                                <div className="w-12 h-12 rounded-lg bg-card border border-border flex items-center justify-center text-primary shadow-sm">
                                     <Building2 size={24} />
                                 </div>
                                 <div>
-                                    <h3 className="font-bold text-lg text-gray-900">{selectedAccountForPopup.name}</h3>
-                                    <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
-                                        <span className="px-2 py-0.5 bg-white border border-gray-200 rounded text-xs">
+                                    <h3 className="font-bold text-lg text-white">{selectedAccountForPopup.name}</h3>
+                                    <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                                        <span className="px-2 py-0.5 bg-card border border-border rounded text-xs">
                                             {selectedAccountForPopup.industry}
                                         </span>
-                                        <span className={`px-2 py-0.5 rounded text-xs border ${selectedAccountForPopup.status === 'Active' ? "bg-green-50 text-green-700 border-green-200" : "bg-gray-50 text-gray-600 border-gray-200"
+                                        <span className={`px-2 py-0.5 rounded text-xs border ${selectedAccountForPopup.status === 'Active' ? "bg-success/10 text-success border-green-200" : "bg-secondary/30 text-muted-foreground border-border"
                                             }`}>
                                             {selectedAccountForPopup.status}
                                         </span>
@@ -247,10 +247,10 @@ export default function Opportunities() {
                             </div>
                         </div>
 
-                        <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-end">
+                        <div className="p-4 bg-secondary/30 border-t border-border flex justify-end">
                             <button
                                 onClick={() => setSelectedAccountForPopup(null)}
-                                className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                                className="px-4 py-2 bg-card border border-border rounded-lg text-sm font-medium text-muted-foreground hover:bg-secondary/30 transition-colors"
                             >
                                 닫기
                             </button>
@@ -792,6 +792,7 @@ export default function Opportunities() {
             })() : ''
         });
         fetchMemos(String(op.id));
+        setNewMemo(''); // Reset memo input
         fetchAccountAddress(op.company);
         setIsEditModalOpen(true);
     };
@@ -844,7 +845,7 @@ export default function Opportunities() {
     };
 
     return (
-        <div className="h-full flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden relative">
+        <div className="h-full flex flex-col bg-card rounded-lg border border-border shadow-sm overflow-hidden relative">
             {/* Config Warning */}
             {import.meta.env.VITE_SUPABASE_URL?.includes('YOUR_SUPABASE_URL') && (
                 <div className="bg-yellow-50 border-b border-yellow-200 p-4 flex items-center gap-3 text-yellow-800">
@@ -858,7 +859,7 @@ export default function Opportunities() {
 
             {/* Error Alert */}
             {error && (
-                <div className="bg-red-50 border-b border-red-200 p-4 flex items-center gap-3 text-red-800">
+                <div className="bg-danger/10 border-b border-danger/20 p-4 flex items-center gap-3 text-red-800">
                     <AlertCircle size={20} />
                     <div>
                         <p className="font-medium">Error</p>
@@ -868,29 +869,29 @@ export default function Opportunities() {
             )}
 
             {/* Toolbar */}
-            <div className="flex items-center justify-between p-2 border-b border-gray-200 bg-gray-50/50">
+            <div className="flex items-center justify-between p-2 border-b border-border bg-secondary/30/50">
                 <div className="flex items-center gap-2">
                     <div className="relative">
-                        <Search className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
+                        <Search className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" size={14} />
                         <input
                             type="text"
                             placeholder="이 목록 검색..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="pl-8 pr-3 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:border-blue-500 w-64"
+                            className="pl-8 pr-3 py-1 text-sm bg-secondary text-white border border-border rounded focus:outline-none focus:border-accent w-64"
                         />
                     </div>
                     <div className="relative">
                         <button
-                            className={`p-1.5 text-gray-600 hover:bg-gray-200 rounded border border-gray-300 bg-white ${isSettingsOpen ? 'bg-gray-200' : ''}`}
+                            className={`p-1.5 text-muted-foreground hover:bg-secondary rounded border border-border bg-card ${isSettingsOpen ? 'bg-secondary' : ''}`}
                             onClick={() => setIsSettingsOpen(!isSettingsOpen)}
                             title="설정"
                         >
                             <Settings size={14} />
                         </button>
                         {isSettingsOpen && (
-                            <div className="absolute left-0 top-full mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 p-2 z-50">
-                                <div className="text-xs font-semibold text-gray-500 mb-2 px-2">표시할 열 선택</div>
+                            <div className="absolute left-0 top-full mt-1 w-48 bg-card rounded-lg shadow-lg border border-border p-2 z-50">
+                                <div className="text-xs font-semibold text-muted-foreground mb-2 px-2">표시할 열 선택</div>
                                 <div className="space-y-1">
                                     {[
                                         { key: 'title', label: '안건' },
@@ -903,14 +904,14 @@ export default function Opportunities() {
                                         { key: 'owner', label: '영업 담당자' },
                                         { key: 'created_at', label: '등록일' }
                                     ].map(col => (
-                                        <label key={col.key} className="flex items-center gap-2 px-2 py-1 hover:bg-gray-50 rounded cursor-pointer">
+                                        <label key={col.key} className="flex items-center gap-2 px-2 py-1 hover:bg-secondary/30 rounded cursor-pointer">
                                             <input
                                                 type="checkbox"
                                                 checked={visibleColumns.has(col.key)}
                                                 onChange={() => toggleColumnVisibility(col.key)}
-                                                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                                className="rounded border-border text-accent focus:ring-accent"
                                             />
-                                            <span className="text-sm text-gray-700">{col.label}</span>
+                                            <span className="text-sm text-muted-foreground">{col.label}</span>
                                         </label>
                                     ))}
                                 </div>
@@ -918,7 +919,7 @@ export default function Opportunities() {
                         )}
                     </div>
                     <button
-                        className={`p-1.5 text-gray-600 hover:bg-gray-200 rounded border border-gray-300 bg-white ${showFilters ? 'bg-blue-50 border-blue-200 text-blue-600' : ''}`}
+                        className={`p-1.5 text-muted-foreground hover:bg-secondary rounded border border-border bg-card ${showFilters ? 'bg-accent/10 border-accent/20 text-accent' : ''}`}
                         onClick={() => setShowFilters(!showFilters)}
                         title="필터"
                     >
@@ -926,38 +927,44 @@ export default function Opportunities() {
                     </button>
                     <button
                         onClick={fetchOpportunities}
-                        className="p-1.5 text-gray-600 hover:bg-gray-200 rounded border border-gray-300 bg-white"
+                        className="p-1.5 text-muted-foreground hover:bg-secondary rounded border border-border bg-card"
                         title="새로고침"
                     >
                         <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
                     </button>
+
+                </div>
+
+                <div className="hidden md:flex items-center gap-2 px-3 py-1 bg-danger/10 text-danger rounded-full border border-danger/20">
+                    <AlertCircle size={14} />
+                    <span className="text-xs font-medium">모든 안건은 14일 안에 재접촉할 것</span>
                 </div>
                 <div className="flex items-center gap-2">
-                    <span className="text-xs text-gray-500 mr-2">{filteredOpportunities.length}개 항목 • 정렬 기준: {sortConfig ? (sortConfig.direction === 'asc' ? '오름차순' : '내림차순') : '기본'}</span>
+                    <span className="text-xs text-muted-foreground mr-2">{filteredOpportunities.length}개 항목 • 정렬 기준: {sortConfig ? (sortConfig.direction === 'asc' ? '오름차순' : '내림차순') : '기본'}</span>
                     <div className="relative">
                         <button
                             onClick={() => setIsMenuOpen(!isMenuOpen)}
-                            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+                            className="flex items-center gap-2 px-4 py-2 bg-accent text-white rounded-lg text-sm font-medium hover:bg-accent/90 transition-colors"
                         >
                             기능
                             <ChevronDown size={16} />
                         </button>
 
                         {isMenuOpen && (
-                            <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-50">
+                            <div className="absolute right-0 mt-2 w-48 bg-card rounded-lg shadow-lg border border-border py-1 z-50">
                                 <button
                                     onClick={() => {
                                         setIsCreateModalOpen(true);
                                         setIsMenuOpen(false);
                                     }}
-                                    className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                                    className="flex items-center gap-2 w-full px-4 py-2 text-sm text-muted-foreground hover:bg-secondary/30"
                                 >
                                     <Plus size={16} />
                                     새로 만들기
                                 </button>
                                 <button
                                     onClick={handleDeleteSelected}
-                                    className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                                    className="flex items-center gap-2 w-full px-4 py-2 text-sm text-danger hover:bg-danger/10"
                                 >
                                     <Trash2 size={16} />
                                     삭제
@@ -971,19 +978,19 @@ export default function Opportunities() {
             {/* Table */}
             <div className="flex-1 overflow-auto">
                 <table className="w-full text-left text-sm border-collapse">
-                    <thead className="bg-gray-50 sticky top-0 z-10">
+                    <thead className="bg-secondary/30 sticky top-0 z-10">
                         <tr>
-                            <th className="p-2 border-b border-gray-200 w-10 text-center">
+                            <th className="p-2 border-b border-border w-10 text-center">
                                 <input
                                     type="checkbox"
-                                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                    className="rounded border-border text-accent focus:ring-accent"
                                     checked={selectedItems.length === filteredOpportunities.length && filteredOpportunities.length > 0}
                                     onChange={toggleSelectAll}
                                 />
                             </th>
                             {visibleColumns.has('title') && (
-                                <th className="p-2 border-b border-gray-200 text-center text-base font-bold text-gray-700 min-w-[200px]" onClick={() => handleSort('title')}>
-                                    <div className="flex items-center justify-center cursor-pointer hover:text-gray-900 group">
+                                <th className="p-2 border-b border-border text-center text-base font-bold text-muted-foreground min-w-[200px]" onClick={() => handleSort('title')}>
+                                    <div className="flex items-center justify-center cursor-pointer hover:text-white group">
                                         안건
                                         {sortConfig?.key === 'title' ? (
                                             <ChevronDown size={12} className={`ml-1 transition-transform ${sortConfig.direction === 'asc' ? 'rotate-180' : ''}`} />
@@ -994,8 +1001,8 @@ export default function Opportunities() {
                                 </th>
                             )}
                             {visibleColumns.has('company') && (
-                                <th className="p-2 border-b border-gray-200 text-center text-base font-bold text-gray-700 min-w-[150px]" onClick={() => handleSort('company')}>
-                                    <div className="flex items-center justify-center cursor-pointer hover:text-gray-900 group">
+                                <th className="p-2 border-b border-border text-center text-base font-bold text-muted-foreground min-w-[150px]" onClick={() => handleSort('company')}>
+                                    <div className="flex items-center justify-center cursor-pointer hover:text-white group">
                                         업체명
                                         {sortConfig?.key === 'company' ? (
                                             <ChevronDown size={12} className={`ml-1 transition-transform ${sortConfig.direction === 'asc' ? 'rotate-180' : ''}`} />
@@ -1006,8 +1013,8 @@ export default function Opportunities() {
                                 </th>
                             )}
                             {visibleColumns.has('value') && (
-                                <th className="p-2 border-b border-gray-200 text-center text-base font-bold text-gray-700 min-w-[120px]" onClick={() => handleSort('value')}>
-                                    <div className="flex items-center justify-center cursor-pointer hover:text-gray-900 group">
+                                <th className="p-2 border-b border-border text-center text-base font-bold text-muted-foreground min-w-[120px]" onClick={() => handleSort('value')}>
+                                    <div className="flex items-center justify-center cursor-pointer hover:text-white group">
                                         예상 매출액
                                         {sortConfig?.key === 'value' ? (
                                             <ChevronDown size={12} className={`ml-1 transition-transform ${sortConfig.direction === 'asc' ? 'rotate-180' : ''}`} />
@@ -1018,8 +1025,8 @@ export default function Opportunities() {
                                 </th>
                             )}
                             {visibleColumns.has('stage') && (
-                                <th className="p-2 border-b border-gray-200 text-center text-base font-bold text-gray-700 min-w-[120px]" onClick={() => handleSort('stage')}>
-                                    <div className="flex items-center justify-center cursor-pointer hover:text-gray-900 group">
+                                <th className="p-2 border-b border-border text-center text-base font-bold text-muted-foreground min-w-[120px]" onClick={() => handleSort('stage')}>
+                                    <div className="flex items-center justify-center cursor-pointer hover:text-white group">
                                         진행 단계
                                         {sortConfig?.key === 'stage' ? (
                                             <ChevronDown size={12} className={`ml-1 transition-transform ${sortConfig.direction === 'asc' ? 'rotate-180' : ''}`} />
@@ -1030,8 +1037,8 @@ export default function Opportunities() {
                                 </th>
                             )}
                             {visibleColumns.has('success_probability') && (
-                                <th className="p-2 border-b border-gray-200 text-center text-base font-bold text-gray-700 min-w-[100px]" onClick={() => handleSort('success_probability')}>
-                                    <div className="flex items-center justify-center cursor-pointer hover:text-gray-900 group">
+                                <th className="p-2 border-b border-border text-center text-base font-bold text-muted-foreground min-w-[100px]" onClick={() => handleSort('success_probability')}>
+                                    <div className="flex items-center justify-center cursor-pointer hover:text-white group">
                                         성공 확률
                                         {sortConfig?.key === 'success_probability' ? (
                                             <ChevronDown size={12} className={`ml-1 transition-transform ${sortConfig.direction === 'asc' ? 'rotate-180' : ''}`} />
@@ -1042,8 +1049,8 @@ export default function Opportunities() {
                                 </th>
                             )}
                             {visibleColumns.has('date') && (
-                                <th className="p-2 border-b border-gray-200 text-center text-base font-bold text-gray-700 min-w-[100px]" onClick={() => handleSort('date')}>
-                                    <div className="flex items-center justify-center cursor-pointer hover:text-gray-900 group">
+                                <th className="p-2 border-b border-border text-center text-base font-bold text-muted-foreground min-w-[100px]" onClick={() => handleSort('date')}>
+                                    <div className="flex items-center justify-center cursor-pointer hover:text-white group">
                                         마감 일자
                                         {sortConfig?.key === 'date' ? (
                                             <ChevronDown size={12} className={`ml-1 transition-transform ${sortConfig.direction === 'asc' ? 'rotate-180' : ''}`} />
@@ -1054,8 +1061,8 @@ export default function Opportunities() {
                                 </th>
                             )}
                             {visibleColumns.has('meeting_date') && (
-                                <th className="p-2 border-b border-gray-200 text-center text-base font-bold text-gray-700 min-w-[100px]" onClick={() => handleSort('meeting_date')}>
-                                    <div className="flex items-center justify-center cursor-pointer hover:text-gray-900 group">
+                                <th className="p-2 border-b border-border text-center text-base font-bold text-muted-foreground min-w-[100px]" onClick={() => handleSort('meeting_date')}>
+                                    <div className="flex items-center justify-center cursor-pointer hover:text-white group">
                                         미팅 일자
                                         {sortConfig?.key === 'meeting_date' ? (
                                             <ChevronDown size={12} className={`ml-1 transition-transform ${sortConfig.direction === 'asc' ? 'rotate-180' : ''}`} />
@@ -1066,8 +1073,8 @@ export default function Opportunities() {
                                 </th>
                             )}
                             {visibleColumns.has('owner') && (
-                                <th className="p-2 border-b border-gray-200 text-center text-base font-bold text-gray-700 min-w-[100px]" onClick={() => handleSort('owner')}>
-                                    <div className="flex items-center justify-center cursor-pointer hover:text-gray-900 group">
+                                <th className="p-2 border-b border-border text-center text-base font-bold text-muted-foreground min-w-[100px]" onClick={() => handleSort('owner')}>
+                                    <div className="flex items-center justify-center cursor-pointer hover:text-white group">
                                         영업 담당자
                                         {sortConfig?.key === 'owner' ? (
                                             <ChevronDown size={12} className={`ml-1 transition-transform ${sortConfig.direction === 'asc' ? 'rotate-180' : ''}`} />
@@ -1078,8 +1085,8 @@ export default function Opportunities() {
                                 </th>
                             )}
                             {visibleColumns.has('created_at') && (
-                                <th className="p-2 border-b border-gray-200 text-center text-base font-bold text-gray-700 min-w-[100px]" onClick={() => handleSort('created_at')}>
-                                    <div className="flex items-center justify-center cursor-pointer hover:text-gray-900 group">
+                                <th className="p-2 border-b border-border text-center text-base font-bold text-muted-foreground min-w-[100px]" onClick={() => handleSort('created_at')}>
+                                    <div className="flex items-center justify-center cursor-pointer hover:text-white group">
                                         등록일
                                         {sortConfig?.key === 'created_at' ? (
                                             <ChevronDown size={12} className={`ml-1 transition-transform ${sortConfig.direction === 'asc' ? 'rotate-180' : ''}`} />
@@ -1089,51 +1096,51 @@ export default function Opportunities() {
                                     </div>
                                 </th>
                             )}
-                            <th className="p-2 border-b border-gray-200 w-10"></th>
+                            <th className="p-2 border-b border-border w-10"></th>
                         </tr>
                         {/* Filter Row */}
                         {showFilters && (
-                            <tr className="bg-gray-50">
-                                <th className="p-2 border-b border-gray-200"></th>
+                            <tr className="bg-secondary/30">
+                                <th className="p-2 border-b border-border"></th>
                                 {visibleColumns.has('title') && (
-                                    <th className="p-2 border-b border-gray-200">
+                                    <th className="p-2 border-b border-border">
                                         <input
                                             type="text"
                                             placeholder="필터..."
                                             value={filters.title || ''}
                                             onChange={(e) => handleFilterChange('title', e.target.value)}
-                                            className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                                            className="w-full px-2 py-1 text-xs bg-secondary text-white border border-border rounded focus:outline-none focus:border-accent"
                                         />
                                     </th>
                                 )}
                                 {visibleColumns.has('company') && (
-                                    <th className="p-2 border-b border-gray-200">
+                                    <th className="p-2 border-b border-border">
                                         <input
                                             type="text"
                                             placeholder="필터..."
                                             value={filters.company || ''}
                                             onChange={(e) => handleFilterChange('company', e.target.value)}
-                                            className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                                            className="w-full px-2 py-1 text-xs bg-secondary text-white border border-border rounded focus:outline-none focus:border-accent"
                                         />
                                     </th>
                                 )}
                                 {visibleColumns.has('value') && (
-                                    <th className="p-2 border-b border-gray-200">
+                                    <th className="p-2 border-b border-border">
                                         <input
                                             type="text"
                                             placeholder="필터..."
                                             value={filters.value || ''}
                                             onChange={(e) => handleFilterChange('value', e.target.value)}
-                                            className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                                            className="w-full px-2 py-1 text-xs bg-secondary text-white border border-border rounded focus:outline-none focus:border-accent"
                                         />
                                     </th>
                                 )}
                                 {visibleColumns.has('stage') && (
-                                    <th className="p-2 border-b border-gray-200">
+                                    <th className="p-2 border-b border-border">
                                         <select
                                             value={filters.stage || ''}
                                             onChange={(e) => handleFilterChange('stage', e.target.value)}
-                                            className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                                            className="w-full px-2 py-1 text-xs bg-secondary text-white border border-border rounded focus:outline-none focus:border-accent"
                                         >
                                             <option value="">전체</option>
                                             {STAGE_OPTIONS.map(opt => (
@@ -1143,44 +1150,44 @@ export default function Opportunities() {
                                     </th>
                                 )}
                                 {visibleColumns.has('success_probability') && (
-                                    <th className="p-2 border-b border-gray-200">
+                                    <th className="p-2 border-b border-border">
                                         <input
                                             type="text"
                                             placeholder="필터..."
                                             value={filters.success_probability || ''}
                                             onChange={(e) => handleFilterChange('success_probability', e.target.value)}
-                                            className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                                            className="w-full px-2 py-1 text-xs bg-secondary text-white border border-border rounded focus:outline-none focus:border-accent"
                                         />
                                     </th>
                                 )}
                                 {visibleColumns.has('date') && (
-                                    <th className="p-2 border-b border-gray-200">
+                                    <th className="p-2 border-b border-border">
                                         <input
                                             type="text"
                                             placeholder="필터..."
                                             value={filters.date || ''}
                                             onChange={(e) => handleFilterChange('date', e.target.value)}
-                                            className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                                            className="w-full px-2 py-1 text-xs bg-secondary text-white border border-border rounded focus:outline-none focus:border-accent"
                                         />
                                     </th>
                                 )}
                                 {visibleColumns.has('meeting_date') && (
-                                    <th className="p-2 border-b border-gray-200">
+                                    <th className="p-2 border-b border-border">
                                         <input
                                             type="text"
                                             placeholder="필터..."
                                             value={filters.meeting_date || ''}
                                             onChange={(e) => handleFilterChange('meeting_date', e.target.value)}
-                                            className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                                            className="w-full px-2 py-1 text-xs bg-secondary text-white border border-border rounded focus:outline-none focus:border-accent"
                                         />
                                     </th>
                                 )}
                                 {visibleColumns.has('owner') && (
-                                    <th className="p-2 border-b border-gray-200">
+                                    <th className="p-2 border-b border-border">
                                         <select
                                             value={filters.owner || ''}
                                             onChange={(e) => handleFilterChange('owner', e.target.value)}
-                                            className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                                            className="w-full px-2 py-1 text-xs bg-secondary text-white border border-border rounded focus:outline-none focus:border-accent"
                                         >
                                             <option value="">전체</option>
                                             {OWNER_OPTIONS.map(opt => (
@@ -1190,33 +1197,33 @@ export default function Opportunities() {
                                     </th>
                                 )}
                                 {visibleColumns.has('created_at') && (
-                                    <th className="p-2 border-b border-gray-200">
+                                    <th className="p-2 border-b border-border">
                                         <input
                                             type="text"
                                             placeholder="필터..."
                                             value={filters.created_at || ''}
                                             onChange={(e) => handleFilterChange('created_at', e.target.value)}
-                                            className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                                            className="w-full px-2 py-1 text-xs bg-secondary text-white border border-border rounded focus:outline-none focus:border-accent"
                                         />
                                     </th>
                                 )}
-                                <th className="p-2 border-b border-gray-200"></th>
+                                <th className="p-2 border-b border-border"></th>
                             </tr>
                         )}
                     </thead>
                     <tbody className="divide-y divide-gray-200">
                         {filteredOpportunities.map((op) => (
-                            <tr key={op.id} className="hover:bg-gray-50 group">
+                            <tr key={op.id} className="hover:bg-secondary/30 group">
                                 <td className="p-2 text-center">
                                     <input
                                         type="checkbox"
-                                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                        className="rounded border-border text-accent focus:ring-accent"
                                         checked={selectedItems.includes(String(op.id))}
                                         onChange={() => toggleSelectItem(String(op.id))}
                                     />
                                 </td>
                                 {visibleColumns.has('title') && (
-                                    <td className="p-2 font-medium text-blue-600 hover:underline cursor-pointer" onClick={() => handleTitleClick(op)}>
+                                    <td className="p-2 font-medium text-accent hover:underline cursor-pointer" onClick={() => handleTitleClick(op)}>
                                         {op.title}
                                     </td>
                                 )}
@@ -1224,14 +1231,14 @@ export default function Opportunities() {
                                     <td className="p-2">
                                         <button
                                             onClick={() => handleCompanyClick(op.company)}
-                                            className="text-gray-700 hover:text-blue-600 hover:underline text-left"
+                                            className="text-muted-foreground hover:text-accent hover:underline text-left"
                                         >
                                             {op.company}
                                         </button>
                                     </td>
                                 )}
                                 {visibleColumns.has('value') && (
-                                    <td className="p-2 text-gray-700">
+                                    <td className="p-2 text-muted-foreground">
                                         {formatCurrency(op.value)}
                                     </td>
                                 )}
@@ -1241,30 +1248,30 @@ export default function Opportunities() {
                                             <select
                                                 value={op.stage}
                                                 onChange={(e) => handleStageChange(String(op.id), e.target.value)}
-                                                className="appearance-none bg-transparent w-full pr-6 py-1 text-gray-700 focus:outline-none focus:bg-white focus:ring-1 focus:ring-blue-500 rounded cursor-pointer"
+                                                className="appearance-none bg-transparent w-full pr-6 py-1 text-muted-foreground focus:outline-none focus:bg-card focus:ring-1 focus:ring-accent rounded cursor-pointer"
                                             >
                                                 {STAGE_OPTIONS.map(opt => (
                                                     <option key={opt} value={opt}>{opt}</option>
                                                 ))}
                                             </select>
-                                            <div className="absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 opacity-0 group-hover/edit:opacity-100">
+                                            <div className="absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground opacity-0 group-hover/edit:opacity-100">
                                                 <Settings size={12} />
                                             </div>
                                         </div>
                                     </td>
                                 )}
                                 {visibleColumns.has('success_probability') && (
-                                    <td className="p-2 text-gray-700">
+                                    <td className="p-2 text-muted-foreground">
                                         {op.success_probability ? `${op.success_probability}% ` : '-'}
                                     </td>
                                 )}
                                 {visibleColumns.has('date') && (
-                                    <td className="p-2 text-gray-700">
+                                    <td className="p-2 text-muted-foreground">
                                         {op.date}
                                     </td>
                                 )}
                                 {visibleColumns.has('meeting_date') && (
-                                    <td className="p-2 text-gray-700">
+                                    <td className="p-2 text-muted-foreground">
                                         {op.meeting_date ? (() => {
                                             const date = new Date(op.meeting_date);
                                             const offset = date.getTimezoneOffset() * 60000;
@@ -1278,25 +1285,25 @@ export default function Opportunities() {
                                             <select
                                                 value={op.owner}
                                                 onChange={(e) => handleOwnerChange(String(op.id), e.target.value)}
-                                                className="appearance-none bg-transparent w-full pr-6 py-1 text-blue-600 focus:outline-none focus:bg-white focus:ring-1 focus:ring-blue-500 rounded cursor-pointer"
+                                                className="appearance-none bg-transparent w-full pr-6 py-1 text-accent focus:outline-none focus:bg-card focus:ring-1 focus:ring-accent rounded cursor-pointer"
                                             >
                                                 {OWNER_OPTIONS.map(opt => (
                                                     <option key={opt} value={opt}>{opt}</option>
                                                 ))}
                                             </select>
-                                            <div className="absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 opacity-0 group-hover/edit:opacity-100">
+                                            <div className="absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground opacity-0 group-hover/edit:opacity-100">
                                                 <Settings size={12} />
                                             </div>
                                         </div>
                                     </td>
                                 )}
                                 {visibleColumns.has('created_at') && (
-                                    <td className="p-2 text-gray-700">
+                                    <td className="p-2 text-muted-foreground">
                                         {op.created_at ? new Date(op.created_at).toISOString().split('T')[0] : '-'}
                                     </td>
                                 )}
                                 <td className="p-2 text-center">
-                                    <button className="text-gray-400 hover:text-blue-600 border border-gray-300 rounded p-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button className="text-muted-foreground hover:text-accent border border-border rounded p-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                                         <ChevronDown size={12} />
                                     </button>
                                 </td>
@@ -1307,198 +1314,200 @@ export default function Opportunities() {
             </div>
 
             {/* Create Modal */}
-            {isCreateModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-                    <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl mx-4 overflow-hidden flex flex-col max-h-[90vh]">
-                        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-                            <h2 className="text-lg font-semibold text-gray-900">새로운 기회 생성</h2>
-                            <button
-                                onClick={() => setIsCreateModalOpen(false)}
-                                className="text-gray-400 hover:text-gray-600 transition-colors"
-                            >
-                                <X size={20} />
-                            </button>
-                        </div>
-                        <form onSubmit={handleCreateSubmit} className="flex flex-col flex-1 overflow-hidden">
-                            <div className="flex-1 overflow-y-auto p-6 space-y-4">
-                                <div className="grid grid-cols-2 gap-6">
-                                    <div className="col-span-2">
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">안건</label>
-                                        <input
-                                            type="text"
-                                            name="title"
-                                            required
-                                            value={newOpportunity.title}
-                                            onChange={handleCreateInputChange}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            placeholder="예: 클라우드 도입 프로젝트"
-                                        />
-                                    </div>
-                                    <div>
-                                        <div className="relative">
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">업체명</label>
-                                            <input
-                                                type="text"
-                                                name="company"
-                                                required
-                                                value={newOpportunity.company}
-                                                onChange={handleCompanyInputChange}
-                                                onBlur={handleCompanyInputBlur}
-                                                onFocus={() => {
-                                                    if (newOpportunity.company) {
-                                                        searchAccounts(newOpportunity.company);
-                                                        setIsAccountDropdownOpen(true);
-                                                    }
-                                                }}
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                                placeholder="예: (주)미래시스템"
-                                                autoComplete="off"
-                                            />
-                                            {isAccountDropdownOpen && (
-                                                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-auto">
-                                                    {isSearching ? (
-                                                        <div className="px-4 py-2 text-sm text-gray-500">검색 중...</div>
-                                                    ) : searchedAccounts.length > 0 ? (
-                                                        searchedAccounts.map((account) => (
-                                                            <button
-                                                                key={account.id}
-                                                                type="button"
-                                                                onClick={() => handleSelectCompany(account.name, account.address)}
-                                                                className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 focus:outline-none focus:bg-gray-50"
-                                                            >
-                                                                {account.name}
-                                                            </button>
-                                                        ))
-                                                    ) : accountSearchQuery.trim() !== '' ? (
-                                                        <div className="px-4 py-2 text-sm text-gray-500">검색 결과가 없습니다.</div>
-                                                    ) : null}
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <div className="relative">
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">담당자</label>
-                                            <input
-                                                type="text"
-                                                name="contact_name"
-                                                value={newOpportunity.contact_name}
-                                                onChange={handleCreateInputChange}
-                                                onFocus={() => contactOptions.length > 0 && setIsContactDropdownOpen(true)}
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                                placeholder="고객 담당자 입력 또는 선택"
-                                                autoComplete="off"
-                                            />
-                                            {isContactDropdownOpen && contactOptions.length > 0 && (
-                                                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-auto">
-                                                    {contactOptions.map((contact, index) => (
-                                                        <button
-                                                            key={index}
-                                                            type="button"
-                                                            onClick={() => {
-                                                                setNewOpportunity(prev => ({ ...prev, contact_name: contact }));
-                                                                setIsContactDropdownOpen(false);
-                                                            }}
-                                                            className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 focus:outline-none focus:bg-gray-50"
-                                                        >
-                                                            {contact}
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">예상 매출액</label>
-                                        <input
-                                            type="text"
-                                            name="value"
-                                            value={newOpportunity.value === '' ? '' : Number(newOpportunity.value).toLocaleString()}
-                                            onChange={handleCreateInputChange}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">진행 단계</label>
-                                        <select
-                                            name="stage"
-                                            value={newOpportunity.stage}
-                                            onChange={handleCreateInputChange}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        >
-                                            {STAGE_OPTIONS.map(opt => (
-                                                <option key={opt} value={opt}>{opt}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">성공 확률</label>
-                                        <select
-                                            name="success_probability"
-                                            value={newOpportunity.success_probability ? `${newOpportunity.success_probability}%` : '10%'}
-                                            onChange={handleCreateInputChange}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        >
-                                            {PROBABILITY_OPTIONS.map(opt => (
-                                                <option key={opt} value={opt}>{opt}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">영업 담당자</label>
-                                        <select
-                                            name="owner"
-                                            value={newOpportunity.owner}
-                                            onChange={handleCreateInputChange}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        >
-                                            {OWNER_OPTIONS.map(opt => (
-                                                <option key={opt} value={opt}>{opt}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">마감 일자</label>
-                                        <input
-                                            type="date"
-                                            name="date"
-                                            required
-                                            value={newOpportunity.date}
-                                            onChange={handleCreateInputChange}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        />
-                                    </div>
-
-                                </div>
-                            </div>
-                            <div className="p-4 border-t border-gray-200 flex justify-end gap-2 bg-gray-50">
+            {
+                isCreateModalOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+                        <div className="bg-card rounded-lg shadow-xl w-full max-w-4xl mx-4 overflow-hidden flex flex-col max-h-[90vh]">
+                            <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+                                <h2 className="text-lg font-semibold text-white">새로운 기회 생성</h2>
                                 <button
-                                    type="button"
                                     onClick={() => setIsCreateModalOpen(false)}
-                                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                                    className="text-muted-foreground hover:text-muted-foreground transition-colors"
                                 >
-                                    취소
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
-                                >
-                                    저장
+                                    <X size={20} />
                                 </button>
                             </div>
-                        </form>
+                            <form onSubmit={handleCreateSubmit} className="flex flex-col flex-1 overflow-hidden">
+                                <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                                    <div className="grid grid-cols-2 gap-6">
+                                        <div className="col-span-2">
+                                            <label className="block text-sm font-medium text-muted-foreground mb-1">안건</label>
+                                            <input
+                                                type="text"
+                                                name="title"
+                                                required
+                                                value={newOpportunity.title}
+                                                onChange={handleCreateInputChange}
+                                                className="w-full px-3 py-2 bg-secondary text-white border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
+                                                placeholder="예: 클라우드 도입 프로젝트"
+                                            />
+                                        </div>
+                                        <div>
+                                            <div className="relative">
+                                                <label className="block text-sm font-medium text-muted-foreground mb-1">업체명</label>
+                                                <input
+                                                    type="text"
+                                                    name="company"
+                                                    required
+                                                    value={newOpportunity.company}
+                                                    onChange={handleCompanyInputChange}
+                                                    onBlur={handleCompanyInputBlur}
+                                                    onFocus={() => {
+                                                        if (newOpportunity.company) {
+                                                            searchAccounts(newOpportunity.company);
+                                                            setIsAccountDropdownOpen(true);
+                                                        }
+                                                    }}
+                                                    className="w-full px-3 py-2 bg-secondary text-white border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
+                                                    placeholder="예: (주)미래시스템"
+                                                    autoComplete="off"
+                                                />
+                                                {isAccountDropdownOpen && (
+                                                    <div className="absolute z-10 w-full mt-1 bg-card border border-border rounded-lg shadow-lg max-h-60 overflow-auto">
+                                                        {isSearching ? (
+                                                            <div className="px-4 py-2 text-sm text-muted-foreground">검색 중...</div>
+                                                        ) : searchedAccounts.length > 0 ? (
+                                                            searchedAccounts.map((account) => (
+                                                                <button
+                                                                    key={account.id}
+                                                                    type="button"
+                                                                    onClick={() => handleSelectCompany(account.name, account.address)}
+                                                                    className="w-full px-4 py-2 text-left text-sm hover:bg-secondary/30 focus:outline-none focus:bg-secondary/30"
+                                                                >
+                                                                    {account.name}
+                                                                </button>
+                                                            ))
+                                                        ) : accountSearchQuery.trim() !== '' ? (
+                                                            <div className="px-4 py-2 text-sm text-muted-foreground">검색 결과가 없습니다.</div>
+                                                        ) : null}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div className="relative">
+                                                <label className="block text-sm font-medium text-muted-foreground mb-1">담당자</label>
+                                                <input
+                                                    type="text"
+                                                    name="contact_name"
+                                                    value={newOpportunity.contact_name}
+                                                    onChange={handleCreateInputChange}
+                                                    onFocus={() => contactOptions.length > 0 && setIsContactDropdownOpen(true)}
+                                                    className="w-full px-3 py-2 bg-secondary text-white border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
+                                                    placeholder="고객 담당자 입력 또는 선택"
+                                                    autoComplete="off"
+                                                />
+                                                {isContactDropdownOpen && contactOptions.length > 0 && (
+                                                    <div className="absolute z-10 w-full mt-1 bg-card border border-border rounded-lg shadow-lg max-h-60 overflow-auto">
+                                                        {contactOptions.map((contact, index) => (
+                                                            <button
+                                                                key={index}
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    setNewOpportunity(prev => ({ ...prev, contact_name: contact }));
+                                                                    setIsContactDropdownOpen(false);
+                                                                }}
+                                                                className="w-full px-4 py-2 text-left text-sm hover:bg-secondary/30 focus:outline-none focus:bg-secondary/30"
+                                                            >
+                                                                {contact}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-muted-foreground mb-1">예상 매출액</label>
+                                            <input
+                                                type="text"
+                                                name="value"
+                                                value={newOpportunity.value === '' ? '' : Number(newOpportunity.value).toLocaleString()}
+                                                onChange={handleCreateInputChange}
+                                                className="w-full px-3 py-2 bg-secondary text-white border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-muted-foreground mb-1">진행 단계</label>
+                                            <select
+                                                name="stage"
+                                                value={newOpportunity.stage}
+                                                onChange={handleCreateInputChange}
+                                                className="w-full px-3 py-2 bg-secondary text-white border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
+                                            >
+                                                {STAGE_OPTIONS.map(opt => (
+                                                    <option key={opt} value={opt}>{opt}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-muted-foreground mb-1">성공 확률</label>
+                                            <select
+                                                name="success_probability"
+                                                value={newOpportunity.success_probability ? `${newOpportunity.success_probability}%` : '10%'}
+                                                onChange={handleCreateInputChange}
+                                                className="w-full px-3 py-2 bg-secondary text-white border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
+                                            >
+                                                {PROBABILITY_OPTIONS.map(opt => (
+                                                    <option key={opt} value={opt}>{opt}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-muted-foreground mb-1">영업 담당자</label>
+                                            <select
+                                                name="owner"
+                                                value={newOpportunity.owner}
+                                                onChange={handleCreateInputChange}
+                                                className="w-full px-3 py-2 bg-secondary text-white border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
+                                            >
+                                                {OWNER_OPTIONS.map(opt => (
+                                                    <option key={opt} value={opt}>{opt}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-muted-foreground mb-1">마감 일자</label>
+                                            <input
+                                                type="date"
+                                                name="date"
+                                                required
+                                                value={newOpportunity.date}
+                                                onChange={handleCreateInputChange}
+                                                className="w-full px-3 py-2 bg-secondary text-white border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
+                                            />
+                                        </div>
+
+                                    </div>
+                                </div>
+                                <div className="p-4 border-t border-border flex justify-end gap-2 bg-secondary/30">
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsCreateModalOpen(false)}
+                                        className="px-4 py-2 text-sm font-medium text-muted-foreground bg-secondary/50 rounded-lg hover:bg-secondary transition-colors"
+                                    >
+                                        취소
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        className="px-4 py-2 text-sm font-medium text-white bg-accent rounded-lg hover:bg-accent/90 transition-colors"
+                                    >
+                                        저장
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             {/* Edit Modal */}
             {
                 isEditModalOpen && editingOpportunity && (
                     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2">
-                        <div className="bg-white rounded-xl shadow-xl w-full max-w-[99vw] h-[98vh] overflow-hidden animate-in flex flex-col">
-                            <div className="flex justify-between items-center p-4 border-b border-gray-100">
-                                <h2 className="text-xl font-bold text-gray-900">기회 수정</h2>
-                                <button onClick={() => setIsEditModalOpen(false)} className="text-gray-400 hover:text-gray-600">
+                        <div className="bg-card rounded-xl shadow-xl w-full max-w-[99vw] h-[98vh] overflow-hidden animate-in flex flex-col">
+                            <div className="flex justify-between items-center p-4 border-b border-border">
+                                <h2 className="text-xl font-bold text-white">기회 수정</h2>
+                                <button onClick={() => setIsEditModalOpen(false)} className="text-muted-foreground hover:text-muted-foreground">
                                     <X size={24} />
                                 </button>
                             </div>
@@ -1509,19 +1518,19 @@ export default function Opportunities() {
                                         {/* Left Column: Form Fields */}
                                         <div className="w-1/3 space-y-4 overflow-y-auto pr-2">
                                             <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">안건</label>
+                                                <label className="block text-sm font-medium text-muted-foreground mb-1">안건</label>
                                                 <input
                                                     type="text"
                                                     name="title"
                                                     required
                                                     value={editingOpportunity.title}
                                                     onChange={handleEditInputChange}
-                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                    className="w-full px-3 py-2 bg-secondary text-white border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
                                                 />
                                             </div>
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div>
-                                                    <label className="block text-sm font-medium text-gray-700 mb-1">업체명</label>
+                                                    <label className="block text-sm font-medium text-muted-foreground mb-1">업체명</label>
                                                     <div className="relative">
                                                         <input
                                                             type="text"
@@ -1530,20 +1539,20 @@ export default function Opportunities() {
                                                             value={editingOpportunity.company}
                                                             onChange={handleCompanyInputChange}
                                                             onBlur={handleCompanyInputBlur}
-                                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                            className="w-full px-3 py-2 bg-secondary text-white border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
                                                             autoComplete="off"
                                                         />
                                                         {isAccountDropdownOpen && searchedAccounts.length > 0 && (
-                                                            <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                                                            <div className="absolute z-10 w-full mt-1 bg-card border border-border rounded-lg shadow-lg max-h-60 overflow-y-auto">
                                                                 {searchedAccounts.map(account => (
                                                                     <button
                                                                         key={account.id}
                                                                         type="button"
                                                                         onClick={() => handleSelectCompany(account.name, account.address)}
-                                                                        className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm"
+                                                                        className="w-full text-left px-4 py-2 hover:bg-secondary/30 text-sm"
                                                                     >
                                                                         <div className="font-medium">{account.name}</div>
-                                                                        {account.address && <div className="text-xs text-gray-500">{account.address}</div>}
+                                                                        {account.address && <div className="text-xs text-muted-foreground">{account.address}</div>}
                                                                     </button>
                                                                 ))}
                                                             </div>
@@ -1551,14 +1560,14 @@ export default function Opportunities() {
                                                     </div>
                                                 </div>
                                                 <div>
-                                                    <label className="block text-sm font-medium text-gray-700 mb-1">담당자</label>
+                                                    <label className="block text-sm font-medium text-muted-foreground mb-1">담당자</label>
                                                     <div className="relative">
                                                         <input
                                                             type="text"
                                                             name="contact_name"
                                                             value={editingOpportunity.contact_name || ''}
                                                             onChange={handleEditInputChange}
-                                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                            className="w-full px-3 py-2 bg-secondary text-white border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
                                                             list="contact-options"
                                                         />
                                                         <datalist id="contact-options">
@@ -1572,24 +1581,24 @@ export default function Opportunities() {
 
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div>
-                                                    <label className="block text-sm font-medium text-gray-700 mb-1">예상 매출액</label>
+                                                    <label className="block text-sm font-medium text-muted-foreground mb-1">예상 매출액</label>
                                                     <div className="relative">
                                                         <input
                                                             type="text"
                                                             name="value"
                                                             value={editingOpportunity.value ? Number(editingOpportunity.value).toLocaleString() : ''}
                                                             onChange={handleEditInputChange}
-                                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                            className="w-full px-3 py-2 bg-secondary text-white border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
                                                         />
                                                     </div>
                                                 </div>
                                                 <div>
-                                                    <label className="block text-sm font-medium text-gray-700 mb-1">진행 단계</label>
+                                                    <label className="block text-sm font-medium text-muted-foreground mb-1">진행 단계</label>
                                                     <select
                                                         name="stage"
                                                         value={editingOpportunity.stage}
                                                         onChange={handleEditInputChange}
-                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                        className="w-full px-3 py-2 bg-secondary text-white border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
                                                     >
                                                         {STAGE_OPTIONS.map(stage => (
                                                             <option key={stage} value={stage}>{stage}</option>
@@ -1600,12 +1609,12 @@ export default function Opportunities() {
 
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div>
-                                                    <label className="block text-sm font-medium text-gray-700 mb-1">성공 확률</label>
+                                                    <label className="block text-sm font-medium text-muted-foreground mb-1">성공 확률</label>
                                                     <select
                                                         name="success_probability"
                                                         value={editingOpportunity.success_probability ? `${editingOpportunity.success_probability}%` : '10%'}
                                                         onChange={handleEditInputChange}
-                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                        className="w-full px-3 py-2 bg-secondary text-white border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
                                                     >
                                                         {PROBABILITY_OPTIONS.map(prob => (
                                                             <option key={prob} value={prob}>{prob}</option>
@@ -1613,12 +1622,12 @@ export default function Opportunities() {
                                                     </select>
                                                 </div>
                                                 <div>
-                                                    <label className="block text-sm font-medium text-gray-700 mb-1">영업 담당자</label>
+                                                    <label className="block text-sm font-medium text-muted-foreground mb-1">영업 담당자</label>
                                                     <select
                                                         name="owner"
                                                         value={editingOpportunity.owner}
                                                         onChange={handleEditInputChange}
-                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                        className="w-full px-3 py-2 bg-secondary text-white border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
                                                     >
                                                         {OWNER_OPTIONS.map(owner => (
                                                             <option key={owner} value={owner}>{owner}</option>
@@ -1629,18 +1638,18 @@ export default function Opportunities() {
 
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div>
-                                                    <label className="block text-sm font-medium text-gray-700 mb-1">마감 일자</label>
+                                                    <label className="block text-sm font-medium text-muted-foreground mb-1">마감 일자</label>
                                                     <input
                                                         type="date"
                                                         name="date"
                                                         required
                                                         value={editingOpportunity.date}
                                                         onChange={handleEditInputChange}
-                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                        className="w-full px-3 py-2 bg-secondary text-white border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
                                                     />
                                                 </div>
                                                 <div>
-                                                    <label className="block text-sm font-medium text-gray-700 mb-1">미팅 일자</label>
+                                                    <label className="block text-sm font-medium text-muted-foreground mb-1">미팅 일자</label>
                                                     <div className="flex gap-2">
                                                         <input
                                                             type="date"
@@ -1654,7 +1663,7 @@ export default function Opportunities() {
                                                                     setEditingOpportunity(prev => ({ ...prev!, meeting_date: '' }));
                                                                 }
                                                             }}
-                                                            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                            className="flex-1 px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
                                                         />
                                                         <select
                                                             value={editingOpportunity.meeting_date ? editingOpportunity.meeting_date.split('T')[1] : '09:00'}
@@ -1663,7 +1672,7 @@ export default function Opportunities() {
                                                                 const date = editingOpportunity.meeting_date ? editingOpportunity.meeting_date.split('T')[0] : new Date().toISOString().split('T')[0];
                                                                 setEditingOpportunity(prev => ({ ...prev!, meeting_date: `${date}T${time}` }));
                                                             }}
-                                                            className="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                            className="w-24 px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
                                                         >
                                                             {TIME_OPTIONS.map(t => (
                                                                 <option key={t} value={t}>{t}</option>
@@ -1687,34 +1696,35 @@ export default function Opportunities() {
                                         </div>
 
                                         {/* Center Column: Memo Section & Todo List */}
-                                        <div className="w-1/3 border-r border-gray-100 px-6 flex flex-col h-full overflow-hidden pb-2">
-                                            <div className="flex-1 min-h-0 flex flex-col mb-4">
-                                                <h3 className="text-lg font-bold text-gray-900 mb-3">미팅 및 통화 메모</h3>
-                                                <div className="flex-1 overflow-y-auto bg-gray-50 p-4 rounded-lg mb-4 space-y-3">
+                                        <div className="w-1/3 border-r border-border px-6 flex flex-col h-full overflow-hidden pb-2">
+                                            {/* Memo Section - 50% */}
+                                            <div className="flex-1 min-h-0 flex flex-col mb-2" style={{ maxHeight: '50%' }}>
+                                                <h3 className="text-lg font-bold text-white mb-2 flex-shrink-0">미팅 및 통화 메모</h3>
+                                                <div className="flex-1 overflow-y-auto bg-secondary/30 p-3 rounded-lg mb-2 space-y-2">
                                                     {isMemoLoading ? (
-                                                        <p className="text-xs text-gray-500 text-center">로딩 중...</p>
+                                                        <p className="text-xs text-muted-foreground text-center">로딩 중...</p>
                                                     ) : memos.length > 0 ? (
                                                         memos.filter(m => !m.parent_id).map(memo => (
                                                             <div key={memo.id} className="space-y-2">
-                                                                <div className="bg-white p-2 rounded border border-gray-200 shadow-sm group relative">
+                                                                <div className="bg-card p-2 rounded border border-border shadow-sm group relative">
                                                                     {editingMemoId === memo.id ? (
                                                                         <div className="space-y-2">
                                                                             <textarea
                                                                                 value={editingMemoContent}
                                                                                 onChange={(e) => setEditingMemoContent(e.target.value)}
-                                                                                className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
+                                                                                className="w-full px-2 py-1 text-sm border border-border rounded focus:outline-none focus:ring-1 focus:ring-accent resize-none"
                                                                                 rows={3}
                                                                             />
                                                                             <div className="flex justify-end gap-2 mt-2">
                                                                                 <button
                                                                                     onClick={() => setEditingMemoId(null)}
-                                                                                    className="px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
+                                                                                    className="px-3 py-1.5 text-xs font-medium text-muted-foreground bg-secondary/50 rounded-md hover:bg-secondary transition-colors"
                                                                                 >
                                                                                     취소
                                                                                 </button>
                                                                                 <button
                                                                                     onClick={() => handleUpdateMemo(memo.id)}
-                                                                                    className="px-3 py-1.5 text-xs font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors"
+                                                                                    className="px-3 py-1.5 text-xs font-medium text-white bg-accent rounded-md hover:bg-accent/90 transition-colors"
                                                                                 >
                                                                                     저장
                                                                                 </button>
@@ -1722,9 +1732,9 @@ export default function Opportunities() {
                                                                         </div>
                                                                     ) : (
                                                                         <div>
-                                                                            <p className="text-sm text-gray-800 whitespace-pre-wrap pr-6">{memo.content}</p>
+                                                                            <p className="text-sm text-white whitespace-pre-wrap pr-6">{memo.content}</p>
                                                                             <div className="flex items-center justify-between mt-1">
-                                                                                <p className="text-xs text-gray-400">
+                                                                                <p className="text-xs text-muted-foreground">
                                                                                     {new Date(memo.created_at).toLocaleString()}
                                                                                     {memo.updated_at && ` (수정됨: ${new Date(memo.updated_at).toLocaleString()})`}
                                                                                 </p>
@@ -1744,23 +1754,31 @@ export default function Opportunities() {
                                                                                         )}
                                                                                         AI F/U 제안
                                                                                     </button>
+                                                                                    <button
+                                                                                        onClick={() => handleSendEmail(memo.content)}
+                                                                                        className="flex items-center gap-1 text-xs text-accent hover:text-accent bg-accent/10 px-2 py-0.5 rounded transition-colors"
+                                                                                        title="이메일 발송"
+                                                                                    >
+                                                                                        <Mail size={12} />
+                                                                                        이메일 발송
+                                                                                    </button>
                                                                                     <div className="relative">
                                                                                         <button
                                                                                             type="button"
                                                                                             onClick={() => setActiveMenuMemoId(activeMenuMemoId === memo.id ? null : memo.id)}
-                                                                                            className="p-1 text-gray-500 hover:text-gray-700 transition-colors"
+                                                                                            className="p-1 text-muted-foreground hover:text-muted-foreground transition-colors"
                                                                                             title="설정"
                                                                                         >
                                                                                             <Settings size={16} />
                                                                                         </button>
                                                                                         {activeMenuMemoId === memo.id && (
-                                                                                            <div className="absolute right-0 mt-1 w-24 bg-white rounded-md shadow-lg border border-gray-200 z-10">
+                                                                                            <div className="absolute right-0 mt-1 w-24 bg-card rounded-md shadow-lg border border-border z-10">
                                                                                                 <button
                                                                                                     onClick={() => {
                                                                                                         startEditingMemo(memo);
                                                                                                         setActiveMenuMemoId(null);
                                                                                                     }}
-                                                                                                    className="block w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-100 first:rounded-t-md"
+                                                                                                    className="block w-full text-left px-4 py-2 text-xs text-muted-foreground hover:bg-secondary/50 first:rounded-t-md"
                                                                                                 >
                                                                                                     수정
                                                                                                 </button>
@@ -1769,7 +1787,7 @@ export default function Opportunities() {
                                                                                                         handleDeleteMemo(memo.id);
                                                                                                         setActiveMenuMemoId(null);
                                                                                                     }}
-                                                                                                    className="block w-full text-left px-4 py-2 text-xs text-red-600 hover:bg-gray-100 last:rounded-b-md"
+                                                                                                    className="block w-full text-left px-4 py-2 text-xs text-danger hover:bg-secondary/50 last:rounded-b-md"
                                                                                                 >
                                                                                                     삭제
                                                                                                 </button>
@@ -1783,38 +1801,30 @@ export default function Opportunities() {
                                                                 </div>
                                                                 {/* Replies */}
                                                                 {memos.filter(reply => reply.parent_id === memo.id).map(reply => (
-                                                                    <div key={reply.id} className="ml-6 bg-purple-50 p-2 rounded border border-purple-100 shadow-sm relative">
-                                                                        <p className="text-sm text-gray-800 whitespace-pre-wrap">{reply.content}</p>
+                                                                    <div key={reply.id} className="ml-4 bg-purple-50/10 p-2 rounded border border-purple-200/20 shadow-sm group relative">
+                                                                        <p className="text-sm text-white whitespace-pre-wrap pr-6">{reply.content}</p>
                                                                         <div className="flex items-center justify-between mt-1">
-                                                                            <p className="text-xs text-gray-400">
+                                                                            <p className="text-xs text-muted-foreground">
                                                                                 {new Date(reply.created_at).toLocaleString()}
                                                                             </p>
                                                                             <div className="flex items-center gap-2">
-                                                                                <button
-                                                                                    onClick={() => handleSendEmail(reply.content)}
-                                                                                    className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 bg-blue-50 px-2 py-0.5 rounded transition-colors"
-                                                                                    title="이메일 발송"
-                                                                                >
-                                                                                    <Mail size={12} />
-                                                                                    이메일 발송
-                                                                                </button>
                                                                                 <div className="relative">
                                                                                     <button
                                                                                         type="button"
                                                                                         onClick={() => setActiveMenuMemoId(activeMenuMemoId === reply.id ? null : reply.id)}
-                                                                                        className="p-1 text-gray-500 hover:text-gray-700 transition-colors"
+                                                                                        className="p-1 text-muted-foreground hover:text-muted-foreground transition-colors"
                                                                                         title="설정"
                                                                                     >
                                                                                         <Settings size={16} />
                                                                                     </button>
                                                                                     {activeMenuMemoId === reply.id && (
-                                                                                        <div className="absolute right-0 mt-1 w-24 bg-white rounded-md shadow-lg border border-gray-200 z-10">
+                                                                                        <div className="absolute right-0 mt-1 w-24 bg-card rounded-md shadow-lg border border-border z-10">
                                                                                             <button
                                                                                                 onClick={() => {
                                                                                                     startEditingMemo(reply);
                                                                                                     setActiveMenuMemoId(null);
                                                                                                 }}
-                                                                                                className="block w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-100 first:rounded-t-md"
+                                                                                                className="block w-full text-left px-4 py-2 text-xs text-muted-foreground hover:bg-secondary/50 first:rounded-t-md"
                                                                                             >
                                                                                                 수정
                                                                                             </button>
@@ -1823,7 +1833,7 @@ export default function Opportunities() {
                                                                                                     handleDeleteMemo(reply.id);
                                                                                                     setActiveMenuMemoId(null);
                                                                                                 }}
-                                                                                                className="block w-full text-left px-4 py-2 text-xs text-red-600 hover:bg-gray-100 last:rounded-b-md"
+                                                                                                className="block w-full text-left px-4 py-2 text-xs text-danger hover:bg-secondary/50 last:rounded-b-md"
                                                                                             >
                                                                                                 삭제
                                                                                             </button>
@@ -1837,29 +1847,30 @@ export default function Opportunities() {
                                                             </div>
                                                         ))
                                                     ) : (
-                                                        <p className="text-xs text-gray-400 text-center">등록된 메모가 없습니다.</p>
+                                                        <p className="text-xs text-muted-foreground text-center">등록된 메모가 없습니다.</p>
                                                     )}
                                                 </div>
-                                                <div className="flex gap-2 mt-auto">
+                                                <div className="flex gap-2 flex-shrink-0">
                                                     <textarea
                                                         value={newMemo}
                                                         onChange={(e) => setNewMemo(e.target.value)}
                                                         placeholder="메모를 입력하세요..."
-                                                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none h-24"
+                                                        className="flex-1 px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent resize-none h-16"
                                                     />
-                                                    <div className="mt-4 flex justify-end">
+                                                    <div className="flex items-end">
                                                         <button
                                                             type="button"
                                                             onClick={handleAddMemo}
                                                             disabled={!newMemo.trim()}
-                                                            className="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium transition-colors"
+                                                            className="px-4 py-2 bg-secondary/50 text-muted-foreground rounded-lg hover:bg-secondary disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium transition-colors"
                                                         >
                                                             등록
                                                         </button>
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div className="h-[150px] min-h-0">
+                                            {/* Todo List - 50% */}
+                                            <div className="flex-1 min-h-0" style={{ maxHeight: '50%' }}>
                                                 <TodoList opportunityId={editingOpportunity.id} />
                                             </div>
                                         </div>
@@ -1876,17 +1887,17 @@ export default function Opportunities() {
                                         </div>
                                     </div>
                                 </div>
-                                <div className="p-6 border-t border-gray-200 flex justify-end gap-2 bg-gray-50">
+                                <div className="p-6 border-t border-border flex justify-end gap-2 bg-secondary/30">
                                     <button
                                         type="button"
                                         onClick={() => setIsEditModalOpen(false)}
-                                        className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                                        className="px-4 py-2 text-sm font-medium text-muted-foreground bg-secondary/50 rounded-lg hover:bg-secondary transition-colors"
                                     >
                                         취소
                                     </button>
                                     <button
                                         type="submit"
-                                        className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+                                        className="px-4 py-2 text-sm font-medium text-white bg-accent rounded-lg hover:bg-accent/90 transition-colors"
                                     >
                                         저장
                                     </button>

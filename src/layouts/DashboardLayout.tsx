@@ -25,8 +25,8 @@ const NavItem = ({ item }: { item: any }) => {
                 <button
                     onClick={() => setIsOpen(!isOpen)}
                     className={cn(
-                        "flex items-center gap-2 px-1 py-2 text-sm font-bold transition-colors hover:text-blue-600",
-                        isOpen ? "text-blue-600" : "text-gray-600"
+                        "flex items-center gap-2 px-3 py-2 text-sm font-medium transition-colors rounded-md hover:bg-secondary hover:text-white",
+                        isOpen ? "text-white bg-secondary" : "text-muted-foreground"
                     )}
                 >
                     <item.icon size={18} />
@@ -35,7 +35,7 @@ const NavItem = ({ item }: { item: any }) => {
                 </button>
 
                 {isOpen && (
-                    <div className="absolute top-full left-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-100 py-2 z-50 animate-in fade-in zoom-in-95 duration-100">
+                    <div className="absolute top-full left-0 mt-2 w-56 bg-card rounded-lg shadow-2xl border border-border py-2 z-50 animate-in fade-in zoom-in-95 duration-100">
                         {item.children.map((child: any) => (
                             <NavLink
                                 key={child.path}
@@ -43,8 +43,8 @@ const NavItem = ({ item }: { item: any }) => {
                                 onClick={() => setIsOpen(false)}
                                 className={({ isActive }) =>
                                     cn(
-                                        "block px-4 py-2.5 text-sm transition-colors hover:bg-gray-50 hover:text-blue-600",
-                                        isActive ? "text-blue-600 font-bold bg-blue-50/50" : "text-gray-600 font-bold"
+                                        "block px-4 py-2.5 text-sm transition-colors hover:bg-secondary",
+                                        isActive ? "text-accent font-semibold bg-secondary/50" : "text-muted-foreground hover:text-white"
                                     )
                                 }
                             >
@@ -62,8 +62,8 @@ const NavItem = ({ item }: { item: any }) => {
             to={item.path}
             className={({ isActive }) =>
                 cn(
-                    "flex items-center gap-2 px-1 py-2 text-sm font-bold transition-colors hover:text-blue-600",
-                    isActive ? "text-blue-600" : "text-gray-600"
+                    "flex items-center gap-2 px-3 py-2 text-sm font-medium transition-colors rounded-md hover:bg-secondary hover:text-white",
+                    isActive ? "text-white bg-secondary" : "text-muted-foreground"
                 )
             }
         >
@@ -91,7 +91,7 @@ export default function DashboardLayout() {
     };
 
     const navItems = [
-        { icon: LayoutDashboard, label: '홈', path: '/' },
+        { icon: LayoutDashboard, label: '대시보드', path: '/' },
         { icon: Briefcase, label: '영업 기회', path: '/opportunities' },
         { icon: BarChart2, label: '실적 관리', path: '/sales-performance' },
         {
@@ -124,17 +124,17 @@ export default function DashboardLayout() {
     ];
 
     return (
-        <div className="min-h-screen bg-gray-50 flex flex-col">
-            <header className="bg-white border-b border-gray-200 sticky top-0 z-40">
+        <div className="min-h-screen bg-background flex flex-col">
+            <header className="bg-background border-b border-border sticky top-0 z-40">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex h-16 items-center justify-between">
                         {/* Logo */}
                         <div className="flex-shrink-0 flex items-center">
-                            <span className="text-xl font-bold text-gray-900 tracking-tight">Convum CRM</span>
+                            <span className="text-xl font-bold text-white tracking-tight">Convum CRM</span>
                         </div>
 
                         {/* Navigation */}
-                        <nav className="hidden md:flex items-center gap-8 ml-12">
+                        <nav className="hidden md:flex items-center gap-1 ml-12">
                             {navItems.map((item) => (
                                 <NavItem key={item.label} item={item} />
                             ))}
@@ -144,15 +144,15 @@ export default function DashboardLayout() {
                         <div className="flex items-center gap-4 ml-auto">
                             <div className="flex items-center gap-3">
                                 <div className="text-right hidden sm:block">
-                                    <p className="text-sm font-medium text-gray-900">{userEmail}</p>
+                                    <p className="text-sm font-medium text-white">{userEmail}</p>
                                 </div>
-                                <div className="h-8 w-8 rounded-full bg-gray-900 text-white flex items-center justify-center text-sm font-medium">
+                                <div className="h-9 w-9 rounded-full bg-accent text-white flex items-center justify-center text-sm font-semibold">
                                     {userEmail ? userEmail[0].toUpperCase() : 'U'}
                                 </div>
                             </div>
                             <button
                                 onClick={handleLogout}
-                                className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+                                className="p-2 text-muted-foreground hover:text-white hover:bg-secondary rounded-md transition-colors"
                                 title="로그아웃"
                             >
                                 <LogOut size={20} />

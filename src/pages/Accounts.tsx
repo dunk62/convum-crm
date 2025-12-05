@@ -5,8 +5,8 @@ import { cn } from '../lib/utils';
 
 const DetailItem = ({ label, value, className = "" }: { label: string; value: string; className?: string }) => (
     <div className={`space-y-1 ${className}`}>
-        <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">{label}</label>
-        <p className="text-sm font-medium text-gray-900 break-words">{value}</p>
+        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{label}</label>
+        <p className="text-sm font-medium text-white break-words">{value}</p>
     </div>
 );
 
@@ -264,13 +264,13 @@ export default function Accounts() {
         <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-gray-900">고객 정보</h1>
-                    <p className="text-gray-500 mt-1">고객사 및 관계를 관리합니다.</p>
+                    <h1 className="text-3xl font-bold tracking-tight text-white">고객 정보</h1>
+                    <p className="text-muted-foreground mt-1">고객사 및 관계를 관리합니다.</p>
                 </div>
                 <div className="flex gap-2">
                     <button
                         onClick={fetchAccounts}
-                        className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                        className="p-2 text-muted-foreground hover:text-muted-foreground hover:bg-secondary/50 rounded-lg transition-colors"
                         title="새로고침"
                     >
                         {isLoading ? <Loader2 size={20} className="animate-spin" /> : <RefreshCw size={20} />}
@@ -285,7 +285,7 @@ export default function Accounts() {
                         </button>
 
                         {isMenuOpen && (
-                            <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-10">
+                            <div className="absolute right-0 mt-2 w-48 bg-card rounded-lg shadow-lg border border-border py-1 z-10">
                                 <button
                                     onClick={() => {
                                         setIsEditMode(false);
@@ -295,21 +295,21 @@ export default function Accounts() {
                                         setIsCreateModalOpen(true);
                                         setIsMenuOpen(false);
                                     }}
-                                    className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                                    className="flex items-center gap-2 w-full px-4 py-2 text-sm text-muted-foreground hover:bg-secondary/30"
                                 >
                                     <Plus size={16} />
                                     새로 만들기
                                 </button>
                                 <button
                                     onClick={handleEditSelected}
-                                    className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                                    className="flex items-center gap-2 w-full px-4 py-2 text-sm text-muted-foreground hover:bg-secondary/30"
                                 >
                                     <Edit2 size={16} />
                                     수정
                                 </button>
                                 <button
                                     onClick={handleDeleteSelected}
-                                    className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                                    className="flex items-center gap-2 w-full px-4 py-2 text-sm text-danger hover:bg-danger/10"
                                 >
                                     <Trash2 size={16} />
                                     삭제
@@ -321,20 +321,20 @@ export default function Accounts() {
             </div>
 
             {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center gap-2">
+                <div className="bg-danger/10 border border-danger/20 text-danger px-4 py-3 rounded-lg flex items-center gap-2">
                     <AlertCircle size={20} />
                     <p>{error}</p>
                 </div>
             )}
 
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-                <div className="p-4 border-b border-gray-200 flex flex-col sm:flex-row gap-4">
+            <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
+                <div className="p-4 border-b border-border flex flex-col sm:flex-row gap-4">
                     <div className="relative flex-1">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={20} />
                         <input
                             type="text"
                             placeholder="업체명 검색..."
-                            className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
+                            className="w-full pl-10 pr-4 py-2 bg-secondary text-white border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
                             value={searchTerm}
                             onChange={(e) => {
                                 setSearchTerm(e.target.value);
@@ -347,38 +347,38 @@ export default function Accounts() {
 
                 <div className="overflow-x-auto">
                     <table className="w-full text-left text-sm">
-                        <thead className="bg-gray-50 border-b border-gray-200">
+                        <thead className="bg-secondary/30 border-b border-border">
                             <tr>
-                                <th className="px-6 py-3 text-center text-base font-bold text-gray-700 whitespace-nowrap">
+                                <th className="px-6 py-3 text-center text-base font-bold text-muted-foreground whitespace-nowrap">
                                     <div className="flex items-center justify-center gap-2">
                                         <input
                                             type="checkbox"
                                             onChange={handleSelectAll}
                                             checked={paginatedAccounts.length > 0 && selectedIds.size === paginatedAccounts.length}
-                                            className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                                            className="w-4 h-4 rounded border-border text-primary focus:ring-primary cursor-pointer"
                                         />
                                         업체명
                                     </div>
                                 </th>
-                                <th className="px-6 py-3 text-center text-base font-bold text-gray-700 whitespace-nowrap">산업군</th>
-                                <th className="px-6 py-3 text-center text-base font-bold text-gray-700 whitespace-nowrap">대표전화</th>
-                                <th className="px-6 py-3 text-center text-base font-bold text-gray-700 whitespace-nowrap">홈페이지</th>
-                                <th className="px-6 py-3 text-center text-base font-bold text-gray-700 whitespace-nowrap">주소</th>
-                                <th className="px-6 py-3 text-center text-base font-bold text-gray-700 whitespace-nowrap">등록일</th>
-                                <th className="px-6 py-3 text-center text-base font-bold text-gray-700 whitespace-nowrap"></th>
+                                <th className="px-6 py-3 text-center text-base font-bold text-muted-foreground whitespace-nowrap">산업군</th>
+                                <th className="px-6 py-3 text-center text-base font-bold text-muted-foreground whitespace-nowrap">대표전화</th>
+                                <th className="px-6 py-3 text-center text-base font-bold text-muted-foreground whitespace-nowrap">홈페이지</th>
+                                <th className="px-6 py-3 text-center text-base font-bold text-muted-foreground whitespace-nowrap">주소</th>
+                                <th className="px-6 py-3 text-center text-base font-bold text-muted-foreground whitespace-nowrap">등록일</th>
+                                <th className="px-6 py-3 text-center text-base font-bold text-muted-foreground whitespace-nowrap"></th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
                             {paginatedAccounts.map((account, index) => (
-                                <tr key={account.id} className="hover:bg-gray-50 transition-colors group">
+                                <tr key={account.id} className="hover:bg-secondary/30 transition-colors group">
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-4">
-                                            <span className="text-gray-500 font-medium min-w-[20px]">{startIndex + index + 1}.</span>
+                                            <span className="text-muted-foreground font-medium min-w-[20px]">{startIndex + index + 1}.</span>
                                             <input
                                                 type="checkbox"
                                                 checked={selectedIds.has(account.id)}
                                                 onChange={() => handleCheckboxChange(account.id)}
-                                                className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                                                className="w-4 h-4 rounded border-border text-primary focus:ring-primary cursor-pointer"
                                                 onClick={(e) => e.stopPropagation()}
                                             />
                                             <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
@@ -390,25 +390,25 @@ export default function Accounts() {
                                                     setActiveTab('details');
                                                     fetchContacts(account.id);
                                                 }}
-                                                className="font-medium text-gray-900 hover:text-primary hover:underline text-left"
+                                                className="font-medium text-white hover:text-primary hover:underline text-left"
                                             >
                                                 {account.name}
                                             </button>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4 text-gray-600">{account.industry}</td>
-                                    <td className="px-6 py-4 text-gray-600">{account.mainPhone || '-'}</td>
-                                    <td className="px-6 py-4 text-gray-600">
+                                    <td className="px-6 py-4 text-muted-foreground">{account.industry}</td>
+                                    <td className="px-6 py-4 text-muted-foreground">{account.mainPhone || '-'}</td>
+                                    <td className="px-6 py-4 text-muted-foreground">
                                         {account.website ? (
-                                            <a href={account.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                                            <a href={account.website} target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">
                                                 {account.website}
                                             </a>
                                         ) : '-'}
                                     </td>
-                                    <td className="px-6 py-4 text-gray-600 truncate max-w-xs" title={account.address}>{account.address || '-'}</td>
-                                    <td className="px-6 py-4 text-gray-600">{account.registrationDate || '-'}</td>
+                                    <td className="px-6 py-4 text-muted-foreground truncate max-w-xs" title={account.address}>{account.address || '-'}</td>
+                                    <td className="px-6 py-4 text-muted-foreground">{account.registrationDate || '-'}</td>
                                     <td className="px-6 py-4 text-right">
-                                        <button className="text-gray-400 hover:text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <button className="text-muted-foreground hover:text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
                                             <MoreHorizontal size={16} />
                                         </button>
                                     </td>
@@ -418,13 +418,13 @@ export default function Accounts() {
                     </table >
                 </div >
 
-                <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex items-center justify-between text-sm text-gray-500">
+                <div className="px-6 py-4 border-t border-border bg-secondary/30 flex items-center justify-between text-sm text-muted-foreground">
                     <span>Showing {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredAccounts.length)} of {filteredAccounts.length} accounts</span>
                     <div className="flex items-center gap-2">
                         <button
                             onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                             disabled={currentPage === 1}
-                            className="flex items-center gap-1 px-3 py-1 border border-gray-200 rounded hover:bg-white disabled:opacity-50 disabled:hover:bg-transparent"
+                            className="flex items-center gap-1 px-3 py-1 border border-border rounded hover:bg-card disabled:opacity-50 disabled:hover:bg-transparent"
                         >
                             <ChevronLeft size={16} />
                             Previous
@@ -453,15 +453,15 @@ export default function Accounts() {
                                         setPageInput(String(currentPage));
                                     }
                                 }}
-                                className="w-12 px-2 py-1 text-center border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                                className="w-12 px-2 py-1 text-center border border-border rounded focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                             />
-                            <span className="text-gray-400">/ {totalPages}</span>
+                            <span className="text-muted-foreground">/ {totalPages}</span>
                         </div>
 
                         <button
                             onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                             disabled={currentPage === totalPages}
-                            className="flex items-center gap-1 px-3 py-1 border border-gray-200 rounded hover:bg-white disabled:opacity-50 disabled:hover:bg-transparent"
+                            className="flex items-center gap-1 px-3 py-1 border border-border rounded hover:bg-card disabled:opacity-50 disabled:hover:bg-transparent"
                         >
                             Next
                             <ChevronRight size={16} />
@@ -474,26 +474,26 @@ export default function Accounts() {
             {
                 selectedAccount && (
                     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                        <div className="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200 flex flex-col max-h-[90vh]">
-                            <div className="flex items-center justify-between p-6 border-b border-gray-100">
-                                <h2 className="text-xl font-semibold text-gray-900">업체 정보</h2>
+                        <div className="bg-card rounded-xl shadow-xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200 flex flex-col max-h-[90vh]">
+                            <div className="flex items-center justify-between p-6 border-b border-border">
+                                <h2 className="text-xl font-semibold text-white">업체 정보</h2>
                                 <button
                                     onClick={() => setSelectedAccount(null)}
-                                    className="text-gray-400 hover:text-gray-600 transition-colors"
+                                    className="text-muted-foreground hover:text-muted-foreground transition-colors"
                                 >
                                     <X size={20} />
                                 </button>
                             </div>
 
                             {/* Tabs */}
-                            <div className="flex border-b border-gray-200 px-6">
+                            <div className="flex border-b border-border px-6">
                                 <button
                                     onClick={() => setActiveTab('details')}
                                     className={cn(
                                         "px-4 py-3 text-sm font-medium border-b-2 transition-colors",
                                         activeTab === 'details'
                                             ? "border-primary text-primary"
-                                            : "border-transparent text-gray-500 hover:text-gray-700"
+                                            : "border-transparent text-muted-foreground hover:text-muted-foreground"
                                     )}
                                 >
                                     상세 정보
@@ -504,7 +504,7 @@ export default function Accounts() {
                                         "px-4 py-3 text-sm font-medium border-b-2 transition-colors",
                                         activeTab === 'contacts'
                                             ? "border-primary text-primary"
-                                            : "border-transparent text-gray-500 hover:text-gray-700"
+                                            : "border-transparent text-muted-foreground hover:text-muted-foreground"
                                     )}
                                 >
                                     담당자 목록
@@ -514,14 +514,14 @@ export default function Accounts() {
                             <div className="p-6 overflow-y-auto flex-1">
                                 {activeTab === 'details' ? (
                                     <>
-                                        <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg border border-gray-100 mb-6">
-                                            <div className="w-12 h-12 rounded-lg bg-white border border-gray-200 flex items-center justify-center text-primary shadow-sm">
+                                        <div className="flex items-center gap-4 p-4 bg-secondary/30 rounded-lg border border-border mb-6">
+                                            <div className="w-12 h-12 rounded-lg bg-card border border-border flex items-center justify-center text-primary shadow-sm">
                                                 <Building2 size={24} />
                                             </div>
                                             <div>
-                                                <h3 className="font-bold text-lg text-gray-900">{selectedAccount.name}</h3>
-                                                <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
-                                                    <span className="px-2 py-0.5 bg-white border border-gray-200 rounded text-xs">
+                                                <h3 className="font-bold text-lg text-white">{selectedAccount.name}</h3>
+                                                <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                                                    <span className="px-2 py-0.5 bg-card border border-border rounded text-xs">
                                                         {selectedAccount.industry}
                                                     </span>
                                                 </div>
@@ -555,59 +555,59 @@ export default function Accounts() {
                                         </div>
 
                                         {isContactFormOpen ? (
-                                            <form onSubmit={handleSaveContact} className="bg-gray-50 p-4 rounded-lg border border-gray-200 space-y-4">
+                                            <form onSubmit={handleSaveContact} className="bg-secondary/30 p-4 rounded-lg border border-border space-y-4">
                                                 <div className="grid grid-cols-2 gap-4">
                                                     <div>
-                                                        <label className="block text-xs font-medium text-gray-500 mb-1">이름</label>
-                                                        <input required type="text" className="w-full p-2 border rounded text-sm" value={newContact.name || ''} onChange={e => setNewContact({ ...newContact, name: e.target.value })} />
+                                                        <label className="block text-xs font-medium text-muted-foreground mb-1">이름</label>
+                                                        <input required type="text" className="w-full p-2 bg-secondary text-white border border-border rounded text-sm" value={newContact.name || ''} onChange={e => setNewContact({ ...newContact, name: e.target.value })} />
                                                     </div>
                                                     <div>
-                                                        <label className="block text-xs font-medium text-gray-500 mb-1">직급</label>
-                                                        <input type="text" className="w-full p-2 border rounded text-sm" value={newContact.position || ''} onChange={e => setNewContact({ ...newContact, position: e.target.value })} />
+                                                        <label className="block text-xs font-medium text-muted-foreground mb-1">직급</label>
+                                                        <input type="text" className="w-full p-2 bg-secondary text-white border border-border rounded text-sm" value={newContact.position || ''} onChange={e => setNewContact({ ...newContact, position: e.target.value })} />
                                                     </div>
                                                     <div>
-                                                        <label className="block text-xs font-medium text-gray-500 mb-1">부서</label>
-                                                        <input type="text" className="w-full p-2 border rounded text-sm" value={newContact.department || ''} onChange={e => setNewContact({ ...newContact, department: e.target.value })} />
+                                                        <label className="block text-xs font-medium text-muted-foreground mb-1">부서</label>
+                                                        <input type="text" className="w-full p-2 bg-secondary text-white border border-border rounded text-sm" value={newContact.department || ''} onChange={e => setNewContact({ ...newContact, department: e.target.value })} />
                                                     </div>
                                                     <div>
-                                                        <label className="block text-xs font-medium text-gray-500 mb-1">전화번호</label>
-                                                        <input type="text" className="w-full p-2 border rounded text-sm" value={newContact.phone || ''} onChange={e => setNewContact({ ...newContact, phone: e.target.value })} />
+                                                        <label className="block text-xs font-medium text-muted-foreground mb-1">전화번호</label>
+                                                        <input type="text" className="w-full p-2 bg-secondary text-white border border-border rounded text-sm" value={newContact.phone || ''} onChange={e => setNewContact({ ...newContact, phone: e.target.value })} />
                                                     </div>
                                                     <div className="col-span-2">
-                                                        <label className="block text-xs font-medium text-gray-500 mb-1">이메일</label>
-                                                        <input type="email" className="w-full p-2 border rounded text-sm" value={newContact.email || ''} onChange={e => setNewContact({ ...newContact, email: e.target.value })} />
+                                                        <label className="block text-xs font-medium text-muted-foreground mb-1">이메일</label>
+                                                        <input type="email" className="w-full p-2 bg-secondary text-white border border-border rounded text-sm" value={newContact.email || ''} onChange={e => setNewContact({ ...newContact, email: e.target.value })} />
                                                     </div>
                                                     <div className="col-span-2">
-                                                        <label className="block text-xs font-medium text-gray-500 mb-1">메모</label>
-                                                        <textarea className="w-full p-2 border rounded text-sm" rows={2} value={newContact.memo || ''} onChange={e => setNewContact({ ...newContact, memo: e.target.value })} />
+                                                        <label className="block text-xs font-medium text-muted-foreground mb-1">메모</label>
+                                                        <textarea className="w-full p-2 bg-secondary text-white border border-border rounded text-sm" rows={2} value={newContact.memo || ''} onChange={e => setNewContact({ ...newContact, memo: e.target.value })} />
                                                     </div>
                                                 </div>
                                                 <div className="flex justify-end gap-2">
-                                                    <button type="button" onClick={() => setIsContactFormOpen(false)} className="px-3 py-1.5 text-sm bg-white border rounded hover:bg-gray-50">취소</button>
+                                                    <button type="button" onClick={() => setIsContactFormOpen(false)} className="px-3 py-1.5 text-sm bg-card border rounded hover:bg-secondary/30">취소</button>
                                                     <button type="submit" className="px-3 py-1.5 text-sm bg-primary text-white rounded hover:bg-primary/90">저장</button>
                                                 </div>
                                             </form>
                                         ) : (
                                             <div className="space-y-3">
                                                 {contacts.map(contact => (
-                                                    <div key={contact.id} className="p-4 bg-white border border-gray-200 rounded-lg hover:border-primary/50 transition-colors group">
+                                                    <div key={contact.id} className="p-4 bg-card border border-border rounded-lg hover:border-primary/50 transition-colors group">
                                                         <div className="flex justify-between items-start">
                                                             <div>
                                                                 <div className="flex items-center gap-2">
-                                                                    <span className="font-medium text-gray-900">{contact.name}</span>
-                                                                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">{contact.position}</span>
+                                                                    <span className="font-medium text-white">{contact.name}</span>
+                                                                    <span className="text-xs text-muted-foreground bg-secondary/50 px-2 py-0.5 rounded">{contact.position}</span>
                                                                 </div>
-                                                                <div className="mt-2 space-y-1 text-sm text-gray-600">
+                                                                <div className="mt-2 space-y-1 text-sm text-muted-foreground">
                                                                     <div className="flex items-center gap-2">
-                                                                        <span className="text-xs text-gray-400 w-12">부서</span>
+                                                                        <span className="text-xs text-muted-foreground w-12">부서</span>
                                                                         {contact.department || '-'}
                                                                     </div>
                                                                     <div className="flex items-center gap-2">
-                                                                        <span className="text-xs text-gray-400 w-12">연락처</span>
+                                                                        <span className="text-xs text-muted-foreground w-12">연락처</span>
                                                                         {contact.phone || '-'}
                                                                     </div>
                                                                     <div className="flex items-center gap-2">
-                                                                        <span className="text-xs text-gray-400 w-12">이메일</span>
+                                                                        <span className="text-xs text-muted-foreground w-12">이메일</span>
                                                                         {contact.email || '-'}
                                                                     </div>
                                                                 </div>
@@ -619,13 +619,13 @@ export default function Accounts() {
                                                                         setNewContact(contact);
                                                                         setIsContactFormOpen(true);
                                                                     }}
-                                                                    className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded"
+                                                                    className="p-1.5 text-muted-foreground hover:text-accent hover:bg-accent/10 rounded"
                                                                 >
                                                                     <Edit2 size={14} />
                                                                 </button>
                                                                 <button
                                                                     onClick={() => handleDeleteContact(contact.id)}
-                                                                    className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded"
+                                                                    className="p-1.5 text-muted-foreground hover:text-danger hover:bg-danger/10 rounded"
                                                                 >
                                                                     <Trash2 size={14} />
                                                                 </button>
@@ -634,7 +634,7 @@ export default function Accounts() {
                                                     </div>
                                                 ))}
                                                 {contacts.length === 0 && (
-                                                    <p className="text-center text-gray-500 py-8">등록된 담당자가 없습니다.</p>
+                                                    <p className="text-center text-muted-foreground py-8">등록된 담당자가 없습니다.</p>
                                                 )}
                                             </div>
                                         )}
@@ -642,10 +642,10 @@ export default function Accounts() {
                                 )}
                             </div>
 
-                            <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-end">
+                            <div className="p-4 bg-secondary/30 border-t border-border flex justify-end">
                                 <button
                                     onClick={() => setSelectedAccount(null)}
-                                    className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                                    className="px-4 py-2 bg-card border border-border rounded-lg text-sm font-medium text-muted-foreground hover:bg-secondary/30 transition-colors"
                                 >
                                     닫기
                                 </button>
@@ -659,12 +659,12 @@ export default function Accounts() {
             {
                 isCreateModalOpen && (
                     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                        <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
-                            <div className="flex items-center justify-between p-6 border-b border-gray-100">
-                                <h2 className="text-xl font-semibold text-gray-900">{isEditMode ? '업체 정보 수정' : '새 고객 정보 등록'}</h2>
+                        <div className="bg-card rounded-xl shadow-xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+                            <div className="flex items-center justify-between p-6 border-b border-border">
+                                <h2 className="text-xl font-semibold text-white">{isEditMode ? '업체 정보 수정' : '새 고객 정보 등록'}</h2>
                                 <button
                                     onClick={() => setIsCreateModalOpen(false)}
-                                    className="text-gray-400 hover:text-gray-600 transition-colors"
+                                    className="text-muted-foreground hover:text-muted-foreground transition-colors"
                                 >
                                     <X size={20} />
                                 </button>
@@ -717,13 +717,13 @@ export default function Accounts() {
                             }}>
                                 <div className="p-6 overflow-y-auto max-h-[70vh] grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div className="space-y-1">
-                                        <label className="text-xs font-medium text-gray-500 uppercase">업체명</label>
-                                        <input required type="text" className="w-full p-2 border rounded text-sm" value={newAccount.name} onChange={e => setNewAccount({ ...newAccount, name: e.target.value })} />
+                                        <label className="text-xs font-medium text-muted-foreground uppercase">업체명</label>
+                                        <input required type="text" className="w-full p-2 bg-secondary text-white border border-border rounded text-sm" value={newAccount.name} onChange={e => setNewAccount({ ...newAccount, name: e.target.value })} />
                                     </div>
                                     <div className="space-y-1">
-                                        <label className="text-xs font-medium text-gray-500 uppercase">산업군</label>
+                                        <label className="text-xs font-medium text-muted-foreground uppercase">산업군</label>
                                         <select
-                                            className="w-full p-2 border rounded text-sm bg-white"
+                                            className="w-full p-2 bg-secondary text-white border border-border rounded text-sm bg-card"
                                             value={newAccount.industry}
                                             onChange={e => setNewAccount({ ...newAccount, industry: e.target.value })}
                                         >
@@ -737,27 +737,27 @@ export default function Accounts() {
                                         </select>
                                     </div>
                                     <div className="space-y-1">
-                                        <label className="text-xs font-medium text-gray-500 uppercase">등록일</label>
-                                        <input type="date" className="w-full p-2 border rounded text-sm" value={newAccount.registrationDate} onChange={e => setNewAccount({ ...newAccount, registrationDate: e.target.value })} />
+                                        <label className="text-xs font-medium text-muted-foreground uppercase">등록일</label>
+                                        <input type="date" className="w-full p-2 bg-secondary text-white border border-border rounded text-sm" value={newAccount.registrationDate} onChange={e => setNewAccount({ ...newAccount, registrationDate: e.target.value })} />
                                     </div>
                                     <div className="space-y-1">
-                                        <label className="text-xs font-medium text-gray-500 uppercase">대표전화</label>
-                                        <input type="text" className="w-full p-2 border rounded text-sm" value={newAccount.mainPhone} onChange={e => setNewAccount({ ...newAccount, mainPhone: e.target.value })} />
+                                        <label className="text-xs font-medium text-muted-foreground uppercase">대표전화</label>
+                                        <input type="text" className="w-full p-2 bg-secondary text-white border border-border rounded text-sm" value={newAccount.mainPhone} onChange={e => setNewAccount({ ...newAccount, mainPhone: e.target.value })} />
                                     </div>
                                     <div className="space-y-1">
-                                        <label className="text-xs font-medium text-gray-500 uppercase">홈페이지</label>
-                                        <input type="text" className="w-full p-2 border rounded text-sm" value={newAccount.website} onChange={e => setNewAccount({ ...newAccount, website: e.target.value })} />
+                                        <label className="text-xs font-medium text-muted-foreground uppercase">홈페이지</label>
+                                        <input type="text" className="w-full p-2 bg-secondary text-white border border-border rounded text-sm" value={newAccount.website} onChange={e => setNewAccount({ ...newAccount, website: e.target.value })} />
                                     </div>
                                     <div className="space-y-1 sm:col-span-2">
-                                        <label className="text-xs font-medium text-gray-500 uppercase">주소</label>
-                                        <input type="text" className="w-full p-2 border rounded text-sm" value={newAccount.address} onChange={e => setNewAccount({ ...newAccount, address: e.target.value })} />
+                                        <label className="text-xs font-medium text-muted-foreground uppercase">주소</label>
+                                        <input type="text" className="w-full p-2 bg-secondary text-white border border-border rounded text-sm" value={newAccount.address} onChange={e => setNewAccount({ ...newAccount, address: e.target.value })} />
                                     </div>
                                 </div>
-                                <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-2">
+                                <div className="p-4 bg-secondary/30 border-t border-border flex justify-end gap-2">
                                     <button
                                         type="button"
                                         onClick={() => setIsCreateModalOpen(false)}
-                                        className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                                        className="px-4 py-2 bg-card border border-border rounded-lg text-sm font-medium text-muted-foreground hover:bg-secondary/30 transition-colors"
                                     >
                                         취소
                                     </button>

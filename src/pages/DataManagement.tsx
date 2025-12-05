@@ -230,10 +230,10 @@ export default function DataManagement() {
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-bold text-gray-900">데이터 관리</h1>
+                <h1 className="text-2xl font-bold text-white">데이터 관리</h1>
                 <button
                     onClick={() => { resetForm(); setIsAddModalOpen(true); }}
-                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    className="flex items-center gap-2 px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent/90 transition-colors"
                 >
                     <Plus size={20} />
                     기록 추가
@@ -241,13 +241,13 @@ export default function DataManagement() {
             </div>
 
             {/* Filters */}
-            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex flex-wrap items-center justify-between gap-4">
+            <div className="bg-card p-4 rounded-xl shadow-sm border border-border flex flex-wrap items-center justify-between gap-4">
                 <div className="flex items-center gap-2">
                     <button
                         onClick={() => setFilterType('all')}
                         className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filterType === 'all'
-                            ? 'bg-blue-50 text-blue-700'
-                            : 'text-gray-600 hover:bg-gray-50'
+                            ? 'bg-accent/10 text-accent'
+                            : 'text-muted-foreground hover:bg-secondary/30'
                             }`}
                     >
                         <div className="flex items-center gap-2">
@@ -260,8 +260,8 @@ export default function DataManagement() {
                             key={type.id}
                             onClick={() => setFilterType(type.id)}
                             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filterType === type.id
-                                ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                                : 'text-gray-600 hover:bg-gray-50'
+                                ? 'bg-accent/10 text-accent border border-accent/20'
+                                : 'text-muted-foreground hover:bg-secondary/30'
                                 }`}
                         >
                             <div className="flex items-center gap-2">
@@ -272,22 +272,22 @@ export default function DataManagement() {
                     ))}
                 </div>
                 <div className="relative w-full md:w-64">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
                     <input
                         type="text"
                         placeholder="검색..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full pl-10 pr-4 py-2 bg-secondary text-white border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
                     />
                 </div>
             </div>
 
             {/* Table View */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm text-left">
-                        <thead className="text-xs text-gray-700 uppercase bg-gray-50 border-b border-gray-200">
+                        <thead className="text-xs text-muted-foreground uppercase bg-secondary/30 border-b border-border">
                             <tr>
                                 <th className="px-6 py-3 font-medium whitespace-nowrap">일자</th>
                                 <th className="px-6 py-3 font-medium whitespace-nowrap">업체명</th>
@@ -304,13 +304,13 @@ export default function DataManagement() {
                         <tbody className="divide-y divide-gray-200">
                             {loading ? (
                                 <tr>
-                                    <td colSpan={10} className="px-6 py-12 text-center text-gray-500">
+                                    <td colSpan={10} className="px-6 py-12 text-center text-muted-foreground">
                                         로딩 중...
                                     </td>
                                 </tr>
                             ) : filteredRecords.length === 0 ? (
                                 <tr>
-                                    <td colSpan={10} className="px-6 py-12 text-center text-gray-500">
+                                    <td colSpan={10} className="px-6 py-12 text-center text-muted-foreground">
                                         <div className="flex flex-col items-center justify-center gap-2">
                                             <Database className="h-8 w-8 text-gray-300" />
                                             <p>등록된 기록이 없습니다.</p>
@@ -319,23 +319,23 @@ export default function DataManagement() {
                                 </tr>
                             ) : (
                                 filteredRecords.map((record) => (
-                                    <tr key={record.id} className="hover:bg-gray-50 transition-colors">
-                                        <td className="px-6 py-4 whitespace-nowrap text-gray-500">
+                                    <tr key={record.id} className="hover:bg-secondary/30 transition-colors">
+                                        <td className="px-6 py-4 whitespace-nowrap text-muted-foreground">
                                             {new Date(record.created_at).toLocaleDateString()}
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">
+                                        <td className="px-6 py-4 whitespace-nowrap font-medium text-white">
                                             {record.company_name || '-'}
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-gray-700">
+                                        <td className="px-6 py-4 whitespace-nowrap text-muted-foreground">
                                             {record.contact_name || '-'}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="flex items-center gap-2">
                                                 {getTypeIcon(record.type)}
-                                                <span className="text-gray-600">{getTypeLabel(record.type)}</span>
+                                                <span className="text-muted-foreground">{getTypeLabel(record.type)}</span>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4 text-gray-700">
+                                        <td className="px-6 py-4 text-muted-foreground">
                                             <p className="line-clamp-2" title={record.summary || record.content}>
                                                 {record.summary || record.content}
                                             </p>
@@ -343,15 +343,15 @@ export default function DataManagement() {
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             {record.sentiment_score !== undefined && record.sentiment_score !== null ? (
                                                 <div className="flex items-center gap-2">
-                                                    <div className="w-16 h-2 bg-gray-100 rounded-full overflow-hidden">
+                                                    <div className="w-16 h-2 bg-secondary/50 rounded-full overflow-hidden">
                                                         <div
-                                                            className={`h-full rounded-full ${record.sentiment_score >= 70 ? 'bg-green-500' :
-                                                                record.sentiment_score >= 40 ? 'bg-yellow-500' : 'bg-red-500'
+                                                            className={`h-full rounded-full ${record.sentiment_score >= 70 ? 'bg-success/100' :
+                                                                record.sentiment_score >= 40 ? 'bg-yellow-500' : 'bg-danger/100'
                                                                 }`}
                                                             style={{ width: `${record.sentiment_score}%` }}
                                                         />
                                                     </div>
-                                                    <span className="text-xs font-medium text-gray-600">{record.sentiment_score}점</span>
+                                                    <span className="text-xs font-medium text-muted-foreground">{record.sentiment_score}점</span>
                                                 </div>
                                             ) : '-'}
                                         </td>
@@ -359,7 +359,7 @@ export default function DataManagement() {
                                             <div className="flex flex-wrap gap-1">
                                                 {record.keywords && record.keywords.length > 0 ? (
                                                     record.keywords.slice(0, 3).map((keyword, idx) => (
-                                                        <span key={idx} className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-xs">
+                                                        <span key={idx} className="px-2 py-0.5 bg-secondary/50 text-muted-foreground rounded text-xs">
                                                             {keyword}
                                                         </span>
                                                     ))
@@ -370,8 +370,8 @@ export default function DataManagement() {
                                             <div className="flex flex-col gap-1">
                                                 {record.next_action && record.next_action.length > 0 ? (
                                                     record.next_action.slice(0, 2).map((action, idx) => (
-                                                        <span key={idx} className="flex items-center gap-1 text-xs text-blue-600">
-                                                            <span className="w-1 h-1 bg-blue-600 rounded-full" />
+                                                        <span key={idx} className="flex items-center gap-1 text-xs text-accent">
+                                                            <span className="w-1 h-1 bg-accent rounded-full" />
                                                             {action}
                                                         </span>
                                                     ))
@@ -384,7 +384,7 @@ export default function DataManagement() {
                                                     href={record.recording_link}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
-                                                    className="text-blue-600 hover:underline text-xs"
+                                                    className="text-accent hover:underline text-xs"
                                                 >
                                                     Link
                                                 </a>
@@ -394,14 +394,14 @@ export default function DataManagement() {
                                             <div className="flex items-center justify-end gap-1">
                                                 <button
                                                     onClick={() => openEditModal(record)}
-                                                    className="text-gray-400 hover:text-blue-500 p-1.5 hover:bg-blue-50 rounded-full transition-colors"
+                                                    className="text-muted-foreground hover:text-blue-500 p-1.5 hover:bg-accent/10 rounded-full transition-colors"
                                                     title="수정"
                                                 >
                                                     <Edit2 size={16} />
                                                 </button>
                                                 <button
                                                     onClick={() => handleDeleteRecord(record.id)}
-                                                    className="text-gray-400 hover:text-red-500 p-1.5 hover:bg-red-50 rounded-full transition-colors"
+                                                    className="text-muted-foreground hover:text-red-500 p-1.5 hover:bg-danger/10 rounded-full transition-colors"
                                                     title="삭제"
                                                 >
                                                     <Trash2 size={16} />
@@ -419,14 +419,14 @@ export default function DataManagement() {
             {/* Add/Edit Modal */}
             {(isAddModalOpen || isEditModalOpen) && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-                        <div className="flex items-center justify-between p-6 border-b border-gray-100">
-                            <h2 className="text-xl font-bold text-gray-900">
+                    <div className="bg-card rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                        <div className="flex items-center justify-between p-6 border-b border-border">
+                            <h2 className="text-xl font-bold text-white">
                                 {isEditModalOpen ? '기록 수정' : '새 기록 추가'}
                             </h2>
                             <button
                                 onClick={() => { setIsAddModalOpen(false); setIsEditModalOpen(false); }}
-                                className="text-gray-400 hover:text-gray-600 p-2 hover:bg-gray-100 rounded-full transition-colors"
+                                className="text-muted-foreground hover:text-muted-foreground p-2 hover:bg-secondary/50 rounded-full transition-colors"
                             >
                                 <X size={20} />
                             </button>
@@ -434,7 +434,7 @@ export default function DataManagement() {
                         <form onSubmit={isEditModalOpen ? handleUpdateRecord : handleAddRecord} className="p-6 space-y-6">
                             <div className="grid grid-cols-2 gap-6">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    <label className="block text-sm font-medium text-muted-foreground mb-2">
                                         유형
                                     </label>
                                     <div className="flex gap-2">
@@ -444,8 +444,8 @@ export default function DataManagement() {
                                                 type="button"
                                                 onClick={() => setFormData({ ...formData, type: type.id })}
                                                 className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium border transition-colors ${formData.type === type.id
-                                                    ? 'bg-blue-50 border-blue-200 text-blue-700'
-                                                    : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                                                    ? 'bg-accent/10 border-accent/20 text-accent'
+                                                    : 'border-border text-muted-foreground hover:bg-secondary/30'
                                                     }`}
                                             >
                                                 {type.label}
@@ -454,7 +454,7 @@ export default function DataManagement() {
                                     </div>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    <label className="block text-sm font-medium text-muted-foreground mb-2">
                                         감정 점수 (0-100)
                                     </label>
                                     <input
@@ -463,40 +463,40 @@ export default function DataManagement() {
                                         max="100"
                                         value={formData.sentiment_score}
                                         onChange={(e) => setFormData({ ...formData, sentiment_score: parseInt(e.target.value) || 0 })}
-                                        className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        className="w-full px-4 py-2 bg-secondary text-white border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
                                     />
                                 </div>
                             </div>
 
                             <div className="grid grid-cols-2 gap-6">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    <label className="block text-sm font-medium text-muted-foreground mb-2">
                                         업체명
                                     </label>
                                     <input
                                         type="text"
                                         value={formData.company_name}
                                         onChange={(e) => setFormData({ ...formData, company_name: e.target.value })}
-                                        className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        className="w-full px-4 py-2 bg-secondary text-white border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
                                         placeholder="업체명 입력"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    <label className="block text-sm font-medium text-muted-foreground mb-2">
                                         담당자명
                                     </label>
                                     <input
                                         type="text"
                                         value={formData.contact_name}
                                         onChange={(e) => setFormData({ ...formData, contact_name: e.target.value })}
-                                        className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        className="w-full px-4 py-2 bg-secondary text-white border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
                                         placeholder="담당자명 입력"
                                     />
                                 </div>
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <label className="block text-sm font-medium text-muted-foreground mb-2">
                                     제목
                                 </label>
                                 <input
@@ -504,26 +504,26 @@ export default function DataManagement() {
                                     required
                                     value={formData.title}
                                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    className="w-full px-4 py-2 bg-secondary text-white border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
                                     placeholder="기록 제목을 입력하세요"
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <label className="block text-sm font-medium text-muted-foreground mb-2">
                                     핵심 요약
                                 </label>
                                 <textarea
                                     rows={3}
                                     value={formData.summary}
                                     onChange={(e) => setFormData({ ...formData, summary: e.target.value })}
-                                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                                    className="w-full px-4 py-2 bg-secondary text-white border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent resize-none"
                                     placeholder="대화 내용 요약"
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <label className="block text-sm font-medium text-muted-foreground mb-2">
                                     전체 내용
                                 </label>
                                 <textarea
@@ -531,49 +531,49 @@ export default function DataManagement() {
                                     required
                                     value={formData.content}
                                     onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                                    className="w-full px-4 py-2 bg-secondary text-white border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent resize-none"
                                     placeholder="상세 내용을 입력하세요"
                                 />
                             </div>
 
                             <div className="grid grid-cols-2 gap-6">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    <label className="block text-sm font-medium text-muted-foreground mb-2">
                                         주요 키워드 (쉼표로 구분)
                                     </label>
                                     <input
                                         type="text"
                                         value={Array.isArray(formData.keywords) ? formData.keywords.join(', ') : formData.keywords}
                                         onChange={(e) => setFormData({ ...formData, keywords: e.target.value })}
-                                        className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        className="w-full px-4 py-2 bg-secondary text-white border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
                                         placeholder="예: 가격, 일정, 기능"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    <label className="block text-sm font-medium text-muted-foreground mb-2">
                                         Next Action (쉼표로 구분)
                                     </label>
                                     <input
                                         type="text"
                                         value={Array.isArray(formData.next_action) ? formData.next_action.join(', ') : formData.next_action}
                                         onChange={(e) => setFormData({ ...formData, next_action: e.target.value })}
-                                        className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        className="w-full px-4 py-2 bg-secondary text-white border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
                                         placeholder="예: 견적서 송부, 미팅 요청"
                                     />
                                 </div>
                             </div>
 
-                            <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+                            <div className="flex justify-end gap-3 pt-4 border-t border-border">
                                 <button
                                     type="button"
                                     onClick={() => { setIsAddModalOpen(false); setIsEditModalOpen(false); }}
-                                    className="px-5 py-2.5 text-gray-600 hover:bg-gray-100 rounded-lg font-medium transition-colors"
+                                    className="px-5 py-2.5 text-muted-foreground hover:bg-secondary/50 rounded-lg font-medium transition-colors"
                                 >
                                     취소
                                 </button>
                                 <button
                                     type="submit"
-                                    className="px-5 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center gap-2"
+                                    className="px-5 py-2.5 bg-accent text-white rounded-lg font-medium hover:bg-accent/90 transition-colors flex items-center gap-2"
                                 >
                                     <Save size={18} />
                                     {isEditModalOpen ? '수정 완료' : '저장하기'}

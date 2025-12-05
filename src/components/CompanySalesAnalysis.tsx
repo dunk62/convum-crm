@@ -164,8 +164,8 @@ export default function CompanySalesAnalysis() {
     const CustomTooltip = ({ active, payload, label }: any) => {
         if (active && payload && payload.length) {
             return (
-                <div className="bg-white p-4 rounded-lg shadow-lg border border-gray-200">
-                    <p className="font-bold text-gray-900 mb-2">{label} 매출 Top 5</p>
+                <div className="bg-card p-4 rounded-lg shadow-lg border border-border">
+                    <p className="font-bold text-white mb-2">{label} 매출 Top 5</p>
                     <div className="space-y-2">
                         {payload.map((entry: any, index: number) => {
                             const rank = entry.dataKey.replace('rank', '');
@@ -175,9 +175,9 @@ export default function CompanySalesAnalysis() {
                             return (
                                 <div key={index} className="flex items-center gap-2 text-sm">
                                     <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
-                                    <span className="font-bold text-gray-700">{rank}위:</span>
-                                    <span className="text-gray-600 truncate max-w-[100px]" title={companyName}>{companyName}</span>
-                                    <span className="font-mono font-medium text-gray-900 ml-auto">{formatCurrency(entry.value)}</span>
+                                    <span className="font-bold text-muted-foreground">{rank}위:</span>
+                                    <span className="text-muted-foreground truncate max-w-[100px]" title={companyName}>{companyName}</span>
+                                    <span className="font-mono font-medium text-white ml-auto">{formatCurrency(entry.value)}</span>
                                 </div>
                             );
                         })}
@@ -191,19 +191,19 @@ export default function CompanySalesAnalysis() {
     return (
         <div className="space-y-6">
             {/* Controls */}
-            <div className="flex flex-wrap items-center justify-between gap-4 bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-4 bg-card p-4 rounded-xl border border-border shadow-sm">
                 <div className="flex items-center gap-2">
-                    <TrendingUp className="text-blue-600" size={24} />
-                    <h2 className="text-lg font-bold text-gray-900">상위 5개 업체 매출 분석</h2>
+                    <TrendingUp className="text-accent" size={24} />
+                    <h2 className="text-lg font-bold text-white">상위 5개 업체 매출 분석</h2>
                 </div>
 
                 <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
+                    <div className="flex items-center gap-2 bg-secondary/50 rounded-lg p-1">
                         <button
                             onClick={() => setPeriodType('monthly')}
                             className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${periodType === 'monthly'
-                                ? 'bg-white text-blue-600 shadow-sm'
-                                : 'text-gray-500 hover:text-gray-700'
+                                ? 'bg-card text-accent shadow-sm'
+                                : 'text-muted-foreground hover:text-muted-foreground'
                                 }`}
                         >
                             월별
@@ -211,8 +211,8 @@ export default function CompanySalesAnalysis() {
                         <button
                             onClick={() => setPeriodType('quarterly')}
                             className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${periodType === 'quarterly'
-                                ? 'bg-white text-blue-600 shadow-sm'
-                                : 'text-gray-500 hover:text-gray-700'
+                                ? 'bg-card text-accent shadow-sm'
+                                : 'text-muted-foreground hover:text-muted-foreground'
                                 }`}
                         >
                             분기별
@@ -222,7 +222,7 @@ export default function CompanySalesAnalysis() {
                     <select
                         value={selectedYear}
                         onChange={(e) => setSelectedYear(Number(e.target.value))}
-                        className="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="px-3 py-2 bg-card border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent"
                     >
                         {availableYears.map(year => (
                             <option key={year} value={year}>{year}년</option>
@@ -233,14 +233,14 @@ export default function CompanySalesAnalysis() {
 
             {loading ? (
                 <div className="h-96 flex items-center justify-center">
-                    <Loader2 className="animate-spin text-blue-600" size={40} />
+                    <Loader2 className="animate-spin text-accent" size={40} />
                 </div>
             ) : (
                 <>
                     {/* Top 5 Cards (Annual) */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                         {topCompanies.map((company, index) => (
-                            <div key={company.name} className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm relative overflow-hidden group hover:shadow-md transition-shadow">
+                            <div key={company.name} className="bg-card p-4 rounded-xl border border-border shadow-sm relative overflow-hidden group hover:shadow-md transition-shadow">
                                 <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-20 transition-opacity">
                                     <Trophy size={48} color={colors[index]} />
                                 </div>
@@ -251,17 +251,17 @@ export default function CompanySalesAnalysis() {
                                     >
                                         {company.rank}
                                     </span>
-                                    <span className="text-sm font-medium text-gray-500">Top {company.rank}</span>
+                                    <span className="text-sm font-medium text-muted-foreground">Top {company.rank}</span>
                                 </div>
-                                <h3 className="font-bold text-gray-900 truncate mb-1" title={company.name}>{company.name}</h3>
-                                <p className="text-lg font-bold text-blue-600">{formatCurrency(company.totalSales)}</p>
+                                <h3 className="font-bold text-white truncate mb-1" title={company.name}>{company.name}</h3>
+                                <p className="text-lg font-bold text-accent">{formatCurrency(company.totalSales)}</p>
                             </div>
                         ))}
                     </div>
 
                     {/* Chart */}
-                    <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                        <h3 className="text-lg font-bold text-gray-900 mb-6">
+                    <div className="bg-card p-6 rounded-xl border border-border shadow-sm">
+                        <h3 className="text-lg font-bold text-white mb-6">
                             상위 5개 업체 매출 추이 ({selectedYear}년 {periodType === 'monthly' ? '월별' : '분기별'})
                         </h3>
                         <div className="h-[400px]">

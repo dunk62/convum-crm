@@ -6,15 +6,15 @@ import { supabase } from '../lib/supabase';
 import { cn } from '../lib/utils';
 
 const StatCard = ({ label, value, icon: Icon }: any) => (
-    <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm h-full flex flex-col justify-between">
+    <div className="bg-card p-6 rounded-xl border border-border h-full flex flex-col justify-between">
         <div className="flex items-start justify-between mb-4">
-            <div className="p-2 bg-primary/5 rounded-lg text-primary">
+            <div className="p-2 bg-accent/10 rounded-lg text-accent">
                 <Icon size={20} />
             </div>
-            <h3 className="text-2xl font-bold text-gray-500 text-right">{label}</h3>
+            <h3 className="text-lg font-medium text-muted-foreground text-right">{label}</h3>
         </div>
         <div className="flex justify-end items-end mt-auto">
-            <p className="text-4xl font-bold text-gray-900">{value}</p>
+            <p className="text-3xl font-bold text-white">{value}</p>
         </div>
     </div>
 );
@@ -187,8 +187,8 @@ export default function Dashboard() {
     return (
         <div className="space-y-8">
             <div>
-                <h1 className="text-3xl font-bold tracking-tight text-gray-900">Dashboard</h1>
-                <p className="text-gray-500 mt-2">Overview of your sales performance and key metrics.</p>
+                <h1 className="text-3xl font-bold tracking-tight text-white">Dashboard</h1>
+                <p className="text-muted-foreground mt-2">Overview of your sales performance and key metrics.</p>
             </div>
 
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
@@ -198,29 +198,29 @@ export default function Dashboard() {
             </div>
 
             <div className="grid gap-6 lg:grid-cols-3">
-                <div className="lg:col-span-2 bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                <div className="lg:col-span-2 bg-card p-6 rounded-xl border border-border">
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
-                        <h2 className="text-lg font-bold text-gray-900">매출 실적 및 목표</h2>
+                        <h2 className="text-lg font-bold text-white">매출 실적 및 목표</h2>
                         <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-sm">
                             <div className="flex items-center gap-2">
-                                <span className="w-2 h-2 rounded-full bg-blue-600"></span>
-                                <span className="text-gray-500">총 매출 목표</span>
-                                <span className="font-bold text-gray-900">
+                                <span className="w-2 h-2 rounded-full bg-accent"></span>
+                                <span className="text-muted-foreground">총 매출 목표</span>
+                                <span className="font-bold text-white">
                                     {new Intl.NumberFormat('ko-KR', { style: 'currency', currency: 'KRW' }).format(chartData.reduce((sum, item) => sum + (item.target || 0), 0))}
                                 </span>
                             </div>
                             <div className="flex items-center gap-2">
-                                <span className="w-2 h-2 rounded-full bg-gray-900"></span>
-                                <span className="text-gray-500">총 매출 실적</span>
-                                <span className="font-bold text-gray-900">
+                                <span className="w-2 h-2 rounded-full bg-success"></span>
+                                <span className="text-muted-foreground">총 매출 실적</span>
+                                <span className="font-bold text-white">
                                     {new Intl.NumberFormat('ko-KR', { style: 'currency', currency: 'KRW' }).format(chartData.reduce((sum, item) => sum + (item.revenue || 0), 0))}
                                 </span>
                             </div>
                             <div className="flex items-center gap-2">
-                                <span className="text-gray-500">달성률</span>
+                                <span className="text-muted-foreground">달성률</span>
                                 <span className={cn(
                                     "font-bold",
-                                    (chartData.reduce((sum, item) => sum + (item.revenue || 0), 0) / chartData.reduce((sum, item) => sum + (item.target || 0), 0) * 100) >= 100 ? "text-green-600" : "text-blue-600"
+                                    (chartData.reduce((sum, item) => sum + (item.revenue || 0), 0) / chartData.reduce((sum, item) => sum + (item.target || 0), 0) * 100) >= 100 ? "text-success" : "text-accent"
                                 )}>
                                     {(() => {
                                         const totalTarget = chartData.reduce((sum, item) => sum + (item.target || 0), 0);
@@ -236,16 +236,16 @@ export default function Dashboard() {
                             <ComposedChart data={chartData}>
                                 <defs>
                                     <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#0f172a" stopOpacity={0.1} />
-                                        <stop offset="95%" stopColor="#0f172a" stopOpacity={0} />
+                                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                                        <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                                     </linearGradient>
                                 </defs>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#27272a" />
                                 <XAxis
                                     dataKey="name"
                                     axisLine={false}
                                     tickLine={false}
-                                    tick={{ fill: '#64748b' }}
+                                    tick={{ fill: '#a1a1aa' }}
                                     tickFormatter={(value) => {
                                         const [, month] = value.split('-');
                                         return `${month}월`;
@@ -255,7 +255,7 @@ export default function Dashboard() {
                                     yAxisId="left"
                                     axisLine={false}
                                     tickLine={false}
-                                    tick={{ fill: '#64748b' }}
+                                    tick={{ fill: '#a1a1aa' }}
                                     tickFormatter={(value) => new Intl.NumberFormat('ko-KR', { notation: "compact" }).format(value)}
                                 />
                                 <YAxis
@@ -263,12 +263,17 @@ export default function Dashboard() {
                                     orientation="right"
                                     axisLine={false}
                                     tickLine={false}
-                                    tick={{ fill: '#64748b' }}
+                                    tick={{ fill: '#a1a1aa' }}
                                     tickFormatter={(value) => new Intl.NumberFormat('ko-KR', { notation: "compact" }).format(value)}
                                     hide
                                 />
                                 <Tooltip
-                                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                    contentStyle={{
+                                        borderRadius: '8px',
+                                        border: '1px solid #27272a',
+                                        backgroundColor: '#18181b',
+                                        color: '#ffffff'
+                                    }}
                                     formatter={(value: number) => new Intl.NumberFormat('ko-KR', { style: 'currency', currency: 'KRW' }).format(value)}
                                     labelFormatter={(label) => {
                                         const [year, month] = label.split('-');
@@ -276,34 +281,34 @@ export default function Dashboard() {
                                     }}
                                 />
                                 <Legend wrapperStyle={{ paddingTop: '20px' }} />
-                                <Area yAxisId="left" type="monotone" dataKey="revenue" name="매출 실적" stroke="#0f172a" strokeWidth={2} fillOpacity={1} fill="url(#colorRevenue)" />
-                                <Line yAxisId="left" type="monotone" dataKey="target" name="매출 목표" stroke="#2563eb" strokeWidth={2} dot={{ r: 4 }} />
+                                <Area yAxisId="left" type="monotone" dataKey="revenue" name="매출 실적" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorRevenue)" />
+                                <Line yAxisId="left" type="monotone" dataKey="target" name="매출 목표" stroke="#3b82f6" strokeWidth={2} dot={{ r: 4, fill: '#3b82f6' }} />
                             </ComposedChart>
                         </ResponsiveContainer>
                     </div>
                 </div>
 
-                <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                    <h2 className="text-lg font-bold text-gray-900 mb-6">영업 기회</h2>
-                    <div className="space-y-4">
+                <div className="bg-card p-6 rounded-xl border border-border">
+                    <h2 className="text-lg font-bold text-white mb-6">영업 기회</h2>
+                    <div className="space-y-2">
                         {recentOpportunities.map((deal: any) => (
-                            <div key={deal.id} className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition-colors">
+                            <div key={deal.id} className="flex items-center justify-between p-3 hover:bg-secondary/50 rounded-lg transition-colors">
                                 <div>
-                                    <p className="font-medium text-gray-900 line-clamp-1">{deal.title}</p>
-                                    <p className="text-sm text-gray-500">{deal.company}</p>
+                                    <p className="font-medium text-white line-clamp-1">{deal.title}</p>
+                                    <p className="text-sm text-muted-foreground">{deal.company}</p>
                                 </div>
                                 <div className="text-right">
-                                    <p className="font-medium text-gray-900">
+                                    <p className="font-medium text-white">
                                         {new Intl.NumberFormat('ko-KR', { style: 'currency', currency: 'KRW' }).format(deal.value)}
                                     </p>
-                                    <p className="text-sm text-green-600">{deal.stage}</p>
+                                    <p className="text-sm text-success">{deal.stage}</p>
                                 </div>
                             </div>
                         ))}
                     </div>
                     <button
                         onClick={() => navigate('/opportunities')}
-                        className="w-full mt-6 py-2.5 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                        className="w-full mt-6 py-2.5 text-sm font-medium bg-accent text-white rounded-lg hover:bg-accent/90 transition-colors flex items-center justify-center gap-2"
                     >
                         영업 기회로 이동
                         <ArrowRight size={16} />

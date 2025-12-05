@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
     LineChart,
     Line,
@@ -10,7 +10,7 @@ import {
     ResponsiveContainer
 } from 'recharts';
 import { supabase } from '../lib/supabase';
-import { TrendingUp, Loader2 } from 'lucide-react';
+import { TrendingUp, Loader2, Search, X, Mail } from 'lucide-react';
 
 export default function CompanyDetailAnalysis() {
     const [loading, setLoading] = useState(true);
@@ -20,9 +20,22 @@ export default function CompanyDetailAnalysis() {
     const [chartData, setChartData] = useState<any[]>([]); // Changed SalesData[] to any[] to support dynamic keys
     const [availableYears, setAvailableYears] = useState<number[]>([]);
     const [allData, setAllData] = useState<any[]>([]);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const dropdownRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         fetchData();
+    }, []);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setIsDropdownOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
     useEffect(() => {
@@ -164,19 +177,19 @@ export default function CompanyDetailAnalysis() {
     return (
         <div className="space-y-6">
             {/* Controls */}
-            <div className="flex flex-wrap items-center justify-between gap-4 bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-4 bg-card p-4 rounded-xl border border-border shadow-sm">
                 <div className="flex items-center gap-2">
-                    <TrendingUp className="text-blue-600" size={24} />
-                    <h2 className="text-lg font-bold text-gray-900">개별 업체 매출 분석</h2>
+                    <TrendingUp className="text-accent" size={24} />
+                    <h2 className="text-lg font-bold text-white">개별 업체 매출 분석</h2>
                 </div>
 
                 <div className="flex items-center gap-3 flex-wrap">
-                    <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
+                    <div className="flex items-center gap-2 bg-secondary/50 rounded-lg p-1">
                         <button
                             onClick={() => setPeriodType('monthly')}
                             className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${periodType === 'monthly'
-                                ? 'bg-white text-blue-600 shadow-sm'
-                                : 'text-gray-500 hover:text-gray-700'
+                                ? 'bg-card text-accent shadow-sm'
+                                : 'text-muted-foreground hover:text-muted-foreground'
                                 }`}
                         >
                             월별
@@ -184,35 +197,96 @@ export default function CompanyDetailAnalysis() {
                         <button
                             onClick={() => setPeriodType('quarterly')}
                             className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${periodType === 'quarterly'
-                                ? 'bg-white text-blue-600 shadow-sm'
-                                : 'text-gray-500 hover:text-gray-700'
+                                ? 'bg-card text-accent shadow-sm'
+                                : 'text-muted-foreground hover:text-muted-foreground'
                                 }`}
                         >
                             분기별
                         </button>
                     </div>
 
-                    <div className="relative">
-                        <select
-                            value={selectedCompany}
-                            onChange={(e) => setSelectedCompany(e.target.value)}
-                            className="pl-3 pr-8 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[200px]"
-                        >
-                            {companyList.map(company => (
-                                <option key={company} value={company}>{company}</option>
-                            ))}
-                        </select>
+                    <div className="relative" ref={dropdownRef}>
+                        <div className="relative">
+                            <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+                            <input
+                                type="text"
+                                value={isDropdownOpen ? searchQuery : selectedCompany}
+                                onChange={(e) => {
+                                    setSearchQuery(e.target.value);
+                                    setIsDropdownOpen(true);
+                                }}
+                                onFocus={() => {
+                                    setIsDropdownOpen(true);
+                                    setSearchQuery('');
+                                }}
+                                placeholder="업체명 검색..."
+                                className="pl-9 pr-8 py-2 bg-secondary text-white border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent min-w-[280px]"
+                            />
+                            {selectedCompany && !isDropdownOpen && (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setSelectedCompany('');
+                                        setSearchQuery('');
+                                        setIsDropdownOpen(true);
+                                    }}
+                                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-white"
+                                >
+                                    <X size={14} />
+                                </button>
+                            )}
+                        </div>
+                        {isDropdownOpen && (
+                            <div className="absolute z-20 w-full mt-1 bg-card border border-border rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                                {companyList
+                                    .filter(company => company.toLowerCase().includes(searchQuery.toLowerCase()))
+                                    .slice(0, 50)
+                                    .map(company => (
+                                        <button
+                                            key={company}
+                                            type="button"
+                                            onClick={() => {
+                                                setSelectedCompany(company);
+                                                setSearchQuery('');
+                                                setIsDropdownOpen(false);
+                                            }}
+                                            className={`w-full text-left px-4 py-2 text-sm hover:bg-secondary/50 transition-colors ${selectedCompany === company ? 'bg-accent/20 text-accent' : 'text-white'}`}
+                                        >
+                                            {company}
+                                        </button>
+                                    ))
+                                }
+                                {companyList.filter(company => company.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 && (
+                                    <div className="px-4 py-3 text-sm text-muted-foreground text-center">
+                                        검색 결과가 없습니다
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
+
+                    {/* Email Button */}
+                    <a
+                        href={selectedCompany ? `https://mail.google.com/mail/?view=cm&fs=1&tf=1&su=${encodeURIComponent('[' + selectedCompany + '] 매출 분석 관련 문의')}&body=${encodeURIComponent('안녕하세요,\n\n' + selectedCompany + ' 관련 매출 분석 문의드립니다.\n\n감사합니다.')}` : '#'}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => !selectedCompany && e.preventDefault()}
+                        className={`flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 transition-colors shadow-sm ${!selectedCompany ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        title="Gmail로 메일 보내기"
+                    >
+                        <Mail size={16} />
+                        <span>메일 보내기</span>
+                    </a>
                 </div>
             </div>
 
             {loading ? (
                 <div className="h-96 flex items-center justify-center">
-                    <Loader2 className="animate-spin text-blue-600" size={40} />
+                    <Loader2 className="animate-spin text-accent" size={40} />
                 </div>
             ) : (
-                <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                    <h3 className="text-lg font-bold text-gray-900 mb-6">
+                <div className="bg-card p-6 rounded-xl border border-border shadow-sm">
+                    <h3 className="text-lg font-bold text-white mb-6">
                         {selectedCompany} 매출 추이 ({availableYears.join(', ')}년)
                     </h3>
                     <div className="h-[400px]">

@@ -174,8 +174,8 @@ export default function RentalManager({ opportunityId }: RentalManagerProps) {
     return (
         <div className="h-full flex flex-col">
             <div className="flex justify-between items-center mb-6">
-                <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                    <div className="p-2 bg-blue-50 rounded-lg text-blue-600">
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                    <div className="p-2 bg-accent/10 rounded-lg text-accent">
                         <Package size={20} />
                     </div>
                     영업 샘플 대여
@@ -184,7 +184,7 @@ export default function RentalManager({ opportunityId }: RentalManagerProps) {
                     <button
                         type="button"
                         onClick={() => setIsAdding(true)}
-                        className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 shadow-sm"
+                        className="px-4 py-2 bg-accent text-white text-sm font-medium rounded-lg hover:bg-accent/90 transition-colors flex items-center gap-2 shadow-sm"
                     >
                         <Plus size={16} />
                         대여 추가
@@ -193,22 +193,22 @@ export default function RentalManager({ opportunityId }: RentalManagerProps) {
             </div>
 
             {isAdding && (
-                <div className="bg-white p-6 rounded-xl border border-blue-100 shadow-sm mb-6 animate-in fade-in slide-in-from-top-2 duration-200">
-                    <h4 className="text-sm font-bold text-gray-900 mb-4">새로운 대여 등록</h4>
+                <div className="bg-card p-6 rounded-xl border border-blue-100 shadow-sm mb-6 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <h4 className="text-sm font-bold text-white mb-4">새로운 대여 등록</h4>
                     <div>
                         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                             <div className="sm:col-span-2 relative" ref={dropdownRef}>
-                                <label className="block text-xs font-semibold text-gray-500 uppercase mb-1.5">품목 검색</label>
+                                <label className="block text-xs font-semibold text-muted-foreground uppercase mb-1.5">품목 검색</label>
                                 <div className="relative">
                                     <div
-                                        className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-sm focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 cursor-text flex items-center justify-between"
+                                        className="w-full px-4 py-2.5 bg-secondary text-white border border-border rounded-lg text-sm focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 cursor-text flex items-center justify-between"
                                         onClick={() => {
                                             setIsDropdownOpen(true);
                                         }}
                                     >
                                         <input
                                             type="text"
-                                            className="flex-1 outline-none bg-transparent placeholder-gray-400"
+                                            className="flex-1 outline-none bg-transparent text-white placeholder-muted-foreground"
                                             placeholder="모델명 또는 품명으로 검색..."
                                             value={selectedItem ? `${selectedItem.model_code} (가용: ${selectedItem.available_quantity})` : searchQuery}
                                             onChange={(e) => {
@@ -226,26 +226,26 @@ export default function RentalManager({ opportunityId }: RentalManagerProps) {
                                                     setSelectedInventoryId('');
                                                     setSearchQuery('');
                                                 }}
-                                                className="text-gray-400 hover:text-gray-600"
+                                                className="text-muted-foreground hover:text-muted-foreground"
                                             >
                                                 <X size={16} />
                                             </button>
                                         ) : (
-                                            <Search size={16} className="text-gray-400" />
+                                            <Search size={16} className="text-muted-foreground" />
                                         )}
                                     </div>
 
                                     {isDropdownOpen && (
-                                        <div className="absolute z-10 w-full mt-1 bg-white rounded-lg shadow-lg border border-gray-200 max-h-60 overflow-auto">
+                                        <div className="absolute z-10 w-full mt-1 bg-card rounded-lg shadow-lg border border-border max-h-60 overflow-auto">
                                             {filteredInventory.length === 0 ? (
-                                                <div className="px-4 py-3 text-sm text-gray-500 text-center">
+                                                <div className="px-4 py-3 text-sm text-muted-foreground text-center">
                                                     검색 결과가 없습니다.
                                                 </div>
                                             ) : (
                                                 filteredInventory.map(item => (
                                                     <div
                                                         key={item.id}
-                                                        className="px-4 py-3 hover:bg-blue-50 cursor-pointer border-b border-gray-50 last:border-0 transition-colors"
+                                                        className="px-4 py-3 hover:bg-accent/10 cursor-pointer border-b border-gray-50 last:border-0 transition-colors"
                                                         onClick={() => {
                                                             setSelectedInventoryId(item.id);
                                                             setSearchQuery('');
@@ -253,13 +253,13 @@ export default function RentalManager({ opportunityId }: RentalManagerProps) {
                                                         }}
                                                     >
                                                         <div className="flex justify-between items-center">
-                                                            <span className="font-medium text-gray-900">{item.model_code}</span>
+                                                            <span className="font-medium text-white">{item.model_code}</span>
                                                             <span className="text-xs font-medium px-2 py-1 bg-blue-100 text-blue-800 rounded-full">
                                                                 가용: {item.available_quantity}
                                                             </span>
                                                         </div>
                                                         {item.product_name && (
-                                                            <div className="text-xs text-gray-500 mt-0.5">{item.product_name}</div>
+                                                            <div className="text-xs text-muted-foreground mt-0.5">{item.product_name}</div>
                                                         )}
                                                     </div>
                                                 ))
@@ -270,7 +270,7 @@ export default function RentalManager({ opportunityId }: RentalManagerProps) {
                             </div>
 
                             <div>
-                                <label className="block text-xs font-semibold text-gray-500 uppercase mb-1.5">수량</label>
+                                <label className="block text-xs font-semibold text-muted-foreground uppercase mb-1.5">수량</label>
                                 <input
                                     type="number"
                                     required
@@ -278,31 +278,31 @@ export default function RentalManager({ opportunityId }: RentalManagerProps) {
                                     max={selectedItem?.available_quantity || 1}
                                     value={quantity}
                                     onChange={(e) => setQuantity(parseInt(e.target.value))}
-                                    className="block w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                                    className="block w-full px-4 py-2.5 bg-secondary text-white rounded-lg border border-border focus:ring-2 focus:ring-accent focus:border-accent text-sm"
                                 />
                             </div>
                             <div>
-                                <label className="block text-xs font-semibold text-gray-500 uppercase mb-1.5">반납 예정일</label>
+                                <label className="block text-xs font-semibold text-muted-foreground uppercase mb-1.5">반납 예정일</label>
                                 <input
                                     type="date"
                                     value={returnDueDate}
                                     onChange={(e) => setReturnDueDate(e.target.value)}
-                                    className="block w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                                    className="block w-full px-4 py-2.5 bg-secondary text-white rounded-lg border border-border focus:ring-2 focus:ring-accent focus:border-accent text-sm"
                                 />
                             </div>
                         </div>
-                        <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-100">
+                        <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-border">
                             <button
                                 type="button"
                                 onClick={() => setIsAdding(false)}
-                                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                                className="px-4 py-2 text-sm font-medium text-muted-foreground bg-card border border-border rounded-lg hover:bg-secondary/30 transition-colors"
                             >
                                 취소
                             </button>
                             <button
                                 type="button"
                                 onClick={handleAddRental}
-                                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 shadow-sm transition-colors"
+                                className="px-4 py-2 text-sm font-medium text-white bg-accent rounded-lg hover:bg-accent/90 shadow-sm transition-colors"
                             >
                                 등록하기
                             </button>
@@ -311,36 +311,36 @@ export default function RentalManager({ opportunityId }: RentalManagerProps) {
                 </div>
             )}
 
-            <div className="overflow-hidden bg-white border border-gray-200 rounded-xl shadow-sm">
+            <div className="overflow-hidden bg-card border border-border rounded-xl shadow-sm">
                 <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50/80">
+                    <thead className="bg-secondary/30/80">
                         <tr>
-                            <th scope="col" className="py-3.5 pl-6 pr-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">품목</th>
-                            <th scope="col" className="px-3 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">수량</th>
-                            <th scope="col" className="px-3 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">대여일</th>
-                            <th scope="col" className="px-3 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">상태</th>
+                            <th scope="col" className="py-3.5 pl-6 pr-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">품목</th>
+                            <th scope="col" className="px-3 py-3.5 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">수량</th>
+                            <th scope="col" className="px-3 py-3.5 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">대여일</th>
+                            <th scope="col" className="px-3 py-3.5 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">상태</th>
                             <th scope="col" className="relative py-3.5 pl-3 pr-6">
                                 <span className="sr-only">Actions</span>
                             </th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-200 bg-white">
+                    <tbody className="divide-y divide-gray-200 bg-card">
                         {rentals.length === 0 ? (
                             <tr>
                                 <td colSpan={5} className="px-6 py-10 text-center">
-                                    <div className="flex flex-col items-center justify-center text-gray-500">
+                                    <div className="flex flex-col items-center justify-center text-muted-foreground">
                                         <Package className="w-10 h-10 text-gray-300 mb-2" />
                                         <p className="text-sm font-medium">대여 기록이 없습니다.</p>
-                                        <p className="text-xs text-gray-400 mt-1">새로운 샘플을 대여하려면 '대여 추가' 버튼을 클릭하세요.</p>
+                                        <p className="text-xs text-muted-foreground mt-1">새로운 샘플을 대여하려면 '대여 추가' 버튼을 클릭하세요.</p>
                                     </div>
                                 </td>
                             </tr>
                         ) : (
                             rentals.map((rental) => (
-                                <tr key={rental.id} className="hover:bg-gray-50/50 transition-colors">
-                                    <td className="whitespace-nowrap py-4 pl-6 pr-3 text-sm font-medium text-gray-900">{rental.model_code}</td>
-                                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-600 text-center">{rental.quantity}</td>
-                                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-600 text-center">{rental.rent_date}</td>
+                                <tr key={rental.id} className="hover:bg-secondary/30/50 transition-colors">
+                                    <td className="whitespace-nowrap py-4 pl-6 pr-3 text-sm font-medium text-white">{rental.model_code}</td>
+                                    <td className="whitespace-nowrap px-3 py-4 text-sm text-muted-foreground text-center">{rental.quantity}</td>
+                                    <td className="whitespace-nowrap px-3 py-4 text-sm text-muted-foreground text-center">{rental.rent_date}</td>
                                     <td className="whitespace-nowrap px-3 py-4 text-sm text-center">
                                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${rental.status === 'rented'
                                             ? 'bg-yellow-100 text-yellow-800 border border-yellow-200'
@@ -355,7 +355,7 @@ export default function RentalManager({ opportunityId }: RentalManagerProps) {
                                                 <button
                                                     type="button"
                                                     onClick={(e) => handleReturnRental(e, rental.id)}
-                                                    className="text-blue-600 hover:text-blue-900 font-medium text-xs bg-blue-50 px-3 py-1.5 rounded-md hover:bg-blue-100 transition-colors"
+                                                    className="text-accent hover:text-blue-900 font-medium text-xs bg-accent/10 px-3 py-1.5 rounded-md hover:bg-blue-100 transition-colors"
                                                 >
                                                     반납
                                                 </button>
@@ -363,7 +363,7 @@ export default function RentalManager({ opportunityId }: RentalManagerProps) {
                                             <button
                                                 type="button"
                                                 onClick={(e) => handleDeleteRental(e, rental.id)}
-                                                className="text-gray-400 hover:text-red-600 transition-colors p-1 rounded-full hover:bg-red-50"
+                                                className="text-muted-foreground hover:text-danger transition-colors p-1 rounded-full hover:bg-danger/10"
                                                 title="삭제"
                                             >
                                                 <Trash2 size={16} />

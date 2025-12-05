@@ -49,16 +49,16 @@ export default function CompanyNews({ companyName }: CompanyNewsProps) {
     };
 
     return (
-        <div className="h-full flex flex-col bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-            <div className="p-4 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
-                <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
-                    <div className="p-1.5 bg-green-50 rounded-lg text-green-600">
+        <div className="h-full flex flex-col bg-card border border-border rounded-xl shadow-sm overflow-hidden">
+            <div className="p-4 border-b border-border bg-secondary/30/50 flex justify-between items-center">
+                <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                    <div className="p-1.5 bg-success/10 rounded-lg text-success">
                         <Newspaper size={16} />
                     </div>
                     업체 관련 주요 뉴스
                 </h3>
                 {companyName && (
-                    <span className="text-xs text-gray-500 font-medium px-2 py-1 bg-gray-100 rounded-full">
+                    <span className="text-xs text-muted-foreground font-medium px-2 py-1 bg-secondary/50 rounded-full">
                         {companyName}
                     </span>
                 )}
@@ -66,16 +66,16 @@ export default function CompanyNews({ companyName }: CompanyNewsProps) {
 
             <div className="flex-1 overflow-y-auto p-4">
                 {loading ? (
-                    <div className="h-full flex flex-col items-center justify-center text-gray-400 gap-2 min-h-[150px]">
+                    <div className="h-full flex flex-col items-center justify-center text-muted-foreground gap-2 min-h-[150px]">
                         <Loader2 size={24} className="animate-spin text-blue-500" />
                         <span className="text-xs">뉴스를 검색중입니다...</span>
                     </div>
                 ) : error ? (
-                    <div className="h-full flex flex-col items-center justify-center text-gray-400 gap-2 min-h-[150px]">
+                    <div className="h-full flex flex-col items-center justify-center text-muted-foreground gap-2 min-h-[150px]">
                         <p className="text-xs text-red-500">{error}</p>
                     </div>
                 ) : news.length === 0 ? (
-                    <div className="h-full flex flex-col items-center justify-center text-gray-400 gap-2 min-h-[150px]">
+                    <div className="h-full flex flex-col items-center justify-center text-muted-foreground gap-2 min-h-[150px]">
                         <Newspaper size={24} className="text-gray-300" />
                         <p className="text-xs">관련된 뉴스가 없습니다.</p>
                     </div>
@@ -89,12 +89,12 @@ export default function CompanyNews({ companyName }: CompanyNewsProps) {
                                 rel="noopener noreferrer"
                                 className="block group"
                             >
-                                <div className="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors border border-transparent hover:border-gray-100">
+                                <div className="flex items-start gap-3 p-3 rounded-lg hover:bg-secondary/30 transition-colors border border-transparent hover:border-border">
                                     <div className="flex-1 min-w-0">
-                                        <h4 className="text-sm font-medium text-gray-900 group-hover:text-blue-600 line-clamp-2 leading-snug mb-1.5 transition-colors">
+                                        <h4 className="text-sm font-medium text-white group-hover:text-accent line-clamp-2 leading-snug mb-1.5 transition-colors">
                                             {item.title}
                                         </h4>
-                                        <div className="flex items-center gap-2 text-xs text-gray-400">
+                                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                             <span>{new Date(item.pubDate).toLocaleDateString()}</span>
                                             {/* <span className="w-0.5 h-0.5 bg-gray-300 rounded-full"></span>
                                             <span>{item.source}</span> */}

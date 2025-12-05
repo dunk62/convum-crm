@@ -128,20 +128,20 @@ export default function TodoList({ opportunityId }: TodoListProps) {
     if (!opportunityId) return null;
 
     return (
-        <div className="h-full flex flex-col bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-            <div className="p-4 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
-                <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
-                    <div className="p-1.5 bg-green-50 rounded-lg text-green-600">
+        <div className="h-full flex flex-col bg-card border border-border rounded-xl shadow-sm overflow-hidden">
+            <div className="p-4 border-b border-border bg-secondary/30/50 flex justify-between items-center">
+                <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                    <div className="p-1.5 bg-success/10 rounded-lg text-success">
                         <CheckSquare size={16} />
                     </div>
                     해야 할 일 리스트
                 </h3>
-                <span className="text-xs text-gray-400 font-medium">
+                <span className="text-xs text-muted-foreground font-medium">
                     {todos.filter(t => t.is_completed).length}/{todos.length} 완료
                 </span>
             </div>
 
-            <div className="p-4 border-b border-gray-100 bg-white">
+            <div className="p-4 border-b border-border bg-card">
                 <div className="flex gap-2">
                     <input
                         type="text"
@@ -149,7 +149,7 @@ export default function TodoList({ opportunityId }: TodoListProps) {
                         onChange={(e) => setInputValue(e.target.value)}
                         onKeyDown={handleKeyDown}
                         placeholder="새로운 할 일을 입력하세요..."
-                        className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        className="flex-1 px-3 py-2 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                     />
                     <button
                         type="button"
@@ -164,12 +164,12 @@ export default function TodoList({ opportunityId }: TodoListProps) {
 
             <div className="flex-1 overflow-y-auto p-2">
                 {loading ? (
-                    <div className="h-full flex flex-col items-center justify-center text-gray-400 gap-2 min-h-[100px]">
+                    <div className="h-full flex flex-col items-center justify-center text-muted-foreground gap-2 min-h-[100px]">
                         <Loader2 size={24} className="animate-spin text-green-500" />
                         <p className="text-xs">로딩 중...</p>
                     </div>
                 ) : todos.length === 0 ? (
-                    <div className="h-full flex flex-col items-center justify-center text-gray-400 gap-2 min-h-[100px]">
+                    <div className="h-full flex flex-col items-center justify-center text-muted-foreground gap-2 min-h-[100px]">
                         <CheckSquare size={24} className="text-gray-300" />
                         <p className="text-xs">등록된 할 일이 없습니다.</p>
                     </div>
@@ -178,14 +178,14 @@ export default function TodoList({ opportunityId }: TodoListProps) {
                         {todos.map((todo) => (
                             <div
                                 key={todo.id}
-                                className={`group flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors ${todo.is_completed ? 'bg-gray-50/50' : ''}`}
+                                className={`group flex items-center gap-3 p-2 rounded-lg hover:bg-secondary/30 transition-colors ${todo.is_completed ? 'bg-secondary/30/50' : ''}`}
                             >
                                 <button
                                     type="button"
                                     onClick={() => toggleTodo(todo.id, todo.is_completed)}
                                     className={`flex-shrink-0 w-5 h-5 rounded border flex items-center justify-center transition-colors ${todo.is_completed
-                                        ? 'bg-green-500 border-green-500 text-white'
-                                        : 'bg-white border-gray-300 text-transparent hover:border-green-400'
+                                        ? 'bg-success/100 border-green-500 text-white'
+                                        : 'bg-card border-border text-transparent hover:border-green-400'
                                         }`}
                                 >
                                     <CheckSquare size={12} fill="currentColor" className={todo.is_completed ? 'opacity-100' : 'opacity-0'} />
@@ -193,8 +193,8 @@ export default function TodoList({ opportunityId }: TodoListProps) {
 
                                 <span
                                     className={`flex-1 text-sm transition-all ${todo.is_completed
-                                        ? 'text-gray-400 line-through decoration-gray-400'
-                                        : 'text-gray-700'
+                                        ? 'text-muted-foreground line-through decoration-gray-400'
+                                        : 'text-muted-foreground'
                                         }`}
                                 >
                                     {todo.task_content}

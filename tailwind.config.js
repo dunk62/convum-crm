@@ -7,31 +7,46 @@ export default {
   theme: {
     extend: {
       colors: {
+        // Dark theme palette inspired by Dovetail
+        background: '#000000',
+        foreground: '#ffffff',
+        card: {
+          DEFAULT: '#18181b',
+          foreground: '#ffffff',
+        },
         primary: {
-          DEFAULT: '#0f172a', // Slate 900
-          foreground: '#f8fafc', // Slate 50
+          DEFAULT: '#ffffff',
+          foreground: '#000000',
         },
         secondary: {
-          DEFAULT: '#f1f5f9', // Slate 100
-          foreground: '#0f172a', // Slate 900
+          DEFAULT: '#27272a',
+          foreground: '#a1a1aa',
         },
         accent: {
-          DEFAULT: '#3b82f6', // Blue 500
+          DEFAULT: '#3b82f6',
           foreground: '#ffffff',
         },
         muted: {
-          DEFAULT: '#64748b', // Slate 500
-          foreground: '#f1f5f9',
+          DEFAULT: '#27272a',
+          foreground: '#a1a1aa',
         },
-        card: {
-          DEFAULT: '#ffffff',
-          foreground: '#0f172a',
-        },
-        background: '#f8fafc', // Slate 50
+        border: '#27272a',
+        input: '#27272a',
+        ring: '#3b82f6',
+        // Semantic colors
+        success: '#10b981',
+        warning: '#f59e0b',
+        danger: '#ef4444',
+        info: '#3b82f6',
       },
       fontFamily: {
         sans: ['Inter', 'sans-serif'],
-      }
+      },
+      borderRadius: {
+        lg: '0.75rem',
+        md: '0.5rem',
+        sm: '0.25rem',
+      },
     },
   },
   plugins: [],
