@@ -7,37 +7,37 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Dark theme palette inspired by Dovetail
-        background: '#000000',
+        // Dark blue theme palette matching Home page
+        background: '#0f1a2e',
         foreground: '#ffffff',
         card: {
-          DEFAULT: '#18181b',
+          DEFAULT: '#1a2d4a',
           foreground: '#ffffff',
         },
         primary: {
           DEFAULT: '#ffffff',
-          foreground: '#000000',
+          foreground: '#0f1a2e',
         },
         secondary: {
-          DEFAULT: '#27272a',
-          foreground: '#a1a1aa',
+          DEFAULT: '#243b5c',
+          foreground: '#94a3b8',
         },
         accent: {
-          DEFAULT: '#3b82f6',
+          DEFAULT: '#5a8fd4',
           foreground: '#ffffff',
         },
         muted: {
-          DEFAULT: '#27272a',
-          foreground: '#a1a1aa',
+          DEFAULT: '#1e3a5f',
+          foreground: '#94a3b8',
         },
-        border: '#27272a',
-        input: '#27272a',
-        ring: '#3b82f6',
+        border: '#2a4266',
+        input: '#243b5c',
+        ring: '#5a8fd4',
         // Semantic colors
         success: '#10b981',
         warning: '#f59e0b',
         danger: '#ef4444',
-        info: '#3b82f6',
+        info: '#5a8fd4',
       },
       fontFamily: {
         sans: ['Inter', 'sans-serif'],

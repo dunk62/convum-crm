@@ -1,6 +1,8 @@
 
 import { useState, useEffect, useMemo } from 'react';
-import { ChevronDown, Search, Filter, Settings, RefreshCw, Plus, X, AlertCircle, Calendar, Trash2, Building2, Mail, Sparkles } from 'lucide-react';
+import { ChevronDown, Search, Filter, Settings, RefreshCw, Plus, X, AlertCircle, Calendar, Trash2, Building2, Mail, Sparkles, LayoutGrid, List, GripVertical, MessageSquare } from 'lucide-react';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
+import type { DropResult } from '@hello-pangea/dnd';
 import { supabase } from '../lib/supabase';
 import RentalManager from '../components/RentalManager';
 import CompanyNews from '../components/CompanyNews';
@@ -39,6 +41,8 @@ interface Memo {
     created_at: string;
     updated_at?: string;
     parent_id?: string | null;
+    author?: string;
+    ai_summary?: string;
 }
 
 export default function Opportunities() {
@@ -50,6 +54,54 @@ export default function Opportunities() {
         fetchOpportunities();
     }, []);
 
+    // Check for overdue opportunities and show alert
+    useEffect(() => {
+        if (opportunities.length > 0) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            const overdue = opportunities.filter(op => {
+                if (!op.date || op.stage === '수주(성공)' || op.stage === '실주(실패)') return false;
+                const dueDate = new Date(op.date);
+                dueDate.setHours(0, 0, 0, 0);
+                return dueDate <= today;
+            });
+
+            if (overdue.length > 0) {
+                setOverdueOpportunities(overdue);
+                setShowOverdueAlert(true);
+
+                // Play warning sound
+                const playWarningSound = () => {
+                    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
+
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+
+                    oscillator.frequency.value = 800;
+                    oscillator.type = 'square';
+                    gainNode.gain.value = 0.3;
+
+                    oscillator.start();
+
+                    // Beep pattern: on-off-on-off-on
+                    setTimeout(() => gainNode.gain.value = 0, 150);
+                    setTimeout(() => gainNode.gain.value = 0.3, 300);
+                    setTimeout(() => gainNode.gain.value = 0, 450);
+                    setTimeout(() => gainNode.gain.value = 0.3, 600);
+                    setTimeout(() => {
+                        gainNode.gain.value = 0;
+                        oscillator.stop();
+                    }, 750);
+                };
+
+                playWarningSound();
+            }
+        }
+    }, [opportunities]);
+
     const fetchOpportunities = async () => {
         try {
             setLoading(true);
@@ -59,7 +111,7 @@ export default function Opportunities() {
             const { data, error } = await supabase
                 .from('opportunities')
                 .select('*')
-                .order('created_at', { ascending: false });
+                .order('date', { ascending: true });
 
             if (error) throw error;
             setOpportunities(data || []);
@@ -87,9 +139,14 @@ export default function Opportunities() {
         'title', 'company', 'value', 'stage', 'success_probability', 'date', 'meeting_date', 'owner', 'created_at'
     ]));
 
+    // View Mode State (table or kanban)
+    const [viewMode, setViewMode] = useState<'table' | 'kanban'>('kanban');
+
     // Modal States
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [showOverdueAlert, setShowOverdueAlert] = useState(false);
+    const [overdueOpportunities, setOverdueOpportunities] = useState<any[]>([]);
 
     // Form States
     const [newOpportunity, setNewOpportunity] = useState<{
@@ -134,9 +191,12 @@ export default function Opportunities() {
     const [newMemo, setNewMemo] = useState('');
     const [isMemoLoading, setIsMemoLoading] = useState(false);
     const [loadingAIForMemo, setLoadingAIForMemo] = useState<string | null>(null);
+    const [loadingAISummaryForMemo, setLoadingAISummaryForMemo] = useState<string | null>(null);
     const [editingMemoId, setEditingMemoId] = useState<string | null>(null);
     const [editingMemoContent, setEditingMemoContent] = useState('');
     const [activeMenuMemoId, setActiveMenuMemoId] = useState<string | null>(null);
+    const [replyToMemoId, setReplyToMemoId] = useState<string | null>(null);
+    const [replyContent, setReplyContent] = useState('');
 
     const fetchMemos = async (opportunityId: string) => {
         try {
@@ -508,22 +568,48 @@ export default function Opportunities() {
 
     const handleAIFollowUp = async (memoId: string, content: string) => {
         setLoadingAIForMemo(memoId);
+        const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+
+        if (!apiKey) {
+            alert('GEMINI API 키가 설정되지 않았습니다.');
+            setLoadingAIForMemo(null);
+            return;
+        }
+
         try {
-            const response = await fetch('/api/ai-followup', {
+            const prompt = `너는 유능한 영업 비서야. 사용자가 입력한 미팅 내용을 바탕으로 향후 F/U(Follow-up)해야 할 핵심 내용을 4가지로 간략하게 요약해서 번호 매겨서 정리해줘.
+각 항목은 군더더기 없이 핵심 행동이나 내용만 명확하게 작성해줘.
+(미팅 내용에 기반하여) 와 같은 괄호 설명이나 부연 설명은 절대 포함하지 마.
+
+반드시 아래 형식으로만 출력해줘:
+F/U 제안
+1. [핵심 내용]
+2. [핵심 내용]
+3. [핵심 내용]
+4. [핵심 내용]
+
+[미팅 내용]
+${content}`;
+
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ content })
+                body: JSON.stringify({
+                    contents: [{
+                        parts: [{ text: prompt }]
+                    }]
+                })
             });
 
             const data = await response.json();
 
-            if (!response.ok) {
-                throw new Error(data.error || 'Failed to fetch AI response');
+            if (data.error) {
+                throw new Error(data.error.message);
             }
 
-            const aiResponse = data.result;
+            const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
             if (!aiResponse) {
                 throw new Error('AI 응답을 받아오지 못했습니다.');
@@ -535,7 +621,8 @@ export default function Opportunities() {
                 .insert([{
                     opportunity_id: editingOpportunity?.id,
                     content: aiResponse,
-                    parent_id: memoId
+                    parent_id: memoId,
+                    author: 'AI Assistant'
                 }]);
 
             if (error) throw error;
@@ -547,6 +634,78 @@ export default function Opportunities() {
             alert('AI 분석 중 오류가 발생했습니다: ' + err.message);
         } finally {
             setLoadingAIForMemo(null);
+        }
+    };
+
+    // AI 메모 정리 함수 - Gemini를 사용하여 메모 내용을 깔끔하게 정리
+    const handleAISummary = async (memoId: string, content: string) => {
+        setLoadingAISummaryForMemo(memoId);
+        const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+
+        if (!apiKey) {
+            alert('GEMINI API 키가 설정되지 않았습니다.');
+            setLoadingAISummaryForMemo(null);
+            return;
+        }
+
+        try {
+            const prompt = `너는 유능한 영업 비서야. 다음 영업 메모를 깔끔하게 정리해줘.
+
+## 정리 규칙:
+1. 핵심 내용을 bullet point로 요약
+2. 날짜, 담당자, 업체명 등 중요 정보 강조
+3. 주요 액션 아이템이 있다면 "📌 액션 아이템" 섹션으로 분리
+4. 간결하고 명확하게 작성
+5. 불필요한 설명 없이 핵심만 작성
+
+[메모 내용]
+${content}
+
+## 정리 결과:`;
+
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    contents: [{
+                        parts: [{ text: prompt }]
+                    }]
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.error) {
+                throw new Error(data.error.message);
+            }
+
+            const aiSummary = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+            if (!aiSummary) {
+                throw new Error('AI 정리 결과를 받아오지 못했습니다.');
+            }
+
+            // Add AI summary as a reply with [AI 정리] prefix
+            const { error } = await supabase
+                .from('opportunity_memos')
+                .insert([{
+                    opportunity_id: editingOpportunity?.id,
+                    content: `📋 **AI 정리**\n\n${aiSummary}`,
+                    parent_id: memoId,
+                    author: 'AI Assistant'
+                }]);
+
+            if (error) throw error;
+
+            fetchMemos(editingOpportunity!.id);
+
+        } catch (err: any) {
+            console.error('Error calling Gemini API for summary:', err);
+            alert('AI 정리 중 오류가 발생했습니다: ' + err.message);
+        } finally {
+            setLoadingAISummaryForMemo(null);
         }
     };
 
@@ -568,11 +727,34 @@ export default function Opportunities() {
 
             if (error) throw error;
 
-            setEditingMemoId(null);
+            setNewMemo('');
             fetchMemos(editingOpportunity!.id);
         } catch (err: any) {
-            console.error('Error updating memo:', err);
-            alert('메모 수정에 실패했습니다.');
+            console.error('Error adding memo:', err);
+            alert('메모 추가에 실패했습니다.');
+        }
+    };
+
+    const handleAddReply = async (parentMemoId: string) => {
+        if (!replyContent.trim() || !editingOpportunity) return;
+
+        try {
+            const { error } = await supabase
+                .from('opportunity_memos')
+                .insert([{
+                    opportunity_id: editingOpportunity.id,
+                    content: replyContent,
+                    parent_id: parentMemoId
+                }]);
+
+            if (error) throw error;
+
+            setReplyContent('');
+            setReplyToMemoId(null);
+            fetchMemos(editingOpportunity!.id);
+        } catch (err: any) {
+            console.error('Error adding reply:', err);
+            alert('댓글 추가에 실패했습니다.');
         }
     };
 
@@ -591,6 +773,40 @@ export default function Opportunities() {
         } catch (err: any) {
             console.error('Error deleting memo:', err);
             alert('메모 삭제에 실패했습니다.');
+        }
+    };
+
+    // Drag and Drop Handler
+    const handleDragEnd = async (result: DropResult) => {
+        const { draggableId, destination, source } = result;
+
+        // If dropped outside a droppable area or same position
+        if (!destination || (destination.droppableId === source.droppableId && destination.index === source.index)) {
+            return;
+        }
+
+        const newStage = destination.droppableId;
+        const opportunityId = draggableId;
+
+        // Optimistically update the local state
+        setOpportunities(prev => prev.map(op =>
+            String(op.id) === opportunityId ? { ...op, stage: newStage } : op
+        ));
+
+        try {
+            const { error } = await supabase
+                .from('opportunities')
+                .update({ stage: newStage })
+                .eq('id', opportunityId);
+
+            if (error) throw error;
+
+            console.log(`Opportunity ${opportunityId} moved to ${newStage}`);
+        } catch (err: any) {
+            console.error('Error updating stage:', err);
+            alert('단계 변경에 실패했습니다. 페이지를 새로고침해주세요.');
+            // Revert on error
+            fetchOpportunities();
         }
     };
 
@@ -935,12 +1151,39 @@ export default function Opportunities() {
 
                 </div>
 
-                <div className="hidden md:flex items-center gap-2 px-3 py-1 bg-danger/10 text-danger rounded-full border border-danger/20">
-                    <AlertCircle size={14} />
-                    <span className="text-xs font-medium">모든 안건은 14일 안에 재접촉할 것</span>
+                <div className="hidden md:flex items-center gap-3 px-5 py-2.5 rounded-full border-2 animate-pulse-glow relative overflow-hidden"
+                    style={{
+                        background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(220, 38, 38, 0.3) 50%, rgba(239, 68, 68, 0.2) 100%)',
+                        borderColor: 'rgba(239, 68, 68, 0.5)',
+                        boxShadow: '0 0 20px rgba(239, 68, 68, 0.3), inset 0 0 20px rgba(239, 68, 68, 0.1)'
+                    }}>
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-red-500/20 to-transparent animate-shimmer"></div>
+                    <AlertCircle size={18} className="text-red-400 animate-bounce-slow relative z-10" />
+                    <span className="text-sm font-bold text-red-400 tracking-wide relative z-10">
+                        ⚠️ 모든 안건은 14일 안에 재접촉할 것
+                    </span>
                 </div>
                 <div className="flex items-center gap-2">
                     <span className="text-xs text-muted-foreground mr-2">{filteredOpportunities.length}개 항목 • 정렬 기준: {sortConfig ? (sortConfig.direction === 'asc' ? '오름차순' : '내림차순') : '기본'}</span>
+
+                    {/* View Mode Toggle */}
+                    <div className="flex items-center bg-secondary/50 rounded-lg p-1 border border-border">
+                        <button
+                            onClick={() => setViewMode('table')}
+                            className={`p-1.5 rounded transition-colors ${viewMode === 'table' ? 'bg-accent text-white' : 'text-muted-foreground hover:text-white'}`}
+                            title="테이블 보기"
+                        >
+                            <List size={16} />
+                        </button>
+                        <button
+                            onClick={() => setViewMode('kanban')}
+                            className={`p-1.5 rounded transition-colors ${viewMode === 'kanban' ? 'bg-accent text-white' : 'text-muted-foreground hover:text-white'}`}
+                            title="칸반 보기"
+                        >
+                            <LayoutGrid size={16} />
+                        </button>
+                    </div>
+
                     <div className="relative">
                         <button
                             onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -975,343 +1218,642 @@ export default function Opportunities() {
                 </div>
             </div>
 
-            {/* Table */}
-            <div className="flex-1 overflow-auto">
-                <table className="w-full text-left text-sm border-collapse">
-                    <thead className="bg-secondary/30 sticky top-0 z-10">
-                        <tr>
-                            <th className="p-2 border-b border-border w-10 text-center">
-                                <input
-                                    type="checkbox"
-                                    className="rounded border-border text-accent focus:ring-accent"
-                                    checked={selectedItems.length === filteredOpportunities.length && filteredOpportunities.length > 0}
-                                    onChange={toggleSelectAll}
-                                />
-                            </th>
-                            {visibleColumns.has('title') && (
-                                <th className="p-2 border-b border-border text-center text-base font-bold text-muted-foreground min-w-[200px]" onClick={() => handleSort('title')}>
-                                    <div className="flex items-center justify-center cursor-pointer hover:text-white group">
-                                        안건
-                                        {sortConfig?.key === 'title' ? (
-                                            <ChevronDown size={12} className={`ml-1 transition-transform ${sortConfig.direction === 'asc' ? 'rotate-180' : ''}`} />
-                                        ) : (
-                                            <ChevronDown size={12} className="ml-1 opacity-0 group-hover:opacity-50" />
-                                        )}
-                                    </div>
-                                </th>
-                            )}
-                            {visibleColumns.has('company') && (
-                                <th className="p-2 border-b border-border text-center text-base font-bold text-muted-foreground min-w-[150px]" onClick={() => handleSort('company')}>
-                                    <div className="flex items-center justify-center cursor-pointer hover:text-white group">
-                                        업체명
-                                        {sortConfig?.key === 'company' ? (
-                                            <ChevronDown size={12} className={`ml-1 transition-transform ${sortConfig.direction === 'asc' ? 'rotate-180' : ''}`} />
-                                        ) : (
-                                            <ChevronDown size={12} className="ml-1 opacity-0 group-hover:opacity-50" />
-                                        )}
-                                    </div>
-                                </th>
-                            )}
-                            {visibleColumns.has('value') && (
-                                <th className="p-2 border-b border-border text-center text-base font-bold text-muted-foreground min-w-[120px]" onClick={() => handleSort('value')}>
-                                    <div className="flex items-center justify-center cursor-pointer hover:text-white group">
-                                        예상 매출액
-                                        {sortConfig?.key === 'value' ? (
-                                            <ChevronDown size={12} className={`ml-1 transition-transform ${sortConfig.direction === 'asc' ? 'rotate-180' : ''}`} />
-                                        ) : (
-                                            <ChevronDown size={12} className="ml-1 opacity-0 group-hover:opacity-50" />
-                                        )}
-                                    </div>
-                                </th>
-                            )}
-                            {visibleColumns.has('stage') && (
-                                <th className="p-2 border-b border-border text-center text-base font-bold text-muted-foreground min-w-[120px]" onClick={() => handleSort('stage')}>
-                                    <div className="flex items-center justify-center cursor-pointer hover:text-white group">
-                                        진행 단계
-                                        {sortConfig?.key === 'stage' ? (
-                                            <ChevronDown size={12} className={`ml-1 transition-transform ${sortConfig.direction === 'asc' ? 'rotate-180' : ''}`} />
-                                        ) : (
-                                            <ChevronDown size={12} className="ml-1 opacity-0 group-hover:opacity-50" />
-                                        )}
-                                    </div>
-                                </th>
-                            )}
-                            {visibleColumns.has('success_probability') && (
-                                <th className="p-2 border-b border-border text-center text-base font-bold text-muted-foreground min-w-[100px]" onClick={() => handleSort('success_probability')}>
-                                    <div className="flex items-center justify-center cursor-pointer hover:text-white group">
-                                        성공 확률
-                                        {sortConfig?.key === 'success_probability' ? (
-                                            <ChevronDown size={12} className={`ml-1 transition-transform ${sortConfig.direction === 'asc' ? 'rotate-180' : ''}`} />
-                                        ) : (
-                                            <ChevronDown size={12} className="ml-1 opacity-0 group-hover:opacity-50" />
-                                        )}
-                                    </div>
-                                </th>
-                            )}
-                            {visibleColumns.has('date') && (
-                                <th className="p-2 border-b border-border text-center text-base font-bold text-muted-foreground min-w-[100px]" onClick={() => handleSort('date')}>
-                                    <div className="flex items-center justify-center cursor-pointer hover:text-white group">
-                                        마감 일자
-                                        {sortConfig?.key === 'date' ? (
-                                            <ChevronDown size={12} className={`ml-1 transition-transform ${sortConfig.direction === 'asc' ? 'rotate-180' : ''}`} />
-                                        ) : (
-                                            <ChevronDown size={12} className="ml-1 opacity-0 group-hover:opacity-50" />
-                                        )}
-                                    </div>
-                                </th>
-                            )}
-                            {visibleColumns.has('meeting_date') && (
-                                <th className="p-2 border-b border-border text-center text-base font-bold text-muted-foreground min-w-[100px]" onClick={() => handleSort('meeting_date')}>
-                                    <div className="flex items-center justify-center cursor-pointer hover:text-white group">
-                                        미팅 일자
-                                        {sortConfig?.key === 'meeting_date' ? (
-                                            <ChevronDown size={12} className={`ml-1 transition-transform ${sortConfig.direction === 'asc' ? 'rotate-180' : ''}`} />
-                                        ) : (
-                                            <ChevronDown size={12} className="ml-1 opacity-0 group-hover:opacity-50" />
-                                        )}
-                                    </div>
-                                </th>
-                            )}
-                            {visibleColumns.has('owner') && (
-                                <th className="p-2 border-b border-border text-center text-base font-bold text-muted-foreground min-w-[100px]" onClick={() => handleSort('owner')}>
-                                    <div className="flex items-center justify-center cursor-pointer hover:text-white group">
-                                        영업 담당자
-                                        {sortConfig?.key === 'owner' ? (
-                                            <ChevronDown size={12} className={`ml-1 transition-transform ${sortConfig.direction === 'asc' ? 'rotate-180' : ''}`} />
-                                        ) : (
-                                            <ChevronDown size={12} className="ml-1 opacity-0 group-hover:opacity-50" />
-                                        )}
-                                    </div>
-                                </th>
-                            )}
-                            {visibleColumns.has('created_at') && (
-                                <th className="p-2 border-b border-border text-center text-base font-bold text-muted-foreground min-w-[100px]" onClick={() => handleSort('created_at')}>
-                                    <div className="flex items-center justify-center cursor-pointer hover:text-white group">
-                                        등록일
-                                        {sortConfig?.key === 'created_at' ? (
-                                            <ChevronDown size={12} className={`ml-1 transition-transform ${sortConfig.direction === 'asc' ? 'rotate-180' : ''}`} />
-                                        ) : (
-                                            <ChevronDown size={12} className="ml-1 opacity-0 group-hover:opacity-50" />
-                                        )}
-                                    </div>
-                                </th>
-                            )}
-                            <th className="p-2 border-b border-border w-10"></th>
-                        </tr>
-                        {/* Filter Row */}
-                        {showFilters && (
-                            <tr className="bg-secondary/30">
-                                <th className="p-2 border-b border-border"></th>
-                                {visibleColumns.has('title') && (
-                                    <th className="p-2 border-b border-border">
-                                        <input
-                                            type="text"
-                                            placeholder="필터..."
-                                            value={filters.title || ''}
-                                            onChange={(e) => handleFilterChange('title', e.target.value)}
-                                            className="w-full px-2 py-1 text-xs bg-secondary text-white border border-border rounded focus:outline-none focus:border-accent"
-                                        />
-                                    </th>
-                                )}
-                                {visibleColumns.has('company') && (
-                                    <th className="p-2 border-b border-border">
-                                        <input
-                                            type="text"
-                                            placeholder="필터..."
-                                            value={filters.company || ''}
-                                            onChange={(e) => handleFilterChange('company', e.target.value)}
-                                            className="w-full px-2 py-1 text-xs bg-secondary text-white border border-border rounded focus:outline-none focus:border-accent"
-                                        />
-                                    </th>
-                                )}
-                                {visibleColumns.has('value') && (
-                                    <th className="p-2 border-b border-border">
-                                        <input
-                                            type="text"
-                                            placeholder="필터..."
-                                            value={filters.value || ''}
-                                            onChange={(e) => handleFilterChange('value', e.target.value)}
-                                            className="w-full px-2 py-1 text-xs bg-secondary text-white border border-border rounded focus:outline-none focus:border-accent"
-                                        />
-                                    </th>
-                                )}
-                                {visibleColumns.has('stage') && (
-                                    <th className="p-2 border-b border-border">
-                                        <select
-                                            value={filters.stage || ''}
-                                            onChange={(e) => handleFilterChange('stage', e.target.value)}
-                                            className="w-full px-2 py-1 text-xs bg-secondary text-white border border-border rounded focus:outline-none focus:border-accent"
-                                        >
-                                            <option value="">전체</option>
-                                            {STAGE_OPTIONS.map(opt => (
-                                                <option key={opt} value={opt}>{opt}</option>
-                                            ))}
-                                        </select>
-                                    </th>
-                                )}
-                                {visibleColumns.has('success_probability') && (
-                                    <th className="p-2 border-b border-border">
-                                        <input
-                                            type="text"
-                                            placeholder="필터..."
-                                            value={filters.success_probability || ''}
-                                            onChange={(e) => handleFilterChange('success_probability', e.target.value)}
-                                            className="w-full px-2 py-1 text-xs bg-secondary text-white border border-border rounded focus:outline-none focus:border-accent"
-                                        />
-                                    </th>
-                                )}
-                                {visibleColumns.has('date') && (
-                                    <th className="p-2 border-b border-border">
-                                        <input
-                                            type="text"
-                                            placeholder="필터..."
-                                            value={filters.date || ''}
-                                            onChange={(e) => handleFilterChange('date', e.target.value)}
-                                            className="w-full px-2 py-1 text-xs bg-secondary text-white border border-border rounded focus:outline-none focus:border-accent"
-                                        />
-                                    </th>
-                                )}
-                                {visibleColumns.has('meeting_date') && (
-                                    <th className="p-2 border-b border-border">
-                                        <input
-                                            type="text"
-                                            placeholder="필터..."
-                                            value={filters.meeting_date || ''}
-                                            onChange={(e) => handleFilterChange('meeting_date', e.target.value)}
-                                            className="w-full px-2 py-1 text-xs bg-secondary text-white border border-border rounded focus:outline-none focus:border-accent"
-                                        />
-                                    </th>
-                                )}
-                                {visibleColumns.has('owner') && (
-                                    <th className="p-2 border-b border-border">
-                                        <select
-                                            value={filters.owner || ''}
-                                            onChange={(e) => handleFilterChange('owner', e.target.value)}
-                                            className="w-full px-2 py-1 text-xs bg-secondary text-white border border-border rounded focus:outline-none focus:border-accent"
-                                        >
-                                            <option value="">전체</option>
-                                            {OWNER_OPTIONS.map(opt => (
-                                                <option key={opt} value={opt}>{opt}</option>
-                                            ))}
-                                        </select>
-                                    </th>
-                                )}
-                                {visibleColumns.has('created_at') && (
-                                    <th className="p-2 border-b border-border">
-                                        <input
-                                            type="text"
-                                            placeholder="필터..."
-                                            value={filters.created_at || ''}
-                                            onChange={(e) => handleFilterChange('created_at', e.target.value)}
-                                            className="w-full px-2 py-1 text-xs bg-secondary text-white border border-border rounded focus:outline-none focus:border-accent"
-                                        />
-                                    </th>
-                                )}
-                                <th className="p-2 border-b border-border"></th>
-                            </tr>
-                        )}
-                    </thead>
-                    <tbody className="divide-y divide-gray-200">
-                        {filteredOpportunities.map((op) => (
-                            <tr key={op.id} className="hover:bg-secondary/30 group">
-                                <td className="p-2 text-center">
+            {/* Table View */}
+            {viewMode === 'table' && (
+                <div className="flex-1 overflow-auto">
+                    <table className="w-full text-left border-collapse">
+                        <thead className="bg-secondary/30 sticky top-0 z-10">
+                            <tr>
+                                <th className="p-2 border-b border-border w-10 text-center">
                                     <input
                                         type="checkbox"
                                         className="rounded border-border text-accent focus:ring-accent"
-                                        checked={selectedItems.includes(String(op.id))}
-                                        onChange={() => toggleSelectItem(String(op.id))}
+                                        checked={selectedItems.length === filteredOpportunities.length && filteredOpportunities.length > 0}
+                                        onChange={toggleSelectAll}
                                     />
-                                </td>
+                                </th>
                                 {visibleColumns.has('title') && (
-                                    <td className="p-2 font-medium text-accent hover:underline cursor-pointer" onClick={() => handleTitleClick(op)}>
-                                        {op.title}
-                                    </td>
+                                    <th className="p-2 border-b border-border text-center text-base font-bold text-muted-foreground min-w-[200px]" onClick={() => handleSort('title')}>
+                                        <div className="flex items-center justify-center cursor-pointer hover:text-white group">
+                                            안건
+                                            {sortConfig?.key === 'title' ? (
+                                                <ChevronDown size={12} className={`ml-1 transition-transform ${sortConfig.direction === 'asc' ? 'rotate-180' : ''}`} />
+                                            ) : (
+                                                <ChevronDown size={12} className="ml-1 opacity-0 group-hover:opacity-50" />
+                                            )}
+                                        </div>
+                                    </th>
                                 )}
                                 {visibleColumns.has('company') && (
-                                    <td className="p-2">
-                                        <button
-                                            onClick={() => handleCompanyClick(op.company)}
-                                            className="text-muted-foreground hover:text-accent hover:underline text-left"
-                                        >
-                                            {op.company}
-                                        </button>
-                                    </td>
+                                    <th className="p-2 border-b border-border text-center text-base font-bold text-muted-foreground min-w-[150px]" onClick={() => handleSort('company')}>
+                                        <div className="flex items-center justify-center cursor-pointer hover:text-white group">
+                                            업체명
+                                            {sortConfig?.key === 'company' ? (
+                                                <ChevronDown size={12} className={`ml-1 transition-transform ${sortConfig.direction === 'asc' ? 'rotate-180' : ''}`} />
+                                            ) : (
+                                                <ChevronDown size={12} className="ml-1 opacity-0 group-hover:opacity-50" />
+                                            )}
+                                        </div>
+                                    </th>
                                 )}
                                 {visibleColumns.has('value') && (
-                                    <td className="p-2 text-muted-foreground">
-                                        {formatCurrency(op.value)}
-                                    </td>
+                                    <th className="p-2 border-b border-border text-center text-base font-bold text-muted-foreground min-w-[120px]" onClick={() => handleSort('value')}>
+                                        <div className="flex items-center justify-center cursor-pointer hover:text-white group">
+                                            예상 매출액
+                                            {sortConfig?.key === 'value' ? (
+                                                <ChevronDown size={12} className={`ml-1 transition-transform ${sortConfig.direction === 'asc' ? 'rotate-180' : ''}`} />
+                                            ) : (
+                                                <ChevronDown size={12} className="ml-1 opacity-0 group-hover:opacity-50" />
+                                            )}
+                                        </div>
+                                    </th>
                                 )}
                                 {visibleColumns.has('stage') && (
-                                    <td className="p-2">
-                                        <div className="relative group/edit">
+                                    <th className="p-2 border-b border-border text-center text-base font-bold text-muted-foreground min-w-[120px]" onClick={() => handleSort('stage')}>
+                                        <div className="flex items-center justify-center cursor-pointer hover:text-white group">
+                                            진행 단계
+                                            {sortConfig?.key === 'stage' ? (
+                                                <ChevronDown size={12} className={`ml-1 transition-transform ${sortConfig.direction === 'asc' ? 'rotate-180' : ''}`} />
+                                            ) : (
+                                                <ChevronDown size={12} className="ml-1 opacity-0 group-hover:opacity-50" />
+                                            )}
+                                        </div>
+                                    </th>
+                                )}
+                                {visibleColumns.has('success_probability') && (
+                                    <th className="p-2 border-b border-border text-center text-base font-bold text-muted-foreground min-w-[100px]" onClick={() => handleSort('success_probability')}>
+                                        <div className="flex items-center justify-center cursor-pointer hover:text-white group">
+                                            성공 확률
+                                            {sortConfig?.key === 'success_probability' ? (
+                                                <ChevronDown size={12} className={`ml-1 transition-transform ${sortConfig.direction === 'asc' ? 'rotate-180' : ''}`} />
+                                            ) : (
+                                                <ChevronDown size={12} className="ml-1 opacity-0 group-hover:opacity-50" />
+                                            )}
+                                        </div>
+                                    </th>
+                                )}
+                                {visibleColumns.has('date') && (
+                                    <th className="p-2 border-b border-border text-center text-base font-bold text-muted-foreground min-w-[100px]" onClick={() => handleSort('date')}>
+                                        <div className="flex items-center justify-center cursor-pointer hover:text-white group">
+                                            마감 일자
+                                            {sortConfig?.key === 'date' ? (
+                                                <ChevronDown size={12} className={`ml-1 transition-transform ${sortConfig.direction === 'asc' ? 'rotate-180' : ''}`} />
+                                            ) : (
+                                                <ChevronDown size={12} className="ml-1 opacity-0 group-hover:opacity-50" />
+                                            )}
+                                        </div>
+                                    </th>
+                                )}
+                                {visibleColumns.has('meeting_date') && (
+                                    <th className="p-2 border-b border-border text-center text-base font-bold text-muted-foreground min-w-[100px]" onClick={() => handleSort('meeting_date')}>
+                                        <div className="flex items-center justify-center cursor-pointer hover:text-white group">
+                                            미팅 일자
+                                            {sortConfig?.key === 'meeting_date' ? (
+                                                <ChevronDown size={12} className={`ml-1 transition-transform ${sortConfig.direction === 'asc' ? 'rotate-180' : ''}`} />
+                                            ) : (
+                                                <ChevronDown size={12} className="ml-1 opacity-0 group-hover:opacity-50" />
+                                            )}
+                                        </div>
+                                    </th>
+                                )}
+                                {visibleColumns.has('owner') && (
+                                    <th className="p-2 border-b border-border text-center text-base font-bold text-muted-foreground min-w-[100px]" onClick={() => handleSort('owner')}>
+                                        <div className="flex items-center justify-center cursor-pointer hover:text-white group">
+                                            영업 담당자
+                                            {sortConfig?.key === 'owner' ? (
+                                                <ChevronDown size={12} className={`ml-1 transition-transform ${sortConfig.direction === 'asc' ? 'rotate-180' : ''}`} />
+                                            ) : (
+                                                <ChevronDown size={12} className="ml-1 opacity-0 group-hover:opacity-50" />
+                                            )}
+                                        </div>
+                                    </th>
+                                )}
+                                {visibleColumns.has('created_at') && (
+                                    <th className="p-2 border-b border-border text-center text-base font-bold text-muted-foreground min-w-[100px]" onClick={() => handleSort('created_at')}>
+                                        <div className="flex items-center justify-center cursor-pointer hover:text-white group">
+                                            등록일
+                                            {sortConfig?.key === 'created_at' ? (
+                                                <ChevronDown size={12} className={`ml-1 transition-transform ${sortConfig.direction === 'asc' ? 'rotate-180' : ''}`} />
+                                            ) : (
+                                                <ChevronDown size={12} className="ml-1 opacity-0 group-hover:opacity-50" />
+                                            )}
+                                        </div>
+                                    </th>
+                                )}
+                                <th className="p-2 border-b border-border w-10"></th>
+                            </tr>
+                            {/* Filter Row */}
+                            {showFilters && (
+                                <tr className="bg-secondary/30">
+                                    <th className="p-2 border-b border-border"></th>
+                                    {visibleColumns.has('title') && (
+                                        <th className="p-2 border-b border-border">
+                                            <input
+                                                type="text"
+                                                placeholder="필터..."
+                                                value={filters.title || ''}
+                                                onChange={(e) => handleFilterChange('title', e.target.value)}
+                                                className="w-full px-2 py-1 text-xs bg-secondary text-white border border-border rounded focus:outline-none focus:border-accent"
+                                            />
+                                        </th>
+                                    )}
+                                    {visibleColumns.has('company') && (
+                                        <th className="p-2 border-b border-border">
+                                            <input
+                                                type="text"
+                                                placeholder="필터..."
+                                                value={filters.company || ''}
+                                                onChange={(e) => handleFilterChange('company', e.target.value)}
+                                                className="w-full px-2 py-1 text-xs bg-secondary text-white border border-border rounded focus:outline-none focus:border-accent"
+                                            />
+                                        </th>
+                                    )}
+                                    {visibleColumns.has('value') && (
+                                        <th className="p-2 border-b border-border">
+                                            <input
+                                                type="text"
+                                                placeholder="필터..."
+                                                value={filters.value || ''}
+                                                onChange={(e) => handleFilterChange('value', e.target.value)}
+                                                className="w-full px-2 py-1 text-xs bg-secondary text-white border border-border rounded focus:outline-none focus:border-accent"
+                                            />
+                                        </th>
+                                    )}
+                                    {visibleColumns.has('stage') && (
+                                        <th className="p-2 border-b border-border">
                                             <select
-                                                value={op.stage}
-                                                onChange={(e) => handleStageChange(String(op.id), e.target.value)}
-                                                className="appearance-none bg-transparent w-full pr-6 py-1 text-muted-foreground focus:outline-none focus:bg-card focus:ring-1 focus:ring-accent rounded cursor-pointer"
+                                                value={filters.stage || ''}
+                                                onChange={(e) => handleFilterChange('stage', e.target.value)}
+                                                className="w-full px-2 py-1 text-xs bg-secondary text-white border border-border rounded focus:outline-none focus:border-accent"
                                             >
+                                                <option value="">전체</option>
                                                 {STAGE_OPTIONS.map(opt => (
                                                     <option key={opt} value={opt}>{opt}</option>
                                                 ))}
                                             </select>
-                                            <div className="absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground opacity-0 group-hover/edit:opacity-100">
-                                                <Settings size={12} />
-                                            </div>
-                                        </div>
-                                    </td>
-                                )}
-                                {visibleColumns.has('success_probability') && (
-                                    <td className="p-2 text-muted-foreground">
-                                        {op.success_probability ? `${op.success_probability}% ` : '-'}
-                                    </td>
-                                )}
-                                {visibleColumns.has('date') && (
-                                    <td className="p-2 text-muted-foreground">
-                                        {op.date}
-                                    </td>
-                                )}
-                                {visibleColumns.has('meeting_date') && (
-                                    <td className="p-2 text-muted-foreground">
-                                        {op.meeting_date ? (() => {
-                                            const date = new Date(op.meeting_date);
-                                            const offset = date.getTimezoneOffset() * 60000;
-                                            return new Date(date.getTime() - offset).toISOString().slice(0, 16).replace('T', ' ');
-                                        })() : '-'}
-                                    </td>
-                                )}
-                                {visibleColumns.has('owner') && (
-                                    <td className="p-2">
-                                        <div className="relative group/edit">
+                                        </th>
+                                    )}
+                                    {visibleColumns.has('success_probability') && (
+                                        <th className="p-2 border-b border-border">
+                                            <input
+                                                type="text"
+                                                placeholder="필터..."
+                                                value={filters.success_probability || ''}
+                                                onChange={(e) => handleFilterChange('success_probability', e.target.value)}
+                                                className="w-full px-2 py-1 text-xs bg-secondary text-white border border-border rounded focus:outline-none focus:border-accent"
+                                            />
+                                        </th>
+                                    )}
+                                    {visibleColumns.has('date') && (
+                                        <th className="p-2 border-b border-border">
+                                            <input
+                                                type="text"
+                                                placeholder="필터..."
+                                                value={filters.date || ''}
+                                                onChange={(e) => handleFilterChange('date', e.target.value)}
+                                                className="w-full px-2 py-1 text-xs bg-secondary text-white border border-border rounded focus:outline-none focus:border-accent"
+                                            />
+                                        </th>
+                                    )}
+                                    {visibleColumns.has('meeting_date') && (
+                                        <th className="p-2 border-b border-border">
+                                            <input
+                                                type="text"
+                                                placeholder="필터..."
+                                                value={filters.meeting_date || ''}
+                                                onChange={(e) => handleFilterChange('meeting_date', e.target.value)}
+                                                className="w-full px-2 py-1 text-xs bg-secondary text-white border border-border rounded focus:outline-none focus:border-accent"
+                                            />
+                                        </th>
+                                    )}
+                                    {visibleColumns.has('owner') && (
+                                        <th className="p-2 border-b border-border">
                                             <select
-                                                value={op.owner}
-                                                onChange={(e) => handleOwnerChange(String(op.id), e.target.value)}
-                                                className="appearance-none bg-transparent w-full pr-6 py-1 text-accent focus:outline-none focus:bg-card focus:ring-1 focus:ring-accent rounded cursor-pointer"
+                                                value={filters.owner || ''}
+                                                onChange={(e) => handleFilterChange('owner', e.target.value)}
+                                                className="w-full px-2 py-1 text-xs bg-secondary text-white border border-border rounded focus:outline-none focus:border-accent"
                                             >
+                                                <option value="">전체</option>
                                                 {OWNER_OPTIONS.map(opt => (
                                                     <option key={opt} value={opt}>{opt}</option>
                                                 ))}
                                             </select>
-                                            <div className="absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground opacity-0 group-hover/edit:opacity-100">
-                                                <Settings size={12} />
+                                        </th>
+                                    )}
+                                    {visibleColumns.has('created_at') && (
+                                        <th className="p-2 border-b border-border">
+                                            <input
+                                                type="text"
+                                                placeholder="필터..."
+                                                value={filters.created_at || ''}
+                                                onChange={(e) => handleFilterChange('created_at', e.target.value)}
+                                                className="w-full px-2 py-1 text-xs bg-secondary text-white border border-border rounded focus:outline-none focus:border-accent"
+                                            />
+                                        </th>
+                                    )}
+                                    <th className="p-2 border-b border-border"></th>
+                                </tr>
+                            )}
+                        </thead>
+                        <tbody className="divide-y divide-border">
+                            {filteredOpportunities.map((op) => (
+                                <tr key={op.id} className="hover:bg-secondary/30 group transition-colors">
+                                    <td className="px-3 py-4 text-center">
+                                        <input
+                                            type="checkbox"
+                                            className="rounded border-border text-accent focus:ring-accent w-4 h-4"
+                                            checked={selectedItems.includes(String(op.id))}
+                                            onChange={() => toggleSelectItem(String(op.id))}
+                                        />
+                                    </td>
+                                    {visibleColumns.has('title') && (
+                                        <td className="px-3 py-4 font-semibold text-accent hover:underline cursor-pointer text-base" onClick={() => handleTitleClick(op)}>
+                                            {op.title}
+                                        </td>
+                                    )}
+                                    {visibleColumns.has('company') && (
+                                        <td className="px-3 py-4">
+                                            <button
+                                                onClick={() => handleCompanyClick(op.company)}
+                                                className="text-white/80 hover:text-accent hover:underline text-left text-base"
+                                            >
+                                                {op.company}
+                                            </button>
+                                        </td>
+                                    )}
+                                    {visibleColumns.has('value') && (
+                                        <td className="px-3 py-4 text-white font-medium text-base">
+                                            {formatCurrency(op.value)}
+                                        </td>
+                                    )}
+                                    {visibleColumns.has('stage') && (
+                                        <td className="px-3 py-4">
+                                            <div className="relative group/edit">
+                                                <select
+                                                    value={op.stage}
+                                                    onChange={(e) => handleStageChange(String(op.id), e.target.value)}
+                                                    className="appearance-none bg-transparent w-full pr-6 py-1 text-emerald-400 font-medium text-base focus:outline-none focus:bg-card focus:ring-1 focus:ring-accent rounded cursor-pointer"
+                                                >
+                                                    {STAGE_OPTIONS.map(opt => (
+                                                        <option key={opt} value={opt}>{opt}</option>
+                                                    ))}
+                                                </select>
+                                                <div className="absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground opacity-0 group-hover/edit:opacity-100">
+                                                    <Settings size={14} />
+                                                </div>
+                                            </div>
+                                        </td>
+                                    )}
+                                    {visibleColumns.has('success_probability') && (
+                                        <td className="px-3 py-4 text-white/80 text-base">
+                                            {op.success_probability ? `${op.success_probability}%` : '-'}
+                                        </td>
+                                    )}
+                                    {visibleColumns.has('date') && (
+                                        <td className="px-3 py-4 text-white/80 text-base">
+                                            {op.date}
+                                        </td>
+                                    )}
+                                    {visibleColumns.has('meeting_date') && (
+                                        <td className="px-3 py-4 text-white/80 text-base">
+                                            {op.meeting_date ? (() => {
+                                                const date = new Date(op.meeting_date);
+                                                const offset = date.getTimezoneOffset() * 60000;
+                                                return new Date(date.getTime() - offset).toISOString().slice(0, 16).replace('T', ' ');
+                                            })() : '-'}
+                                        </td>
+                                    )}
+                                    {visibleColumns.has('owner') && (
+                                        <td className="px-3 py-4">
+                                            <div className="relative group/edit">
+                                                <select
+                                                    value={op.owner}
+                                                    onChange={(e) => handleOwnerChange(String(op.id), e.target.value)}
+                                                    className="appearance-none bg-transparent w-full pr-6 py-1 text-sky-400 font-medium text-base focus:outline-none focus:bg-card focus:ring-1 focus:ring-accent rounded cursor-pointer"
+                                                >
+                                                    {OWNER_OPTIONS.map(opt => (
+                                                        <option key={opt} value={opt}>{opt}</option>
+                                                    ))}
+                                                </select>
+                                                <div className="absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground opacity-0 group-hover/edit:opacity-100">
+                                                    <Settings size={14} />
+                                                </div>
+                                            </div>
+                                        </td>
+                                    )}
+                                    {visibleColumns.has('created_at') && (
+                                        <td className="px-3 py-4 text-white/80 text-base">
+                                            {op.created_at ? new Date(op.created_at).toISOString().split('T')[0] : '-'}
+                                        </td>
+                                    )}
+                                    <td className="px-3 py-4 text-center">
+                                        <button className="text-muted-foreground hover:text-accent border border-border rounded p-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <ChevronDown size={14} />
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+
+            {/* Kanban View */}
+            {viewMode === 'kanban' && (
+                <DragDropContext onDragEnd={handleDragEnd}>
+                    <div className="flex-1 overflow-x-auto p-6 bg-gradient-to-br from-background via-background to-secondary/20">
+                        <div className="flex gap-5 h-full min-w-max">
+                            {STAGE_OPTIONS.map((stage) => {
+                                const stageOpportunities = filteredOpportunities
+                                    .filter(op => op.stage === stage)
+                                    .sort((a, b) => {
+                                        // Sort by date ascending (earliest first)
+                                        if (!a.date && !b.date) return 0;
+                                        if (!a.date) return 1;
+                                        if (!b.date) return -1;
+                                        return new Date(a.date).getTime() - new Date(b.date).getTime();
+                                    });
+                                const stageTotal = stageOpportunities.reduce((sum, op) => sum + Number(op.value || 0), 0);
+
+                                // Premium stage color mapping with gradients
+                                const stageColors: Record<string, {
+                                    headerGradient: string;
+                                    cardBg: string;
+                                    borderColor: string;
+                                    badgeColor: string;
+                                    badgeBg: string;
+                                    iconColor: string;
+                                    glowColor: string;
+                                }> = {
+                                    '발굴': {
+                                        headerGradient: 'from-slate-600/90 to-slate-700/90',
+                                        cardBg: 'bg-slate-900/40',
+                                        borderColor: 'border-slate-500/40',
+                                        badgeColor: 'text-slate-300',
+                                        badgeBg: 'bg-slate-500/30',
+                                        iconColor: 'bg-gradient-to-br from-slate-400 to-slate-600',
+                                        glowColor: 'hover:shadow-slate-500/20'
+                                    },
+                                    '제안': {
+                                        headerGradient: 'from-blue-600/90 to-blue-700/90',
+                                        cardBg: 'bg-blue-950/40',
+                                        borderColor: 'border-blue-500/40',
+                                        badgeColor: 'text-blue-300',
+                                        badgeBg: 'bg-blue-500/30',
+                                        iconColor: 'bg-gradient-to-br from-blue-400 to-blue-600',
+                                        glowColor: 'hover:shadow-blue-500/20'
+                                    },
+                                    '견적': {
+                                        headerGradient: 'from-violet-600/90 to-purple-700/90',
+                                        cardBg: 'bg-purple-950/40',
+                                        borderColor: 'border-purple-500/40',
+                                        badgeColor: 'text-purple-300',
+                                        badgeBg: 'bg-purple-500/30',
+                                        iconColor: 'bg-gradient-to-br from-violet-400 to-purple-600',
+                                        glowColor: 'hover:shadow-purple-500/20'
+                                    },
+                                    '협상': {
+                                        headerGradient: 'from-orange-500/90 to-amber-600/90',
+                                        cardBg: 'bg-orange-950/40',
+                                        borderColor: 'border-orange-500/40',
+                                        badgeColor: 'text-orange-300',
+                                        badgeBg: 'bg-orange-500/30',
+                                        iconColor: 'bg-gradient-to-br from-orange-400 to-amber-500',
+                                        glowColor: 'hover:shadow-orange-500/20'
+                                    },
+                                    '계약 대기': {
+                                        headerGradient: 'from-yellow-500/90 to-amber-500/90',
+                                        cardBg: 'bg-yellow-950/40',
+                                        borderColor: 'border-yellow-500/40',
+                                        badgeColor: 'text-yellow-300',
+                                        badgeBg: 'bg-yellow-500/30',
+                                        iconColor: 'bg-gradient-to-br from-yellow-400 to-amber-500',
+                                        glowColor: 'hover:shadow-yellow-500/20'
+                                    },
+                                    '수주(성공)': {
+                                        headerGradient: 'from-emerald-500/90 to-teal-600/90',
+                                        cardBg: 'bg-emerald-950/40',
+                                        borderColor: 'border-emerald-500/40',
+                                        badgeColor: 'text-emerald-300',
+                                        badgeBg: 'bg-emerald-500/30',
+                                        iconColor: 'bg-gradient-to-br from-emerald-400 to-teal-500',
+                                        glowColor: 'hover:shadow-emerald-500/20'
+                                    },
+                                    '실주(실패)': {
+                                        headerGradient: 'from-red-600/90 to-rose-700/90',
+                                        cardBg: 'bg-red-950/40',
+                                        borderColor: 'border-red-500/40',
+                                        badgeColor: 'text-red-300',
+                                        badgeBg: 'bg-red-500/30',
+                                        iconColor: 'bg-gradient-to-br from-red-400 to-rose-600',
+                                        glowColor: 'hover:shadow-red-500/20'
+                                    },
+                                };
+
+                                const colors = stageColors[stage] || {
+                                    headerGradient: 'from-gray-600/90 to-gray-700/90',
+                                    cardBg: 'bg-gray-900/40',
+                                    borderColor: 'border-gray-500/40',
+                                    badgeColor: 'text-gray-300',
+                                    badgeBg: 'bg-gray-500/30',
+                                    iconColor: 'bg-gradient-to-br from-gray-400 to-gray-600',
+                                    glowColor: 'hover:shadow-gray-500/20'
+                                };
+
+                                return (
+                                    <div
+                                        key={stage}
+                                        className={`flex flex-col w-80 rounded-2xl ${colors.cardBg} border ${colors.borderColor} overflow-hidden backdrop-blur-sm shadow-xl transition-all duration-300`}
+                                    >
+                                        {/* Column Header - Gradient */}
+                                        <div className={`p-4 bg-gradient-to-r ${colors.headerGradient} backdrop-blur-md`}>
+                                            <div className="flex items-center justify-between mb-3">
+                                                <div className="flex items-center gap-3">
+                                                    <div className={`w-4 h-4 rounded-lg ${colors.iconColor} shadow-lg`}></div>
+                                                    <h3 className="font-bold text-white text-lg tracking-tight">{stage}</h3>
+                                                </div>
+                                                <span className={`text-sm font-semibold ${colors.badgeColor} ${colors.badgeBg} px-3 py-1 rounded-full backdrop-blur-sm`}>
+                                                    {stageOpportunities.length}건
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center justify-between">
+                                                <p className="text-sm text-white/80 font-medium">
+                                                    💰 {formatCurrency(stageTotal)}
+                                                </p>
+                                                {stageOpportunities.length > 0 && (
+                                                    <p className="text-xs text-white/60">
+                                                        평균: {formatCurrency(stageTotal / stageOpportunities.length)}
+                                                    </p>
+                                                )}
                                             </div>
                                         </div>
-                                    </td>
-                                )}
-                                {visibleColumns.has('created_at') && (
-                                    <td className="p-2 text-muted-foreground">
-                                        {op.created_at ? new Date(op.created_at).toISOString().split('T')[0] : '-'}
-                                    </td>
-                                )}
-                                <td className="p-2 text-center">
-                                    <button className="text-muted-foreground hover:text-accent border border-border rounded p-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <ChevronDown size={12} />
-                                    </button>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
+
+                                        {/* Cards Container - Droppable */}
+                                        <Droppable droppableId={stage}>
+                                            {(provided, snapshot) => (
+                                                <div
+                                                    ref={provided.innerRef}
+                                                    {...provided.droppableProps}
+                                                    className={`flex-1 overflow-y-auto p-3 space-y-3 max-h-[calc(100vh-300px)] min-h-[100px] transition-colors duration-200 ${snapshot.isDraggingOver ? 'bg-accent/10 ring-2 ring-accent/30 ring-inset' : ''
+                                                        }`}
+                                                >
+                                                    {stageOpportunities.map((op, index) => (
+                                                        <Draggable key={String(op.id)} draggableId={String(op.id)} index={index}>
+                                                            {(provided, snapshot) => (
+                                                                <div
+                                                                    ref={provided.innerRef}
+                                                                    {...provided.draggableProps}
+                                                                    {...provided.dragHandleProps}
+                                                                    onClick={() => handleTitleClick(op)}
+                                                                    className={`bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl p-4 cursor-grab transition-all duration-300 group hover:bg-card hover:border-accent/40 ${colors.glowColor} hover:shadow-2xl ${snapshot.isDragging ? 'shadow-2xl scale-105 rotate-2 opacity-90 cursor-grabbing ring-2 ring-accent' : 'hover:-translate-y-1'
+                                                                        }`}
+                                                                    style={provided.draggableProps.style}
+                                                                >
+                                                                    {/* Card Header */}
+                                                                    <div className="flex items-start justify-between mb-3">
+                                                                        <h4 className="font-bold text-white text-base line-clamp-2 group-hover:text-accent transition-colors leading-tight">
+                                                                            {op.title}
+                                                                        </h4>
+                                                                        <GripVertical size={16} className="text-muted-foreground group-hover:text-accent transition-opacity flex-shrink-0 ml-2 mt-0.5" />
+                                                                    </div>
+
+                                                                    {/* Company */}
+                                                                    <div className="flex items-center gap-2 mb-3">
+                                                                        <Building2 size={14} className="text-muted-foreground" />
+                                                                        <p className="text-sm text-white/80 font-medium">{op.company}</p>
+                                                                    </div>
+
+                                                                    {/* Value & Probability */}
+                                                                    <div className="flex items-center justify-between mb-3">
+                                                                        <span className="text-lg font-bold bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent">
+                                                                            {formatCurrency(op.value)}
+                                                                        </span>
+                                                                        {op.success_probability && (
+                                                                            <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${op.success_probability >= 80 ? 'bg-emerald-500/20 text-emerald-400 ring-1 ring-emerald-500/30' :
+                                                                                op.success_probability >= 50 ? 'bg-amber-500/20 text-amber-400 ring-1 ring-amber-500/30' :
+                                                                                    'bg-slate-500/20 text-slate-400 ring-1 ring-slate-500/30'
+                                                                                }`}>
+                                                                                <div className={`w-2 h-2 rounded-full ${op.success_probability >= 80 ? 'bg-emerald-400' :
+                                                                                    op.success_probability >= 50 ? 'bg-amber-400' :
+                                                                                        'bg-slate-400'
+                                                                                    }`}></div>
+                                                                                {op.success_probability}%
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+
+                                                                    {/* Footer */}
+                                                                    <div className="flex items-center justify-between pt-3 border-t border-border/30">
+                                                                        <div className="flex items-center gap-2">
+                                                                            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-sky-400 to-blue-500 flex items-center justify-center text-xs font-bold text-white shadow-lg">
+                                                                                {op.owner?.charAt(0)}
+                                                                            </div>
+                                                                            <span className="text-sm text-sky-400 font-medium">{op.owner}</span>
+                                                                        </div>
+                                                                        {op.date && (
+                                                                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-secondary/50 px-2 py-1 rounded-full">
+                                                                                <Calendar size={12} />
+                                                                                {op.date}
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                        </Draggable>
+                                                    ))}
+                                                    {provided.placeholder}
+                                                    {stageOpportunities.length === 0 && !snapshot.isDraggingOver && (
+                                                        <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                                                            <div className={`w-16 h-16 rounded-2xl ${colors.badgeBg} flex items-center justify-center mb-4`}>
+                                                                <Plus size={32} className="text-muted-foreground/50" />
+                                                            </div>
+                                                            <p className="text-sm font-medium">안건이 없습니다</p>
+                                                            <p className="text-xs mt-1 opacity-70">카드를 여기로 끌어다 놓으세요</p>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </Droppable>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </DragDropContext>
+            )}
+
+            {/* Overdue Alert Popup */}
+            {showOverdueAlert && overdueOpportunities.length > 0 && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm animate-in fade-in duration-300">
+                    <div className="bg-gradient-to-br from-red-950 via-red-900 to-red-950 rounded-2xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden border-2 border-red-500/50 animate-in zoom-in-95 duration-300" style={{ animation: 'shake 0.5s ease-in-out' }}>
+                        {/* Header */}
+                        <div className="bg-gradient-to-r from-red-600 to-red-700 px-6 py-4 flex items-center gap-4">
+                            <div className="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center animate-pulse">
+                                <AlertCircle size={36} className="text-white" />
+                            </div>
+                            <div>
+                                <h2 className="text-2xl font-black text-white tracking-tight">⚠️ 긴급 경고</h2>
+                                <p className="text-red-100 font-medium">마감일이 도래한 안건이 있습니다!</p>
+                            </div>
+                        </div>
+
+                        {/* Content */}
+                        <div className="p-6">
+                            <div className="bg-red-950/50 border border-red-500/30 rounded-xl p-4 mb-4">
+                                <p className="text-red-200 text-lg font-bold mb-2 flex items-center gap-2">
+                                    🚨 {overdueOpportunities.length}건의 안건이 마감일을 초과했습니다!
+                                </p>
+                                <p className="text-red-300/80 text-sm">
+                                    아래 안건들의 마감일이 도래하였습니다. 즉시 조치가 필요합니다.
+                                </p>
+                            </div>
+
+                            {/* Overdue List */}
+                            <div className="max-h-64 overflow-y-auto space-y-2">
+                                {overdueOpportunities.map((op) => (
+                                    <div
+                                        key={op.id}
+                                        className="bg-red-900/40 border border-red-500/20 rounded-lg p-3 hover:bg-red-800/40 transition-colors cursor-pointer"
+                                        onClick={() => {
+                                            setShowOverdueAlert(false);
+                                            handleTitleClick(op);
+                                        }}
+                                    >
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex-1">
+                                                <h4 className="font-bold text-white text-base">{op.title}</h4>
+                                                <div className="flex items-center gap-4 mt-1">
+                                                    <span className="text-red-300 text-sm">{op.company}</span>
+                                                    <span className="text-red-400 text-sm font-medium">
+                                                        💰 {new Intl.NumberFormat('ko-KR', { style: 'currency', currency: 'KRW', maximumFractionDigits: 0 }).format(op.value || 0)}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div className="text-right">
+                                                <div className="bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full">
+                                                    마감: {op.date}
+                                                </div>
+                                                <span className="text-red-400 text-xs mt-1 block">{op.owner}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Footer */}
+                        <div className="px-6 py-4 bg-red-950/80 border-t border-red-500/30 flex justify-end gap-3">
+                            <button
+                                onClick={() => setShowOverdueAlert(false)}
+                                className="px-6 py-2.5 bg-gradient-to-r from-red-600 to-red-700 text-white font-bold rounded-lg hover:from-red-500 hover:to-red-600 transition-all shadow-lg hover:shadow-red-500/30 flex items-center gap-2"
+                            >
+                                <X size={18} />
+                                확인했습니다
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Create Modal */}
             {
@@ -1699,7 +2241,7 @@ export default function Opportunities() {
                                         <div className="w-1/3 border-r border-border px-6 flex flex-col h-full overflow-hidden pb-2">
                                             {/* Memo Section - 50% */}
                                             <div className="flex-1 min-h-0 flex flex-col mb-2" style={{ maxHeight: '50%' }}>
-                                                <h3 className="text-lg font-bold text-white mb-2 flex-shrink-0">미팅 및 통화 메모</h3>
+                                                <h3 className="text-lg font-bold text-white mb-2 flex-shrink-0">메모</h3>
                                                 <div className="flex-1 overflow-y-auto bg-secondary/30 p-3 rounded-lg mb-2 space-y-2">
                                                     {isMemoLoading ? (
                                                         <p className="text-xs text-muted-foreground text-center">로딩 중...</p>
@@ -1734,25 +2276,45 @@ export default function Opportunities() {
                                                                         <div>
                                                                             <p className="text-sm text-white whitespace-pre-wrap pr-6">{memo.content}</p>
                                                                             <div className="flex items-center justify-between mt-1">
-                                                                                <p className="text-xs text-muted-foreground">
-                                                                                    {new Date(memo.created_at).toLocaleString()}
-                                                                                    {memo.updated_at && ` (수정됨: ${new Date(memo.updated_at).toLocaleString()})`}
-                                                                                </p>
+                                                                                <div className="flex items-center gap-2">
+                                                                                    <p className="text-xs text-muted-foreground">
+                                                                                        {new Date(memo.created_at).toLocaleString()}
+                                                                                        {memo.updated_at && ` (수정됨: ${new Date(memo.updated_at).toLocaleString()})`}
+                                                                                    </p>
+                                                                                    {memo.author && (
+                                                                                        <span className="text-xs px-2 py-0.5 rounded-full bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-blue-400 border border-blue-500/30">
+                                                                                            ✍️ {memo.author}
+                                                                                        </span>
+                                                                                    )}
+                                                                                </div>
 
 
                                                                                 <div className="flex items-center gap-2">
                                                                                     <button
+                                                                                        onClick={() => handleAISummary(memo.id, memo.content)}
+                                                                                        disabled={loadingAISummaryForMemo === memo.id}
+                                                                                        className="flex items-center gap-1 text-xs text-emerald-600 hover:text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded transition-colors"
+                                                                                        title="A/I 정리"
+                                                                                    >
+                                                                                        {loadingAISummaryForMemo === memo.id ? (
+                                                                                            <RefreshCw size={12} className="animate-spin" />
+                                                                                        ) : (
+                                                                                            <Sparkles size={12} />
+                                                                                        )}
+                                                                                        A/I 정리
+                                                                                    </button>
+                                                                                    <button
                                                                                         onClick={() => handleAIFollowUp(memo.id, memo.content)}
                                                                                         disabled={loadingAIForMemo === memo.id}
                                                                                         className="flex items-center gap-1 text-xs text-purple-600 hover:text-purple-700 bg-purple-50 px-2 py-0.5 rounded transition-colors"
-                                                                                        title="AI F/U 제안"
+                                                                                        title="A/I F/U"
                                                                                     >
                                                                                         {loadingAIForMemo === memo.id ? (
                                                                                             <RefreshCw size={12} className="animate-spin" />
                                                                                         ) : (
                                                                                             <Sparkles size={12} />
                                                                                         )}
-                                                                                        AI F/U 제안
+                                                                                        A/I F/U
                                                                                     </button>
                                                                                     <button
                                                                                         onClick={() => handleSendEmail(memo.content)}
@@ -1799,6 +2361,21 @@ export default function Opportunities() {
                                                                         </div>
                                                                     )}
                                                                 </div>
+
+                                                                {/* Reply Button */}
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        e.preventDefault();
+                                                                        setReplyToMemoId(replyToMemoId === memo.id ? null : memo.id);
+                                                                    }}
+                                                                    className="flex items-center gap-1 text-xs text-muted-foreground hover:text-white mt-1 transition-colors"
+                                                                >
+                                                                    <MessageSquare size={12} />
+                                                                    댓글 {memos.filter(r => r.parent_id === memo.id).length > 0 && `(${memos.filter(r => r.parent_id === memo.id).length})`}
+                                                                </button>
+
                                                                 {/* Replies */}
                                                                 {memos.filter(reply => reply.parent_id === memo.id).map(reply => (
                                                                     <div key={reply.id} className="ml-4 bg-purple-50/10 p-2 rounded border border-purple-200/20 shadow-sm group relative">
@@ -1844,6 +2421,37 @@ export default function Opportunities() {
                                                                         </div>
                                                                     </div>
                                                                 ))}
+
+                                                                {/* Reply Input Box */}
+                                                                {replyToMemoId === memo.id && (
+                                                                    <div className="ml-4 mt-2 flex gap-2">
+                                                                        <input
+                                                                            type="text"
+                                                                            value={replyContent}
+                                                                            onChange={(e) => setReplyContent(e.target.value)}
+                                                                            placeholder="댓글을 입력하세요..."
+                                                                            className="flex-1 px-2 py-1.5 text-xs bg-secondary/50 text-white border border-border rounded focus:outline-none focus:border-accent"
+                                                                            onKeyDown={(e) => {
+                                                                                if (e.key === 'Enter' && !e.shiftKey) {
+                                                                                    e.preventDefault();
+                                                                                    handleAddReply(memo.id);
+                                                                                }
+                                                                            }}
+                                                                        />
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={(e) => {
+                                                                                e.preventDefault();
+                                                                                e.stopPropagation();
+                                                                                handleAddReply(memo.id);
+                                                                            }}
+                                                                            disabled={!replyContent.trim()}
+                                                                            className="px-3 py-1.5 text-xs font-medium text-white bg-accent rounded hover:bg-accent/90 transition-colors disabled:opacity-50"
+                                                                        >
+                                                                            등록
+                                                                        </button>
+                                                                    </div>
+                                                                )}
                                                             </div>
                                                         ))
                                                     ) : (

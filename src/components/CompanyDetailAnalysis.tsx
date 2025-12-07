@@ -141,7 +141,7 @@ export default function CompanyDetailAnalysis() {
         return new Intl.NumberFormat('ko-KR', { style: 'currency', currency: 'KRW', maximumFractionDigits: 0 }).format(value);
     };
 
-    const colors = ['#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6']; // Red, Amber, Emerald, Blue, Violet
+    const colors = ['#ef4444', '#f59e0b', '#10b981', '#5a8fd4', '#8b5cf6']; // Red, Amber, Emerald, Blue, Violet
 
     const CustomTooltip = ({ active, payload, label }: any) => {
         if (active && payload && payload.length) {

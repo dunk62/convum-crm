@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, Briefcase, BarChart2, LogOut, Package, ChevronDown, ClipboardList, Database } from 'lucide-react';
+import { Outlet, NavLink, useNavigate, Link } from 'react-router-dom';
+import { LayoutDashboard, Users, Briefcase, BarChart2, LogOut, Package, ChevronDown, ClipboardList, Database, Gauge, Layers } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { cn } from '../lib/utils';
 
@@ -25,8 +25,8 @@ const NavItem = ({ item }: { item: any }) => {
                 <button
                     onClick={() => setIsOpen(!isOpen)}
                     className={cn(
-                        "flex items-center gap-2 px-3 py-2 text-sm font-medium transition-colors rounded-md hover:bg-secondary hover:text-white",
-                        isOpen ? "text-white bg-secondary" : "text-muted-foreground"
+                        "flex items-center gap-2 px-3 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-0",
+                        isOpen ? "text-white" : "text-white/80 hover:text-white"
                     )}
                 >
                     <item.icon size={18} />
@@ -35,7 +35,7 @@ const NavItem = ({ item }: { item: any }) => {
                 </button>
 
                 {isOpen && (
-                    <div className="absolute top-full left-0 mt-2 w-56 bg-card rounded-lg shadow-2xl border border-border py-2 z-50 animate-in fade-in zoom-in-95 duration-100">
+                    <div className="absolute top-full left-0 mt-2 w-56 bg-[#1a2d4a] rounded-lg shadow-2xl border border-[#2a4266] py-2 z-50 animate-in fade-in zoom-in-95 duration-100">
                         {item.children.map((child: any) => (
                             <NavLink
                                 key={child.path}
@@ -43,8 +43,8 @@ const NavItem = ({ item }: { item: any }) => {
                                 onClick={() => setIsOpen(false)}
                                 className={({ isActive }) =>
                                     cn(
-                                        "block px-4 py-2.5 text-sm transition-colors hover:bg-secondary",
-                                        isActive ? "text-accent font-semibold bg-secondary/50" : "text-muted-foreground hover:text-white"
+                                        "block px-4 py-2.5 text-sm transition-colors hover:bg-white/10 focus:outline-none focus:ring-0",
+                                        isActive ? "text-[#5a8fd4] font-semibold bg-white/5" : "text-white/80 hover:text-white"
                                     )
                                 }
                             >
@@ -62,8 +62,8 @@ const NavItem = ({ item }: { item: any }) => {
             to={item.path}
             className={({ isActive }) =>
                 cn(
-                    "flex items-center gap-2 px-3 py-2 text-sm font-medium transition-colors rounded-md hover:bg-secondary hover:text-white",
-                    isActive ? "text-white bg-secondary" : "text-muted-foreground"
+                    "flex items-center gap-2 px-3 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-0",
+                    isActive ? "text-white" : "text-white/80 hover:text-white"
                 )
             }
         >
@@ -91,7 +91,7 @@ export default function DashboardLayout() {
     };
 
     const navItems = [
-        { icon: LayoutDashboard, label: '대시보드', path: '/' },
+        { icon: LayoutDashboard, label: '대시보드', path: '/dashboard' },
         { icon: Briefcase, label: '영업 기회', path: '/opportunities' },
         { icon: BarChart2, label: '실적 관리', path: '/sales-performance' },
         {
@@ -112,6 +112,8 @@ export default function DashboardLayout() {
                 { label: '제품 도면', path: '/products/drawings' }
             ]
         },
+        { icon: Gauge, label: '진공 이송 시트', path: '/vacuum-transfer' },
+        { icon: Layers, label: '패드 선정 가이드', path: '/pad-selection' },
         {
             icon: Users,
             label: '고객 정보',
@@ -125,12 +127,12 @@ export default function DashboardLayout() {
 
     return (
         <div className="min-h-screen bg-background flex flex-col">
-            <header className="bg-background border-b border-border sticky top-0 z-40">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <header className="sticky top-0 z-40" style={{ background: 'rgba(74, 111, 165, 0.95)', backdropFilter: 'blur(10px)' }}>
+                <div className="w-full px-4 sm:px-6 lg:px-8">
                     <div className="flex h-16 items-center justify-between">
                         {/* Logo */}
                         <div className="flex-shrink-0 flex items-center">
-                            <span className="text-xl font-bold text-white tracking-tight">Convum CRM</span>
+                            <Link to="/" className="text-xl font-bold text-white tracking-tight hover:opacity-80 transition-opacity">Convum CRM</Link>
                         </div>
 
                         {/* Navigation */}
@@ -146,13 +148,13 @@ export default function DashboardLayout() {
                                 <div className="text-right hidden sm:block">
                                     <p className="text-sm font-medium text-white">{userEmail}</p>
                                 </div>
-                                <div className="h-9 w-9 rounded-full bg-accent text-white flex items-center justify-center text-sm font-semibold">
+                                <div className="h-9 w-9 rounded-full bg-orange-500 text-white flex items-center justify-center text-sm font-semibold">
                                     {userEmail ? userEmail[0].toUpperCase() : 'U'}
                                 </div>
                             </div>
                             <button
                                 onClick={handleLogout}
-                                className="p-2 text-muted-foreground hover:text-white hover:bg-secondary rounded-md transition-colors"
+                                className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-md transition-colors"
                                 title="로그아웃"
                             >
                                 <LogOut size={20} />
@@ -162,7 +164,7 @@ export default function DashboardLayout() {
                 </div>
             </header>
 
-            <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <main className="flex-1 w-full px-4 sm:px-6 lg:px-8 py-8">
                 <Outlet />
             </main>
         </div>

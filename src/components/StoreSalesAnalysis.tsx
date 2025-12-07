@@ -165,7 +165,7 @@ export default function StoreSalesAnalysis() {
         );
     };
 
-    const colors = ['#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6']; // Red, Amber, Emerald, Blue, Violet
+    const colors = ['#ef4444', '#f59e0b', '#10b981', '#5a8fd4', '#8b5cf6']; // Red, Amber, Emerald, Blue, Violet
 
     return (
         <div className="flex flex-col lg:flex-row gap-6 h-[600px]">

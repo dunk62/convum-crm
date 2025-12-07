@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Database, Phone, Users, Mail, Plus, Search, Trash2, Edit2, X, Save } from 'lucide-react';
+import { Database, Phone, Users, Mail, Plus, Search, Trash2, Edit2, X, Save, RefreshCw, Loader2, FileText, TrendingUp, Calendar, Building2, User, Hash, Sparkles, ExternalLink, ChevronDown, ChevronUp } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 interface DataRecord {
@@ -18,9 +18,9 @@ interface DataRecord {
 }
 
 const RECORD_TYPES = [
-    { id: 'call', label: '통화 녹음', icon: Phone },
-    { id: 'meeting', label: '미팅 녹음', icon: Users },
-    { id: 'email', label: '이메일', icon: Mail },
+    { id: 'call', label: '통화 녹음', icon: Phone, color: 'from-emerald-500 to-teal-600', bgColor: 'bg-emerald-500/10', textColor: 'text-emerald-400', borderColor: 'border-emerald-500/30' },
+    { id: 'meeting', label: '미팅 녹음', icon: Users, color: 'from-blue-500 to-indigo-600', bgColor: 'bg-blue-500/10', textColor: 'text-blue-400', borderColor: 'border-blue-500/30' },
+    { id: 'email', label: '이메일', icon: Mail, color: 'from-purple-500 to-violet-600', bgColor: 'bg-purple-500/10', textColor: 'text-purple-400', borderColor: 'border-purple-500/30' },
 ] as const;
 
 export default function DataManagement() {
@@ -28,6 +28,7 @@ export default function DataManagement() {
     const [loading, setLoading] = useState(true);
     const [filterType, setFilterType] = useState<'all' | 'call' | 'meeting' | 'email'>('all');
     const [searchQuery, setSearchQuery] = useState('');
+    const [expandedRow, setExpandedRow] = useState<string | null>(null);
 
     // Modal States
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -208,14 +209,8 @@ export default function DataManagement() {
         });
     };
 
-    const getTypeIcon = (type: string) => {
-        const config = RECORD_TYPES.find(t => t.id === type);
-        const Icon = config?.icon || Database;
-        return <Icon size={16} />;
-    };
-
-    const getTypeLabel = (type: string) => {
-        return RECORD_TYPES.find(t => t.id === type)?.label || type;
+    const getTypeConfig = (type: string) => {
+        return RECORD_TYPES.find(t => t.id === type) || RECORD_TYPES[0];
     };
 
     const filteredRecords = records.filter(record => {
@@ -227,338 +222,449 @@ export default function DataManagement() {
         return matchesType && matchesSearch;
     });
 
+    // Summary Stats
+    const stats = {
+        total: records.length,
+        calls: records.filter(r => r.type === 'call').length,
+        meetings: records.filter(r => r.type === 'meeting').length,
+        emails: records.filter(r => r.type === 'email').length,
+        avgSentiment: records.length > 0 ? Math.round(records.reduce((sum, r) => sum + (r.sentiment_score || 0), 0) / records.length) : 0
+    };
+
+    const getSentimentColor = (score: number) => {
+        if (score >= 70) return { bg: 'bg-emerald-500', text: 'text-emerald-400', label: '긍정적' };
+        if (score >= 40) return { bg: 'bg-amber-500', text: 'text-amber-400', label: '중립적' };
+        return { bg: 'bg-red-500', text: 'text-red-400', label: '부정적' };
+    };
+
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-bold text-white">데이터 관리</h1>
-                <button
-                    onClick={() => { resetForm(); setIsAddModalOpen(true); }}
-                    className="flex items-center gap-2 px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent/90 transition-colors"
-                >
-                    <Plus size={20} />
-                    기록 추가
-                </button>
+            {/* Header */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-3xl font-bold tracking-tight text-white flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
+                            <Database size={20} className="text-white" />
+                        </div>
+                        데이터 관리
+                    </h1>
+                    <p className="text-muted-foreground mt-1">통화, 미팅, 이메일 기록을 통합 관리합니다.</p>
+                </div>
+                <div className="flex gap-2">
+                    <button
+                        onClick={fetchRecords}
+                        className="p-2.5 text-muted-foreground hover:text-white hover:bg-secondary/50 rounded-lg transition-colors"
+                        title="새로고침"
+                    >
+                        {loading ? <Loader2 size={20} className="animate-spin" /> : <RefreshCw size={20} />}
+                    </button>
+                    <button
+                        onClick={() => { resetForm(); setIsAddModalOpen(true); }}
+                        className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-violet-500 to-purple-600 text-white rounded-lg hover:from-violet-600 hover:to-purple-700 transition-all shadow-lg hover:shadow-violet-500/25"
+                    >
+                        <Plus size={20} />
+                        기록 추가
+                    </button>
+                </div>
+            </div>
+
+            {/* Summary Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                <div className="bg-gradient-to-br from-slate-600/20 to-slate-800/20 border border-slate-500/30 rounded-xl p-4">
+                    <div className="flex items-center justify-between mb-2">
+                        <FileText className="text-slate-400" size={24} />
+                        <span className="text-xs text-slate-400 bg-slate-500/20 px-2 py-0.5 rounded-full">전체</span>
+                    </div>
+                    <p className="text-2xl font-bold text-white">{stats.total}</p>
+                    <p className="text-sm text-slate-400">총 기록</p>
+                </div>
+                <div className="bg-gradient-to-br from-emerald-600/20 to-emerald-800/20 border border-emerald-500/30 rounded-xl p-4">
+                    <div className="flex items-center justify-between mb-2">
+                        <Phone className="text-emerald-400" size={24} />
+                        <span className="text-xs text-emerald-400 bg-emerald-500/20 px-2 py-0.5 rounded-full">통화</span>
+                    </div>
+                    <p className="text-2xl font-bold text-white">{stats.calls}</p>
+                    <p className="text-sm text-emerald-400">통화 녹음</p>
+                </div>
+                <div className="bg-gradient-to-br from-blue-600/20 to-blue-800/20 border border-blue-500/30 rounded-xl p-4">
+                    <div className="flex items-center justify-between mb-2">
+                        <Users className="text-blue-400" size={24} />
+                        <span className="text-xs text-blue-400 bg-blue-500/20 px-2 py-0.5 rounded-full">미팅</span>
+                    </div>
+                    <p className="text-2xl font-bold text-white">{stats.meetings}</p>
+                    <p className="text-sm text-blue-400">미팅 녹음</p>
+                </div>
+                <div className="bg-gradient-to-br from-purple-600/20 to-purple-800/20 border border-purple-500/30 rounded-xl p-4">
+                    <div className="flex items-center justify-between mb-2">
+                        <Mail className="text-purple-400" size={24} />
+                        <span className="text-xs text-purple-400 bg-purple-500/20 px-2 py-0.5 rounded-full">이메일</span>
+                    </div>
+                    <p className="text-2xl font-bold text-white">{stats.emails}</p>
+                    <p className="text-sm text-purple-400">이메일</p>
+                </div>
+                <div className="bg-gradient-to-br from-amber-600/20 to-amber-800/20 border border-amber-500/30 rounded-xl p-4">
+                    <div className="flex items-center justify-between mb-2">
+                        <TrendingUp className="text-amber-400" size={24} />
+                        <span className="text-xs text-amber-400 bg-amber-500/20 px-2 py-0.5 rounded-full">감정</span>
+                    </div>
+                    <p className="text-2xl font-bold text-white">{stats.avgSentiment}점</p>
+                    <p className="text-sm text-amber-400">평균 감정</p>
+                </div>
             </div>
 
             {/* Filters */}
-            <div className="bg-card p-4 rounded-xl shadow-sm border border-border flex flex-wrap items-center justify-between gap-4">
-                <div className="flex items-center gap-2">
+            <div className="bg-card/80 backdrop-blur-sm p-4 rounded-xl border border-border flex flex-col md:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-2 flex-wrap">
                     <button
                         onClick={() => setFilterType('all')}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filterType === 'all'
-                            ? 'bg-accent/10 text-accent'
-                            : 'text-muted-foreground hover:bg-secondary/30'
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${filterType === 'all'
+                            ? 'bg-gradient-to-r from-violet-500/20 to-purple-500/20 text-violet-400 border border-violet-500/30 shadow-lg shadow-violet-500/10'
+                            : 'text-muted-foreground hover:bg-secondary/30 border border-transparent'
                             }`}
                     >
                         <div className="flex items-center gap-2">
                             <Database size={16} />
-                            전체
+                            전체 ({stats.total})
                         </div>
                     </button>
                     {RECORD_TYPES.map(type => (
                         <button
                             key={type.id}
                             onClick={() => setFilterType(type.id)}
-                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filterType === type.id
-                                ? 'bg-accent/10 text-accent border border-accent/20'
-                                : 'text-muted-foreground hover:bg-secondary/30'
+                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${filterType === type.id
+                                ? `${type.bgColor} ${type.textColor} border ${type.borderColor} shadow-lg`
+                                : 'text-muted-foreground hover:bg-secondary/30 border border-transparent'
                                 }`}
                         >
                             <div className="flex items-center gap-2">
                                 <type.icon size={16} />
-                                {type.label}
+                                {type.label} ({type.id === 'call' ? stats.calls : type.id === 'meeting' ? stats.meetings : stats.emails})
                             </div>
                         </button>
                     ))}
                 </div>
-                <div className="relative w-full md:w-64">
+                <div className="relative w-full md:w-72">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
                     <input
                         type="text"
-                        placeholder="검색..."
+                        placeholder="제목, 업체명, 담당자 검색..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 bg-secondary text-white border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
+                        className="w-full pl-10 pr-4 py-2.5 bg-secondary/50 text-white border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500/50 transition-all"
                     />
                 </div>
             </div>
 
-            {/* Table View */}
-            <div className="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-sm text-left">
-                        <thead className="text-xs text-muted-foreground uppercase bg-secondary/30 border-b border-border">
-                            <tr>
-                                <th className="px-6 py-3 font-medium whitespace-nowrap">일자</th>
-                                <th className="px-6 py-3 font-medium whitespace-nowrap">업체명</th>
-                                <th className="px-6 py-3 font-medium whitespace-nowrap">담당자명</th>
-                                <th className="px-6 py-3 font-medium whitespace-nowrap">유형</th>
-                                <th className="px-6 py-3 font-medium min-w-[300px]">핵심 요약</th>
-                                <th className="px-6 py-3 font-medium whitespace-nowrap">감정/태도</th>
-                                <th className="px-6 py-3 font-medium whitespace-nowrap">주요 키워드</th>
-                                <th className="px-6 py-3 font-medium whitespace-nowrap">Next Action</th>
-                                <th className="px-6 py-3 font-medium whitespace-nowrap">전체 내용</th>
-                                <th className="px-6 py-3 font-medium whitespace-nowrap text-right">관리</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-200">
-                            {loading ? (
-                                <tr>
-                                    <td colSpan={10} className="px-6 py-12 text-center text-muted-foreground">
-                                        로딩 중...
-                                    </td>
-                                </tr>
-                            ) : filteredRecords.length === 0 ? (
-                                <tr>
-                                    <td colSpan={10} className="px-6 py-12 text-center text-muted-foreground">
-                                        <div className="flex flex-col items-center justify-center gap-2">
-                                            <Database className="h-8 w-8 text-gray-300" />
-                                            <p>등록된 기록이 없습니다.</p>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ) : (
-                                filteredRecords.map((record) => (
-                                    <tr key={record.id} className="hover:bg-secondary/30 transition-colors">
-                                        <td className="px-6 py-4 whitespace-nowrap text-muted-foreground">
-                                            {new Date(record.created_at).toLocaleDateString()}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap font-medium text-white">
-                                            {record.company_name || '-'}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-muted-foreground">
-                                            {record.contact_name || '-'}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="flex items-center gap-2">
-                                                {getTypeIcon(record.type)}
-                                                <span className="text-muted-foreground">{getTypeLabel(record.type)}</span>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 text-muted-foreground">
-                                            <p className="line-clamp-2" title={record.summary || record.content}>
-                                                {record.summary || record.content}
-                                            </p>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            {record.sentiment_score !== undefined && record.sentiment_score !== null ? (
-                                                <div className="flex items-center gap-2">
-                                                    <div className="w-16 h-2 bg-secondary/50 rounded-full overflow-hidden">
-                                                        <div
-                                                            className={`h-full rounded-full ${record.sentiment_score >= 70 ? 'bg-success/100' :
-                                                                record.sentiment_score >= 40 ? 'bg-yellow-500' : 'bg-danger/100'
-                                                                }`}
-                                                            style={{ width: `${record.sentiment_score}%` }}
-                                                        />
-                                                    </div>
-                                                    <span className="text-xs font-medium text-muted-foreground">{record.sentiment_score}점</span>
+            {/* Card List View */}
+            <div className="space-y-4">
+                {loading ? (
+                    <div className="bg-card rounded-xl border border-border p-12 text-center">
+                        <Loader2 className="animate-spin mx-auto text-violet-400" size={40} />
+                        <p className="text-muted-foreground mt-4">데이터를 불러오는 중...</p>
+                    </div>
+                ) : filteredRecords.length === 0 ? (
+                    <div className="bg-card rounded-xl border border-border p-12 text-center">
+                        <Database className="mx-auto text-muted-foreground/30" size={48} />
+                        <p className="text-muted-foreground mt-4">등록된 기록이 없습니다.</p>
+                        <button
+                            onClick={() => { resetForm(); setIsAddModalOpen(true); }}
+                            className="mt-4 px-4 py-2 bg-violet-500/20 text-violet-400 rounded-lg hover:bg-violet-500/30 transition-colors"
+                        >
+                            첫 기록 추가하기
+                        </button>
+                    </div>
+                ) : (
+                    filteredRecords.map((record) => {
+                        const typeConfig = getTypeConfig(record.type);
+                        const sentiment = getSentimentColor(record.sentiment_score || 0);
+                        const isExpanded = expandedRow === record.id;
+
+                        return (
+                            <div
+                                key={record.id}
+                                className={`bg-card/80 backdrop-blur-sm rounded-xl border ${typeConfig.borderColor} overflow-hidden transition-all duration-300 hover:shadow-lg hover:shadow-${typeConfig.textColor.replace('text-', '')}/5`}
+                            >
+                                {/* Card Header */}
+                                <div className="p-4 flex items-start gap-4">
+                                    {/* Type Icon */}
+                                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${typeConfig.color} flex items-center justify-center flex-shrink-0 shadow-lg`}>
+                                        <typeConfig.icon size={24} className="text-white" />
+                                    </div>
+
+                                    {/* Content */}
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-start justify-between gap-4">
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <span className={`text-xs px-2 py-0.5 rounded-full ${typeConfig.bgColor} ${typeConfig.textColor} font-medium`}>
+                                                        {typeConfig.label}
+                                                    </span>
+                                                    <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                                        <Calendar size={12} />
+                                                        {new Date(record.created_at).toLocaleDateString('ko-KR', { year: 'numeric', month: 'short', day: 'numeric' })}
+                                                    </span>
                                                 </div>
-                                            ) : '-'}
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex flex-wrap gap-1">
-                                                {record.keywords && record.keywords.length > 0 ? (
-                                                    record.keywords.slice(0, 3).map((keyword, idx) => (
-                                                        <span key={idx} className="px-2 py-0.5 bg-secondary/50 text-muted-foreground rounded text-xs">
-                                                            {keyword}
+                                                <h3 className="text-lg font-bold text-white mb-1">{record.title || '제목 없음'}</h3>
+                                                <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+                                                    {record.company_name && (
+                                                        <span className="flex items-center gap-1">
+                                                            <Building2 size={14} />
+                                                            {record.company_name}
                                                         </span>
-                                                    ))
-                                                ) : '-'}
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex flex-col gap-1">
-                                                {record.next_action && record.next_action.length > 0 ? (
-                                                    record.next_action.slice(0, 2).map((action, idx) => (
-                                                        <span key={idx} className="flex items-center gap-1 text-xs text-accent">
-                                                            <span className="w-1 h-1 bg-accent rounded-full" />
-                                                            {action}
+                                                    )}
+                                                    {record.contact_name && (
+                                                        <span className="flex items-center gap-1">
+                                                            <User size={14} />
+                                                            {record.contact_name}
                                                         </span>
-                                                    ))
-                                                ) : '-'}
+                                                    )}
+                                                </div>
                                             </div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            {record.recording_link ? (
-                                                <a
-                                                    href={record.recording_link}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="text-accent hover:underline text-xs"
-                                                >
-                                                    Link
-                                                </a>
-                                            ) : '-'}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-right">
-                                            <div className="flex items-center justify-end gap-1">
+
+                                            {/* Actions */}
+                                            <div className="flex items-center gap-1">
+                                                {record.sentiment_score !== undefined && record.sentiment_score !== null && (
+                                                    <div className={`px-2.5 py-1 rounded-full ${sentiment.bg}/20 ${sentiment.text} text-xs font-bold mr-2`}>
+                                                        {record.sentiment_score}점
+                                                    </div>
+                                                )}
                                                 <button
                                                     onClick={() => openEditModal(record)}
-                                                    className="text-muted-foreground hover:text-blue-500 p-1.5 hover:bg-accent/10 rounded-full transition-colors"
+                                                    className="p-2 text-muted-foreground hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors"
                                                     title="수정"
                                                 >
                                                     <Edit2 size={16} />
                                                 </button>
                                                 <button
                                                     onClick={() => handleDeleteRecord(record.id)}
-                                                    className="text-muted-foreground hover:text-red-500 p-1.5 hover:bg-danger/10 rounded-full transition-colors"
+                                                    className="p-2 text-muted-foreground hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
                                                     title="삭제"
                                                 >
                                                     <Trash2 size={16} />
                                                 </button>
+                                                <button
+                                                    onClick={() => setExpandedRow(isExpanded ? null : record.id)}
+                                                    className="p-2 text-muted-foreground hover:text-white hover:bg-secondary/50 rounded-lg transition-colors"
+                                                    title={isExpanded ? "접기" : "펼치기"}
+                                                >
+                                                    {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                                                </button>
                                             </div>
-                                        </td>
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                </div>
+                                        </div>
+
+                                        {/* Summary */}
+                                        {record.summary && (
+                                            <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
+                                                {record.summary}
+                                            </p>
+                                        )}
+
+                                        {/* Keywords & Actions */}
+                                        <div className="flex flex-wrap items-center gap-2 mt-3">
+                                            {record.keywords && record.keywords.length > 0 && (
+                                                record.keywords.slice(0, 4).map((keyword, idx) => (
+                                                    <span key={idx} className="flex items-center gap-1 px-2 py-0.5 bg-secondary/50 text-muted-foreground rounded-full text-xs">
+                                                        <Hash size={10} />
+                                                        {keyword}
+                                                    </span>
+                                                ))
+                                            )}
+                                            {record.next_action && record.next_action.length > 0 && (
+                                                record.next_action.slice(0, 2).map((action, idx) => (
+                                                    <span key={idx} className="flex items-center gap-1 px-2 py-0.5 bg-violet-500/20 text-violet-400 rounded-full text-xs">
+                                                        <Sparkles size={10} />
+                                                        {action}
+                                                    </span>
+                                                ))
+                                            )}
+                                            {record.recording_link && (
+                                                <a
+                                                    href={record.recording_link}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="flex items-center gap-1 px-2 py-0.5 bg-blue-500/20 text-blue-400 rounded-full text-xs hover:bg-blue-500/30 transition-colors"
+                                                >
+                                                    <ExternalLink size={10} />
+                                                    원본 보기
+                                                </a>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Expanded Content */}
+                                {isExpanded && (
+                                    <div className="px-4 pb-4 pt-2 border-t border-border/50 bg-secondary/20">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            {/* Sentiment */}
+                                            {record.sentiment_score !== undefined && (
+                                                <div className="bg-secondary/30 rounded-lg p-3">
+                                                    <p className="text-xs text-muted-foreground mb-2">감정/태도 분석</p>
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="flex-1 h-3 bg-secondary/50 rounded-full overflow-hidden">
+                                                            <div
+                                                                className={`h-full rounded-full ${sentiment.bg}`}
+                                                                style={{ width: `${record.sentiment_score}%` }}
+                                                            />
+                                                        </div>
+                                                        <span className={`text-sm font-bold ${sentiment.text}`}>
+                                                            {record.sentiment_score}점 ({sentiment.label})
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Full Content Preview */}
+                                            <div className="bg-secondary/30 rounded-lg p-3">
+                                                <p className="text-xs text-muted-foreground mb-2">전체 내용</p>
+                                                <p className="text-sm text-white/80 line-clamp-4">{record.content}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })
+                )}
             </div>
+
+            {/* Results Count */}
+            {!loading && filteredRecords.length > 0 && (
+                <div className="text-center text-sm text-muted-foreground">
+                    총 {filteredRecords.length}개의 기록
+                </div>
+            )}
 
             {/* Add/Edit Modal */}
             {(isAddModalOpen || isEditModalOpen) && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-card rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-                        <div className="flex items-center justify-between p-6 border-b border-border">
-                            <h2 className="text-xl font-bold text-white">
-                                {isEditModalOpen ? '기록 수정' : '새 기록 추가'}
-                            </h2>
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="bg-card rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-border">
+                        <div className="flex items-center justify-between p-6 border-b border-border bg-gradient-to-r from-violet-500/10 to-purple-500/10">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
+                                    {isEditModalOpen ? <Edit2 size={20} className="text-white" /> : <Plus size={20} className="text-white" />}
+                                </div>
+                                <h2 className="text-xl font-bold text-white">
+                                    {isEditModalOpen ? '기록 수정' : '새 기록 추가'}
+                                </h2>
+                            </div>
                             <button
                                 onClick={() => { setIsAddModalOpen(false); setIsEditModalOpen(false); }}
-                                className="text-muted-foreground hover:text-muted-foreground p-2 hover:bg-secondary/50 rounded-full transition-colors"
+                                className="text-muted-foreground hover:text-white p-2 hover:bg-secondary/50 rounded-lg transition-colors"
                             >
                                 <X size={20} />
                             </button>
                         </div>
                         <form onSubmit={isEditModalOpen ? handleUpdateRecord : handleAddRecord} className="p-6 space-y-6">
-                            <div className="grid grid-cols-2 gap-6">
-                                <div>
-                                    <label className="block text-sm font-medium text-muted-foreground mb-2">
-                                        유형
-                                    </label>
-                                    <div className="flex gap-2">
-                                        {RECORD_TYPES.map(type => (
-                                            <button
-                                                key={type.id}
-                                                type="button"
-                                                onClick={() => setFormData({ ...formData, type: type.id })}
-                                                className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium border transition-colors ${formData.type === type.id
-                                                    ? 'bg-accent/10 border-accent/20 text-accent'
-                                                    : 'border-border text-muted-foreground hover:bg-secondary/30'
-                                                    }`}
-                                            >
-                                                {type.label}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-muted-foreground mb-2">
-                                        감정 점수 (0-100)
-                                    </label>
-                                    <input
-                                        type="number"
-                                        min="0"
-                                        max="100"
-                                        value={formData.sentiment_score}
-                                        onChange={(e) => setFormData({ ...formData, sentiment_score: parseInt(e.target.value) || 0 })}
-                                        className="w-full px-4 py-2 bg-secondary text-white border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
-                                    />
+                            {/* Type Selection */}
+                            <div>
+                                <label className="block text-sm font-medium text-muted-foreground mb-3">유형 선택</label>
+                                <div className="grid grid-cols-3 gap-3">
+                                    {RECORD_TYPES.map(type => (
+                                        <button
+                                            key={type.id}
+                                            type="button"
+                                            onClick={() => setFormData({ ...formData, type: type.id })}
+                                            className={`p-4 rounded-xl border text-center transition-all ${formData.type === type.id
+                                                ? `${type.bgColor} ${type.borderColor} ${type.textColor} shadow-lg`
+                                                : 'border-border text-muted-foreground hover:bg-secondary/30'
+                                                }`}
+                                        >
+                                            <type.icon size={24} className="mx-auto mb-2" />
+                                            <span className="font-medium">{type.label}</span>
+                                        </button>
+                                    ))}
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-6">
+                            <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-muted-foreground mb-2">
-                                        업체명
-                                    </label>
+                                    <label className="block text-sm font-medium text-muted-foreground mb-2">업체명</label>
                                     <input
                                         type="text"
                                         value={formData.company_name}
                                         onChange={(e) => setFormData({ ...formData, company_name: e.target.value })}
-                                        className="w-full px-4 py-2 bg-secondary text-white border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
+                                        className="w-full px-4 py-2.5 bg-secondary/50 text-white border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500/50"
                                         placeholder="업체명 입력"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-muted-foreground mb-2">
-                                        담당자명
-                                    </label>
+                                    <label className="block text-sm font-medium text-muted-foreground mb-2">담당자명</label>
                                     <input
                                         type="text"
                                         value={formData.contact_name}
                                         onChange={(e) => setFormData({ ...formData, contact_name: e.target.value })}
-                                        className="w-full px-4 py-2 bg-secondary text-white border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
+                                        className="w-full px-4 py-2.5 bg-secondary/50 text-white border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500/50"
                                         placeholder="담당자명 입력"
                                     />
                                 </div>
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-muted-foreground mb-2">
-                                    제목
-                                </label>
+                                <label className="block text-sm font-medium text-muted-foreground mb-2">제목</label>
                                 <input
                                     type="text"
                                     required
                                     value={formData.title}
                                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                                    className="w-full px-4 py-2 bg-secondary text-white border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
+                                    className="w-full px-4 py-2.5 bg-secondary/50 text-white border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500/50"
                                     placeholder="기록 제목을 입력하세요"
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-muted-foreground mb-2">
-                                    핵심 요약
-                                </label>
+                                <label className="block text-sm font-medium text-muted-foreground mb-2">핵심 요약</label>
                                 <textarea
                                     rows={3}
                                     value={formData.summary}
                                     onChange={(e) => setFormData({ ...formData, summary: e.target.value })}
-                                    className="w-full px-4 py-2 bg-secondary text-white border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent resize-none"
+                                    className="w-full px-4 py-2.5 bg-secondary/50 text-white border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500/50 resize-none"
                                     placeholder="대화 내용 요약"
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-muted-foreground mb-2">
-                                    전체 내용
-                                </label>
+                                <label className="block text-sm font-medium text-muted-foreground mb-2">전체 내용</label>
                                 <textarea
-                                    rows={6}
+                                    rows={5}
                                     required
                                     value={formData.content}
                                     onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                                    className="w-full px-4 py-2 bg-secondary text-white border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent resize-none"
+                                    className="w-full px-4 py-2.5 bg-secondary/50 text-white border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500/50 resize-none"
                                     placeholder="상세 내용을 입력하세요"
                                 />
                             </div>
 
-                            <div className="grid grid-cols-2 gap-6">
+                            <div className="grid grid-cols-3 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-muted-foreground mb-2">
-                                        주요 키워드 (쉼표로 구분)
-                                    </label>
+                                    <label className="block text-sm font-medium text-muted-foreground mb-2">감정 점수</label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        max="100"
+                                        value={formData.sentiment_score}
+                                        onChange={(e) => setFormData({ ...formData, sentiment_score: parseInt(e.target.value) || 0 })}
+                                        className="w-full px-4 py-2.5 bg-secondary/50 text-white border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500/50"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-muted-foreground mb-2">키워드 (쉼표)</label>
                                     <input
                                         type="text"
                                         value={Array.isArray(formData.keywords) ? formData.keywords.join(', ') : formData.keywords}
                                         onChange={(e) => setFormData({ ...formData, keywords: e.target.value })}
-                                        className="w-full px-4 py-2 bg-secondary text-white border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
-                                        placeholder="예: 가격, 일정, 기능"
+                                        className="w-full px-4 py-2.5 bg-secondary/50 text-white border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500/50"
+                                        placeholder="가격, 일정"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-muted-foreground mb-2">
-                                        Next Action (쉼표로 구분)
-                                    </label>
+                                    <label className="block text-sm font-medium text-muted-foreground mb-2">Next Action</label>
                                     <input
                                         type="text"
                                         value={Array.isArray(formData.next_action) ? formData.next_action.join(', ') : formData.next_action}
                                         onChange={(e) => setFormData({ ...formData, next_action: e.target.value })}
-                                        className="w-full px-4 py-2 bg-secondary text-white border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
-                                        placeholder="예: 견적서 송부, 미팅 요청"
+                                        className="w-full px-4 py-2.5 bg-secondary/50 text-white border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500/50"
+                                        placeholder="견적서 송부"
                                     />
                                 </div>
                             </div>
@@ -573,7 +679,7 @@ export default function DataManagement() {
                                 </button>
                                 <button
                                     type="submit"
-                                    className="px-5 py-2.5 bg-accent text-white rounded-lg font-medium hover:bg-accent/90 transition-colors flex items-center gap-2"
+                                    className="px-5 py-2.5 bg-gradient-to-r from-violet-500 to-purple-600 text-white rounded-lg font-medium hover:from-violet-600 hover:to-purple-700 transition-all flex items-center gap-2 shadow-lg"
                                 >
                                     <Save size={18} />
                                     {isEditModalOpen ? '수정 완료' : '저장하기'}

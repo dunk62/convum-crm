@@ -1,23 +1,83 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ComposedChart, Line, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { DollarSign, Users, Briefcase, Activity, ArrowRight, TrendingUp } from 'lucide-react';
+import { DollarSign, Users, Briefcase, Activity, ArrowRight, TrendingUp, Target, Edit2, Check, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { cn } from '../lib/utils';
 
-const StatCard = ({ label, value, icon: Icon }: any) => (
-    <div className="bg-card p-6 rounded-xl border border-border h-full flex flex-col justify-between">
-        <div className="flex items-start justify-between mb-4">
-            <div className="p-2 bg-accent/10 rounded-lg text-accent">
-                <Icon size={20} />
+interface StatCardProps {
+    label: string;
+    value: string | number;
+    icon: any;
+    isRightAligned?: boolean;
+    isEditable?: boolean;
+    onSave?: (value: number) => void;
+}
+
+const StatCard = ({ label, value, icon: Icon, isEditable, onSave }: StatCardProps) => {
+    const [isEditing, setIsEditing] = useState(false);
+    const [inputValue, setInputValue] = useState('');
+
+    const handleEdit = () => {
+        setInputValue(typeof value === 'number' ? value.toString() : '0');
+        setIsEditing(true);
+    };
+
+    const handleSave = () => {
+        const numValue = parseInt(inputValue.replace(/[^0-9]/g, ''), 10) || 0;
+        onSave?.(numValue);
+        setIsEditing(false);
+    };
+
+    const handleCancel = () => {
+        setIsEditing(false);
+    };
+
+    const displayValue = typeof value === 'number'
+        ? new Intl.NumberFormat('ko-KR', { style: 'currency', currency: 'KRW' }).format(value)
+        : value;
+
+    return (
+        <div className="bg-card p-6 rounded-xl border border-border h-full flex flex-col justify-between">
+            <div className="flex items-start justify-between mb-4">
+                <div className="p-2 bg-accent/10 rounded-lg text-accent">
+                    <Icon size={20} />
+                </div>
+                <h3 className="text-lg font-medium text-muted-foreground text-right">{label}</h3>
             </div>
-            <h3 className="text-lg font-medium text-muted-foreground text-right">{label}</h3>
+            <div className="flex justify-end items-end mt-auto gap-2">
+                {isEditing ? (
+                    <>
+                        <input
+                            type="text"
+                            value={inputValue}
+                            onChange={(e) => setInputValue(e.target.value)}
+                            className="w-full bg-background text-white text-xl font-bold p-2 rounded border border-border text-right"
+                            placeholder="금액 입력"
+                            autoFocus
+                        />
+                        <button onClick={handleSave} className="p-2 bg-success/20 text-success rounded hover:bg-success/30">
+                            <Check size={18} />
+                        </button>
+                        <button onClick={handleCancel} className="p-2 bg-danger/20 text-danger rounded hover:bg-danger/30">
+                            <X size={18} />
+                        </button>
+                    </>
+                ) : (
+                    <>
+                        <p className="text-3xl font-bold text-white">{displayValue}</p>
+                        {isEditable && (
+                            <button onClick={handleEdit} className="p-2 text-muted-foreground hover:text-white transition-colors">
+                                <Edit2 size={16} />
+                            </button>
+                        )}
+                    </>
+                )}
+            </div>
         </div>
-        <div className="flex justify-end items-end mt-auto">
-            <p className="text-3xl font-bold text-white">{value}</p>
-        </div>
-    </div>
-);
+    );
+};
+
 
 
 export default function Dashboard() {
@@ -30,6 +90,10 @@ export default function Dashboard() {
     const [expectedRevenue, setExpectedRevenue] = useState(0);
     const [recentOpportunities, setRecentOpportunities] = useState<any[]>([]);
     const [contactCount, setContactCount] = useState(0);
+    const [forecastTarget, setForecastTarget] = useState<number>(() => {
+        const saved = localStorage.getItem('forecastTarget');
+        return saved ? parseInt(saved, 10) : 0;
+    });
 
     // Monthly Targets for 2025
     const targets: { [key: string]: number } = {
@@ -51,6 +115,7 @@ export default function Dashboard() {
         { label: `${currentMonthLabel} 매출 실적`, value: new Intl.NumberFormat('ko-KR', { style: 'currency', currency: 'KRW' }).format(currentMonthRevenue), icon: DollarSign, isRightAligned: true },
         { label: `${currentMonthLabel} 수주 실적`, value: new Intl.NumberFormat('ko-KR', { style: 'currency', currency: 'KRW' }).format(currentMonthOrderPerformance), icon: TrendingUp, isRightAligned: true },
         { label: `${currentMonthLabel} 매출 목표`, value: new Intl.NumberFormat('ko-KR', { style: 'currency', currency: 'KRW' }).format(currentMonthTarget), icon: Briefcase, isRightAligned: true },
+        { label: `${currentMonthLabel} 예측 목표`, value: forecastTarget, icon: Target, isEditable: true },
         { label: '추가 예상 매출액', value: new Intl.NumberFormat('ko-KR', { style: 'currency', currency: 'KRW' }).format(expectedRevenue), icon: Activity, isRightAligned: true },
         { label: '접촉 횟수', value: `${contactCount}건`, icon: Users, isRightAligned: true },
     ];
@@ -87,7 +152,7 @@ export default function Dashboard() {
                 .from('opportunities')
                 .select('*')
                 .order('created_at', { ascending: false })
-                .limit(5);
+                .limit(20);
 
             if (recentError) throw recentError;
             setRecentOpportunities(recentData || []);
@@ -191,9 +256,16 @@ export default function Dashboard() {
                 <p className="text-muted-foreground mt-2">Overview of your sales performance and key metrics.</p>
             </div>
 
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {stats.map((stat, i) => (
-                    <StatCard key={i} {...stat} />
+                    <StatCard
+                        key={i}
+                        {...stat}
+                        onSave={stat.isEditable ? (value: number) => {
+                            setForecastTarget(value);
+                            localStorage.setItem('forecastTarget', value.toString());
+                        } : undefined}
+                    />
                 ))}
             </div>
 
@@ -240,12 +312,12 @@ export default function Dashboard() {
                                         <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                                     </linearGradient>
                                 </defs>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#27272a" />
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#2a4266" />
                                 <XAxis
                                     dataKey="name"
                                     axisLine={false}
                                     tickLine={false}
-                                    tick={{ fill: '#a1a1aa' }}
+                                    tick={{ fill: '#94a3b8' }}
                                     tickFormatter={(value) => {
                                         const [, month] = value.split('-');
                                         return `${month}월`;
@@ -255,7 +327,7 @@ export default function Dashboard() {
                                     yAxisId="left"
                                     axisLine={false}
                                     tickLine={false}
-                                    tick={{ fill: '#a1a1aa' }}
+                                    tick={{ fill: '#94a3b8' }}
                                     tickFormatter={(value) => new Intl.NumberFormat('ko-KR', { notation: "compact" }).format(value)}
                                 />
                                 <YAxis
@@ -263,15 +335,15 @@ export default function Dashboard() {
                                     orientation="right"
                                     axisLine={false}
                                     tickLine={false}
-                                    tick={{ fill: '#a1a1aa' }}
+                                    tick={{ fill: '#94a3b8' }}
                                     tickFormatter={(value) => new Intl.NumberFormat('ko-KR', { notation: "compact" }).format(value)}
                                     hide
                                 />
                                 <Tooltip
                                     contentStyle={{
                                         borderRadius: '8px',
-                                        border: '1px solid #27272a',
-                                        backgroundColor: '#18181b',
+                                        border: '1px solid #2a4266',
+                                        backgroundColor: '#1a2d4a',
                                         color: '#ffffff'
                                     }}
                                     formatter={(value: number) => new Intl.NumberFormat('ko-KR', { style: 'currency', currency: 'KRW' }).format(value)}
@@ -282,15 +354,15 @@ export default function Dashboard() {
                                 />
                                 <Legend wrapperStyle={{ paddingTop: '20px' }} />
                                 <Area yAxisId="left" type="monotone" dataKey="revenue" name="매출 실적" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorRevenue)" />
-                                <Line yAxisId="left" type="monotone" dataKey="target" name="매출 목표" stroke="#3b82f6" strokeWidth={2} dot={{ r: 4, fill: '#3b82f6' }} />
+                                <Line yAxisId="left" type="monotone" dataKey="target" name="매출 목표" stroke="#5a8fd4" strokeWidth={2} dot={{ r: 4, fill: '#5a8fd4' }} />
                             </ComposedChart>
                         </ResponsiveContainer>
                     </div>
                 </div>
 
-                <div className="bg-card p-6 rounded-xl border border-border">
+                <div className="bg-card p-6 rounded-xl border border-border flex flex-col">
                     <h2 className="text-lg font-bold text-white mb-6">영업 기회</h2>
-                    <div className="space-y-2">
+                    <div className="space-y-2 max-h-[400px] overflow-y-auto flex-1">
                         {recentOpportunities.map((deal: any) => (
                             <div key={deal.id} className="flex items-center justify-between p-3 hover:bg-secondary/50 rounded-lg transition-colors">
                                 <div>

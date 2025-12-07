@@ -47,7 +47,7 @@ export default function Login() {
     return (
         <div className="min-h-screen bg-background flex items-center justify-center p-4">
             {/* Subtle grid background */}
-            <div className="absolute inset-0 bg-[linear-gradient(to_right,#27272a_1px,transparent_1px),linear-gradient(to_bottom,#27272a_1px,transparent_1px)] bg-[size:4rem_4rem] opacity-20"></div>
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,#2a4266_1px,transparent_1px),linear-gradient(to_bottom,#2a4266_1px,transparent_1px)] bg-[size:4rem_4rem] opacity-20"></div>
 
             <div className="relative max-w-md w-full bg-card rounded-xl border border-border p-8">
                 <div className="text-center mb-8">
