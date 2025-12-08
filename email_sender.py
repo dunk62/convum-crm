@@ -143,8 +143,8 @@ def process_queue():
                 print(f"Failed to send email: {e}")
                 supabase.table('email_queue').update({'status': 'failed', 'error_message': str(e)}).eq('id', item['id']).execute()
 
-            # Sleep to prevent spamming
-            time.sleep(3)
+            # Sleep to prevent SMTP rate limiting (increased from 3 to 10 seconds)
+            time.sleep(10)
 
         except Exception as e:
             print(f"Loop Error: {e}")

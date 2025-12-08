@@ -173,22 +173,45 @@ export default function ContactInfo() {
     const handleSendEmails = async () => {
         if (selectedContactIds.size === 0) return;
 
-        if (!confirm(`총 ${selectedContactIds.size}명에게 회사소개서 메일을 발송하시겠습니까?`)) return;
+        const contactIdArray = Array.from(selectedContactIds);
+        if (!confirm(`총 ${contactIdArray.length}명에게 회사소개서 메일을 발송하시겠습니까?\n(순차적으로 발송되며 시간이 걸릴 수 있습니다)`)) return;
+
+        setIsSendingEmails(true);
+        let successCount = 0;
+        let failCount = 0;
 
         try {
-            setIsSendingEmails(true);
-            const queueItems = Array.from(selectedContactIds).map(contactId => ({
-                contact_id: contactId,
-                status: 'pending'
-            }));
+            // 순차적으로 대기열에 추가 (1초 간격)
+            for (let i = 0; i < contactIdArray.length; i++) {
+                const contactId = contactIdArray[i];
 
-            const { error } = await supabase
-                .from('email_queue')
-                .insert(queueItems);
+                try {
+                    const { error } = await supabase
+                        .from('email_queue')
+                        .insert({ contact_id: contactId, status: 'pending' });
 
-            if (error) throw error;
+                    if (error) {
+                        console.error(`Error queuing contact ${contactId}:`, error);
+                        failCount++;
+                    } else {
+                        successCount++;
+                    }
+                } catch (err) {
+                    console.error(`Error queuing contact ${contactId}:`, err);
+                    failCount++;
+                }
 
-            alert('메일 발송 요청이 대기열에 등록되었습니다.\n순차적으로 발송됩니다.');
+                // 각 요청 사이에 1초 대기 (마지막 요청 제외)
+                if (i < contactIdArray.length - 1) {
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                }
+            }
+
+            if (failCount > 0) {
+                alert(`메일 발송 요청 완료\n성공: ${successCount}건\n실패: ${failCount}건`);
+            } else {
+                alert(`${successCount}건의 메일 발송 요청이 대기열에 등록되었습니다.\n순차적으로 발송됩니다.`);
+            }
             setSelectedContactIds(new Set());
         } catch (err: any) {
             console.error('Error queuing emails:', err);

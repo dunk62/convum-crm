@@ -5,11 +5,27 @@ import { useGoogleLogin } from '@react-oauth/google';
 import { fetchCalendarEvents, fetchEmails, parseEmail, formatEventTime, type CalendarEvent, type ParsedEmail } from '../lib/googleApi';
 import { supabase } from '../lib/supabase';
 
-// Draggable Card Hook
-const useDraggable = (initialPosition: { x: number; y: number }) => {
-  const [position, setPosition] = useState(initialPosition);
+// Draggable Card Hook with localStorage persistence
+const useDraggable = (cardId: string, initialPosition: { x: number; y: number }) => {
+  const [position, setPosition] = useState(() => {
+    const saved = localStorage.getItem(`home_card_position_${cardId}`);
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        return initialPosition;
+      }
+    }
+    return initialPosition;
+  });
   const [isDragging, setIsDragging] = useState(false);
   const dragRef = useRef<{ startX: number; startY: number; initialX: number; initialY: number } | null>(null);
+  const positionRef = useRef(position);
+
+  // Keep positionRef updated with latest position
+  useEffect(() => {
+    positionRef.current = position;
+  }, [position]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -27,14 +43,17 @@ const useDraggable = (initialPosition: { x: number; y: number }) => {
       if (!isDragging || !dragRef.current) return;
       const deltaX = e.clientX - dragRef.current.startX;
       const deltaY = e.clientY - dragRef.current.startY;
-      setPosition({
+      const newPosition = {
         x: dragRef.current.initialX + deltaX,
         y: dragRef.current.initialY + deltaY,
-      });
+      };
+      setPosition(newPosition);
     };
 
     const handleMouseUp = () => {
       setIsDragging(false);
+      // Save the latest position from ref to localStorage when drag ends
+      localStorage.setItem(`home_card_position_${cardId}`, JSON.stringify(positionRef.current));
       dragRef.current = null;
     };
 
@@ -47,7 +66,7 @@ const useDraggable = (initialPosition: { x: number; y: number }) => {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isDragging]);
+  }, [isDragging, cardId]);
 
   return { position, isDragging, handleMouseDown };
 };
@@ -192,12 +211,12 @@ export default function Home() {
       .finally(() => setIsLoadingEmail(false));
   }, [accessToken]);
 
-  // Draggable positions for each card
-  const chatCard = useDraggable({ x: 0, y: 0 });
-  const appIconsCard = useDraggable({ x: 0, y: 0 });
-  const workspaceCard = useDraggable({ x: 0, y: 0 });
-  const mailCard = useDraggable({ x: 0, y: 0 });
-  const statsCard = useDraggable({ x: 0, y: 0 });
+  // Draggable positions for each card (with localStorage persistence)
+  const chatCard = useDraggable('chat', { x: 0, y: 0 });
+  const appIconsCard = useDraggable('appIcons', { x: 0, y: 0 });
+  const workspaceCard = useDraggable('workspace', { x: 0, y: 0 });
+  const mailCard = useDraggable('mail', { x: 0, y: 0 });
+  const statsCard = useDraggable('stats', { x: 0, y: 0 });
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);

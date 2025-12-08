@@ -72,6 +72,8 @@ export default function VacuumTransferReference() {
     const [isSaving, setIsSaving] = useState(false);
     const [showList, setShowList] = useState(false);
     const [tagInput, setTagInput] = useState('');
+    const [weightInput, setWeightInput] = useState(''); // 무게 입력 문자열 상태
+    const [pressureInput, setPressureInput] = useState(''); // 공급압력 입력 문자열 상태
 
     const fetchRecords = useCallback(async () => {
         setIsLoading(true);
@@ -326,24 +328,51 @@ export default function VacuumTransferReference() {
                         </div>
                         <div className="p-5 grid grid-cols-2 gap-4">
                             {[
-                                { label: '명칭', key: 'work_name', type: 'text' },
-                                { label: '재질', key: 'work_material', type: 'text' },
-                                { label: '크기 (mm)', key: 'work_size', type: 'text' },
-                                { label: '무게 (kg)', key: 'work_weight', type: 'number', highlight: true },
+                                { label: '명칭', key: 'work_name' },
+                                { label: '재질', key: 'work_material' },
                             ].map(field => (
                                 <div key={field.key} className="space-y-1.5">
-                                    <label className={`text-[10px] uppercase tracking-wider font-bold ${field.highlight ? 'text-orange-400' : 'text-slate-500'}`}>{field.label}</label>
+                                    <label className="text-[10px] uppercase tracking-wider font-bold text-slate-500">{field.label}</label>
                                     <input
-                                        type={field.type}
-                                        className={`w-full bg-slate-800/50 border rounded-lg px-3 py-2.5 text-sm focus:outline-none transition-all ${field.highlight
-                                            ? 'border-orange-500/30 focus:border-orange-500 text-orange-300 font-bold'
-                                            : 'border-slate-700/50 focus:border-cyan-500/50 text-white'
-                                            }`}
+                                        type="text"
+                                        className="w-full bg-slate-800/50 border border-slate-700/50 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-cyan-500/50 text-white transition-all"
                                         value={(data as any)[field.key] || ''}
-                                        onChange={e => updateField(field.key as any, field.type === 'number' ? Number(e.target.value) : e.target.value)}
+                                        onChange={e => updateField(field.key as any, e.target.value)}
                                     />
                                 </div>
                             ))}
+                            <div className="space-y-1.5">
+                                <label className="text-[10px] uppercase tracking-wider font-bold text-slate-500">크기 (mm)</label>
+                                <input
+                                    type="text"
+                                    className="w-full bg-slate-800/50 border border-slate-700/50 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-cyan-500/50 text-white transition-all"
+                                    value={data.work_size || ''}
+                                    onChange={e => updateField('work_size', e.target.value)}
+                                />
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="text-[10px] uppercase tracking-wider font-bold text-orange-400">무게 (kg)</label>
+                                <input
+                                    type="text"
+                                    inputMode="decimal"
+                                    className="w-full bg-slate-800/50 border border-orange-500/30 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-orange-500 text-orange-300 font-bold transition-all"
+                                    value={weightInput}
+                                    placeholder="예: 0.5"
+                                    onChange={e => {
+                                        const val = e.target.value;
+                                        // 숫자와 소수점만 허용
+                                        if (val === '' || /^[0-9]*\.?[0-9]*$/.test(val)) {
+                                            setWeightInput(val);
+                                            const numVal = parseFloat(val);
+                                            if (!isNaN(numVal)) {
+                                                updateField('work_weight', numVal);
+                                            } else if (val === '') {
+                                                updateField('work_weight', 0);
+                                            }
+                                        }
+                                    }}
+                                />
+                            </div>
                             <div className="col-span-2 flex items-center gap-4 pt-2">
                                 <label className="flex items-center gap-2 cursor-pointer bg-slate-800/30 px-3 py-2 rounded-lg border border-slate-700/30">
                                     <input type="checkbox" className="w-4 h-4 rounded accent-cyan-500" checked={data.is_breathable} onChange={e => updateField('is_breathable', e.target.checked)} />
@@ -383,7 +412,26 @@ export default function VacuumTransferReference() {
                                     <div className="col-span-2 space-y-1">
                                         <label className="text-[10px] text-slate-500 uppercase">공급 압력 (MPa)</label>
                                         <div className="flex items-center gap-2">
-                                            <input type="number" step="0.1" className="flex-1 bg-slate-800/50 border border-slate-700/50 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-cyan-500/50" value={data.supply_pressure || ''} onChange={e => updateField('supply_pressure', Number(e.target.value))} />
+                                            <input
+                                                type="text"
+                                                inputMode="decimal"
+                                                className="flex-1 bg-slate-800/50 border border-slate-700/50 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-cyan-500/50"
+                                                value={pressureInput}
+                                                placeholder="예: 0.5"
+                                                onChange={e => {
+                                                    const val = e.target.value;
+                                                    // 숫자와 소수점만 허용
+                                                    if (val === '' || /^[0-9]*\.?[0-9]*$/.test(val)) {
+                                                        setPressureInput(val);
+                                                        const numVal = parseFloat(val);
+                                                        if (!isNaN(numVal)) {
+                                                            updateField('supply_pressure', numVal);
+                                                        } else if (val === '') {
+                                                            updateField('supply_pressure', 0);
+                                                        }
+                                                    }
+                                                }}
+                                            />
                                             <Gauge size={16} className="text-slate-500" />
                                         </div>
                                     </div>

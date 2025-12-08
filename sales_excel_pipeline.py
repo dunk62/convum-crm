@@ -43,13 +43,10 @@ def monitor_folder():
 
     while True:
         try:
-            # Query for Excel files in the folder
-            # We check all files and filter by ID locally to keep it simple, 
-            # or we could use createdTime > last_check_time.
-            # Given the volume is likely low, checking the list against processed_files is fine.
+            # Query for Excel files AND Google Sheets in the folder
             results = service.files().list(
-                q=f"'{DRIVE_FOLDER_ID}' in parents and trashed = false and (mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' or mimeType = 'application/vnd.ms-excel')",
-                fields="files(id, name, createdTime)",
+                q=f"'{DRIVE_FOLDER_ID}' in parents and trashed = false and (mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' or mimeType = 'application/vnd.ms-excel' or mimeType = 'application/vnd.google-apps.spreadsheet')",
+                fields="files(id, name, createdTime, mimeType)",
                 orderBy='createdTime desc',
                 pageSize=20
             ).execute()
@@ -60,13 +57,14 @@ def monitor_folder():
             for file in files:
                 file_id = file['id']
                 file_name = file['name']
+                mime_type = file.get('mimeType', '')
                 
                 if file_id not in processed_files:
-                    print(f"New file found: {file_name} ({file_id})")
+                    print(f"New file found: {file_name} ({file_id}) - {mime_type}")
                     
-                    # Process the file
+                    # Process the file (pass mimeType for Google Sheets export)
                     print(f"Importing {file_name}...")
-                    import_sales_excel.import_file(file_id, file_name)
+                    import_sales_excel.import_file(file_id, file_name + '.xlsx', mime_type)
                     
                     # Mark as processed
                     processed_files.add(file_id)

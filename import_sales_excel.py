@@ -28,14 +28,26 @@ def get_drive_service():
         return build('drive', 'v3', credentials=creds)
     return None
 
-def download_file():
+def download_file(file_id=None, mime_type=None):
     service = get_drive_service()
     if not service:
         print("Service account not found.")
         return False
 
+    target_file_id = file_id if file_id else FILE_ID
+    
     try:
-        request = service.files().get_media(fileId=FILE_ID)
+        # Google Sheets need to be exported as Excel
+        if mime_type == 'application/vnd.google-apps.spreadsheet':
+            print(f"Exporting Google Sheets as Excel...")
+            request = service.files().export_media(
+                fileId=target_file_id,
+                mimeType='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            )
+        else:
+            # Regular file download
+            request = service.files().get_media(fileId=target_file_id)
+        
         fh = io.BytesIO()
         downloader = MediaIoBaseDownload(fh, request)
         done = False
@@ -211,12 +223,12 @@ def process_order_data(df, sheet_date):
             
     return records
 
-def import_file(file_id, file_name='downloaded_sales_data.xlsx'):
+def import_file(file_id, file_name='downloaded_sales_data.xlsx', mime_type=None):
     global FILE_ID, OUTPUT_FILE
     FILE_ID = file_id
     OUTPUT_FILE = file_name
     
-    if not download_file():
+    if not download_file(file_id, mime_type):
         return
 
     try:

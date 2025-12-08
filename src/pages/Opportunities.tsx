@@ -1001,11 +1001,7 @@ ${content}
             owner: op.owner,
             contact_name: op.contact_name || '',
             success_probability: op.success_probability || 10,
-            meeting_date: op.meeting_date ? (() => {
-                const date = new Date(op.meeting_date);
-                const offset = date.getTimezoneOffset() * 60000;
-                return new Date(date.getTime() - offset).toISOString().slice(0, 16);
-            })() : ''
+            meeting_date: op.meeting_date ? op.meeting_date.slice(0, 16) : ''
         });
         fetchMemos(String(op.id));
         setNewMemo(''); // Reset memo input
@@ -1517,9 +1513,9 @@ ${content}
                                     {visibleColumns.has('meeting_date') && (
                                         <td className="px-3 py-4 text-white/80 text-base">
                                             {op.meeting_date ? (() => {
-                                                const date = new Date(op.meeting_date);
-                                                const offset = date.getTimezoneOffset() * 60000;
-                                                return new Date(date.getTime() - offset).toISOString().slice(0, 16).replace('T', ' ');
+                                                // meeting_date is stored as local time (e.g., 2025-12-09T09:00)
+                                                // just display it directly without timezone conversion
+                                                return op.meeting_date.slice(0, 16).replace('T', ' ');
                                             })() : '-'}
                                         </td>
                                     )}
