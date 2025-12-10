@@ -64,7 +64,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         console.error('Email send error:', error);
         return res.status(500).json({
             error: 'Failed to send email',
-            details: error.message
+            details: error.message,
+            code: error.code,
+            response: error.response
         });
     }
 }

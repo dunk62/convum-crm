@@ -468,7 +468,7 @@ function DrawingEmailModal({ modelNo, selectedFiles, onClose }: DrawingEmailModa
                 alert(`✅ 도면 패키지(${selectedFiles.length}개)가 ${recipientEmail}로 발송되었습니다!`);
                 onClose();
             } else {
-                throw new Error(result.error || '이메일 발송에 실패했습니다.');
+                throw new Error(result.details || result.error || '이메일 발송에 실패했습니다.');
             }
         } catch (error: any) {
             console.error('Email send error:', error);
