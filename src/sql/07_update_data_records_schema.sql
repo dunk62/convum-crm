@@ -1,4 +1,4 @@
--- Add new columns to data_records table for AI analysis
+-- Add ㅐㅜew columns to data_records table for AI analysis
 alter table public.data_records
 add column if not exists company_name text,
 add column if not exists contact_name text,

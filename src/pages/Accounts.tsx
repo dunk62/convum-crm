@@ -547,7 +547,7 @@ export default function Accounts() {
                                                     setNewContact({});
                                                     setIsContactFormOpen(true);
                                                 }}
-                                                className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary/90 transition-colors"
+                                                className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-500 transition-colors"
                                             >
                                                 <Plus size={16} />
                                                 담당자 추가
@@ -763,7 +763,7 @@ export default function Accounts() {
                                     </button>
                                     <button
                                         type="submit"
-                                        className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
+                                        className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-500 transition-colors"
                                     >
                                         저장
                                     </button>

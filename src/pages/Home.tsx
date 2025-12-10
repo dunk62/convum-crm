@@ -274,6 +274,7 @@ export default function Home() {
     { label: '제품 정보', path: '/products/catalog', icon: Package, hasDropdown: true },
     { label: '진공 이송 시트', path: '/vacuum-transfer', icon: Gauge },
     { label: '패드 선정 가이드', path: '/pad-selection', icon: Layers },
+    { label: '치환 가이드', path: '/cross-reference', icon: Target },
     { label: '고객 정보', path: '/accounts/companies', icon: Users, hasDropdown: true },
   ];
 

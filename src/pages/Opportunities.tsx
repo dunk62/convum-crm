@@ -2230,13 +2230,16 @@ ${content}
                                                 </button>
                                             </div>
 
-                                            {/* Company Sales Chart */}
+                                            {/* Todo List - moved under Google Calendar */}
+                                            <div className="mt-4 flex-1 min-h-0">
+                                                <TodoList opportunityId={editingOpportunity.id} />
+                                            </div>
                                         </div>
 
-                                        {/* Center Column: Memo Section & Todo List */}
+                                        {/* Center Column: Memo Section - Full Width */}
                                         <div className="w-1/3 border-r border-border px-6 flex flex-col h-full overflow-hidden pb-2">
-                                            {/* Memo Section - 50% */}
-                                            <div className="flex-1 min-h-0 flex flex-col mb-2" style={{ maxHeight: '50%' }}>
+                                            {/* Memo Section - Full Height */}
+                                            <div className="flex-1 min-h-0 flex flex-col">
                                                 <h3 className="text-lg font-bold text-white mb-2 flex-shrink-0">메모</h3>
                                                 <div className="flex-1 overflow-y-auto bg-secondary/30 p-3 rounded-lg mb-2 space-y-2">
                                                     {isMemoLoading ? (
@@ -2472,10 +2475,6 @@ ${content}
                                                         </button>
                                                     </div>
                                                 </div>
-                                            </div>
-                                            {/* Todo List - 50% */}
-                                            <div className="flex-1 min-h-0" style={{ maxHeight: '50%' }}>
-                                                <TodoList opportunityId={editingOpportunity.id} />
                                             </div>
                                         </div>
 

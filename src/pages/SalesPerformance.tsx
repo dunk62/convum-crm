@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Search, RefreshCw, AlertCircle, Loader2, ChevronUp, ChevronDown, BarChart2, List, PieChart, TrendingUp, Package } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
+import { Search, AlertCircle, ChevronUp, ChevronDown } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import StoreSalesAnalysis from '../components/StoreSalesAnalysis';
-import CompanySalesAnalysis from '../components/CompanySalesAnalysis';
-import CompanyDetailAnalysis from '../components/CompanyDetailAnalysis';
-import ProductModelAnalysis from '../components/ProductModelAnalysis';
+import PartnerGrowthDashboard from '../components/PartnerGrowthDashboard';
+import CompanySalesControlDashboard from '../components/CompanySalesControlDashboard';
+import SalesInsightDashboard from '../components/SalesInsightDashboard';
+import SalesForecastDashboard from '../components/SalesForecastDashboard';
 
 interface SalesRecord {
     id: string;
@@ -23,7 +24,23 @@ interface SalesRecord {
 }
 
 export default function SalesPerformance() {
-    const [activeTab, setActiveTab] = useState<'list' | 'analysis' | 'company_analysis' | 'order_performance' | 'detail_analysis' | 'model_analysis'>('list');
+    const [searchParams] = useSearchParams();
+
+    // Map URL tab param to internal tab names
+    const getTabFromUrl = () => {
+        const tabParam = searchParams.get('tab');
+        switch (tabParam) {
+            case 'list': return 'list';
+            case 'order': return 'order_performance';
+            case 'analysis': return 'analysis';
+            case 'model': return 'model_analysis';
+            case 'detail': return 'detail_analysis';
+            case 'forecast': return 'forecast_2026';
+            default: return 'list';
+        }
+    };
+
+    const [activeTab, setActiveTab] = useState<'list' | 'analysis' | 'order_performance' | 'detail_analysis' | 'model_analysis' | 'forecast_2026'>(getTabFromUrl());
     const [salesData, setSalesData] = useState<SalesRecord[]>([]);
     const [orderData, setOrderData] = useState<SalesRecord[]>([]); // Added for order performance data
     const [isLoading, setIsLoading] = useState(true);
@@ -46,6 +63,11 @@ export default function SalesPerformance() {
         product_name: 'all',
         model_number: ''
     });
+
+    // Sync tab with URL when it changes
+    useEffect(() => {
+        setActiveTab(getTabFromUrl());
+    }, [searchParams]);
 
     useEffect(() => {
         const fetchFilterOptions = async () => {
@@ -484,125 +506,6 @@ export default function SalesPerformance() {
 
     return (
         <div className="space-y-6">
-            {/* ... (Header and Tabs) ... */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-white">실적 관리</h1>
-                    <p className="text-muted-foreground mt-1">영업 성과 및 실적을 확인하고 관리합니다.</p>
-                </div>
-                <div className="flex gap-2">
-                    <button
-                        onClick={() => {
-                            if (activeTab === 'list') fetchSalesData(searchTerm);
-                            if (activeTab === 'order_performance') fetchOrderData(searchTerm);
-                        }}
-                        className="p-2 text-muted-foreground hover:text-muted-foreground hover:bg-secondary/50 rounded-lg transition-colors"
-                        title="새로고침"
-                    >
-                        {isLoading ? <Loader2 size={20} className="animate-spin" /> : <RefreshCw size={20} />}
-                    </button>
-                </div>
-            </div>
-
-            {/* Tabs */}
-            <div className="border-b border-border">
-                <nav className="-mb-px flex space-x-8" aria-label="Tabs">
-                    <button
-                        onClick={() => {
-                            setActiveTab('list');
-                            setSearchTerm('');
-                            setFilters(prev => ({
-                                ...prev,
-                                distributor_name: 'all',
-                                company_name: '',
-                                sales_rep: 'all',
-                                product_name: 'all',
-                                model_number: ''
-                            }));
-                        }}
-                        className={`
-                            whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2
-                            ${activeTab === 'list'
-                                ? 'border-blue-500 text-accent'
-                                : 'border-transparent text-muted-foreground hover:text-muted-foreground hover:border-border'}
-                        `}
-                    >
-                        <List size={18} />
-                        판매 실적
-                    </button>
-                    <button
-                        onClick={() => {
-                            setActiveTab('order_performance');
-                            setSearchTerm('');
-                            setFilters(prev => ({
-                                ...prev,
-                                distributor_name: 'all',
-                                company_name: '',
-                                sales_rep: 'all',
-                                product_name: 'all',
-                                model_number: ''
-                            }));
-                        }}
-                        className={`
-                            whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2
-                            ${activeTab === 'order_performance'
-                                ? 'border-blue-500 text-accent'
-                                : 'border-transparent text-muted-foreground hover:text-muted-foreground hover:border-border'}
-                        `}
-                    >
-                        <TrendingUp size={18} />
-                        수주 실적
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('analysis')}
-                        className={`
-                            whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2
-                            ${activeTab === 'analysis'
-                                ? 'border-blue-500 text-accent'
-                                : 'border-transparent text-muted-foreground hover:text-muted-foreground hover:border-border'}
-                        `}
-                    >
-                        <BarChart2 size={18} />
-                        판매점별 매출 분석
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('company_analysis')}
-                        className={`
-                            whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2
-                            ${activeTab === 'company_analysis'
-                                ? 'border-blue-500 text-accent'
-                                : 'border-transparent text-muted-foreground hover:text-muted-foreground hover:border-border'}
-                        `}
-                    >
-                        <PieChart size={18} />
-                        상위 5개 업체 매출 분석
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('model_analysis')}
-                        className={`
-                            whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2
-                            ${activeTab === 'model_analysis'
-                                ? 'border-blue-500 text-accent'
-                                : 'border-transparent text-muted-foreground hover:text-muted-foreground hover:border-border'}
-                        `}
-                    >
-                        <Package size={18} />
-                        형번별 매출 분석
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('detail_analysis')}
-                        className={`
-                            whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2
-                            ${activeTab === 'detail_analysis'
-                                ? 'border-blue-500 text-accent'
-                                : 'border-transparent text-muted-foreground hover:text-muted-foreground hover:border-border'}
-                        `}
-                    >
-                        <PieChart size={18} />
-                        업체별 매출 분석
-                    </button>
-                </nav>
-            </div>
 
             {error && (
                 <div className="bg-danger/10 border border-danger/20 text-danger px-4 py-3 rounded-lg flex items-center gap-2">
@@ -616,13 +519,13 @@ export default function SalesPerformance() {
             ) : activeTab === 'order_performance' ? (
                 renderTable(paginatedData, 'order')
             ) : activeTab === 'analysis' ? (
-                <StoreSalesAnalysis />
-            ) : activeTab === 'company_analysis' ? (
-                <CompanySalesAnalysis />
+                <PartnerGrowthDashboard />
             ) : activeTab === 'model_analysis' ? (
-                <ProductModelAnalysis />
+                <SalesInsightDashboard />
+            ) : activeTab === 'forecast_2026' ? (
+                <SalesForecastDashboard />
             ) : (
-                <CompanyDetailAnalysis />
+                <CompanySalesControlDashboard />
             )}
         </div>
     );

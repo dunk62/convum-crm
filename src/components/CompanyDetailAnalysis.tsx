@@ -99,7 +99,7 @@ export default function CompanyDetailAnalysis() {
         const filtered = allData.filter(d => d.company_name === selectedCompany);
 
         // Determine available years from data
-        const years = Array.from(new Set(filtered.map(d => new Date(d.shipment_date).getFullYear()))).sort();
+        const years = Array.from(new Set(filtered.map(d => new Date(d.shipment_date).getFullYear()))).sort((a, b) => b - a); // 내림차순: 최신 연도가 위에
         setAvailableYears(years);
 
         const periods = periodType === 'monthly'

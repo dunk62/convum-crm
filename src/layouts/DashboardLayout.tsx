@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { Outlet, NavLink, useNavigate, Link } from 'react-router-dom';
 import { LayoutDashboard, Users, Briefcase, BarChart2, LogOut, Package, ChevronDown, ClipboardList, Database, Gauge, Layers } from 'lucide-react';
 import { supabase } from '../lib/supabase';
@@ -6,24 +6,29 @@ import { cn } from '../lib/utils';
 
 const NavItem = ({ item }: { item: any }) => {
     const [isOpen, setIsOpen] = useState(false);
-    const dropdownRef = useRef<HTMLDivElement>(null);
+    const timeoutRef = useRef<number | null>(null);
 
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-                setIsOpen(false);
-            }
-        };
+    const handleMouseEnter = () => {
+        if (timeoutRef.current) {
+            clearTimeout(timeoutRef.current);
+        }
+        setIsOpen(true);
+    };
 
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
+    const handleMouseLeave = () => {
+        timeoutRef.current = window.setTimeout(() => {
+            setIsOpen(false);
+        }, 150); // Small delay to prevent flickering
+    };
 
     if (item.children) {
         return (
-            <div className="relative" ref={dropdownRef}>
+            <div
+                className="relative"
+                onMouseEnter={handleMouseEnter}
+                onMouseLeave={handleMouseLeave}
+            >
                 <button
-                    onClick={() => setIsOpen(!isOpen)}
                     className={cn(
                         "flex items-center gap-2 px-3 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-0",
                         isOpen ? "text-white" : "text-white/80 hover:text-white"
@@ -35,7 +40,7 @@ const NavItem = ({ item }: { item: any }) => {
                 </button>
 
                 {isOpen && (
-                    <div className="absolute top-full left-0 mt-2 w-56 bg-[#1a2d4a] rounded-lg shadow-2xl border border-[#2a4266] py-2 z-50 animate-in fade-in zoom-in-95 duration-100">
+                    <div className="absolute top-full left-0 mt-1 w-56 bg-[#1a2d4a] rounded-lg shadow-2xl border border-[#2a4266] py-2 z-50 animate-in fade-in zoom-in-95 duration-100">
                         {item.children.map((child: any) => (
                             <NavLink
                                 key={child.path}
@@ -93,7 +98,19 @@ export default function DashboardLayout() {
     const navItems = [
         { icon: LayoutDashboard, label: '대시보드', path: '/dashboard' },
         { icon: Briefcase, label: '영업 기회', path: '/opportunities' },
-        { icon: BarChart2, label: '실적 관리', path: '/sales-performance' },
+        {
+            icon: BarChart2,
+            label: '실적 관리',
+            path: '/sales-performance',
+            children: [
+                { label: '판매 실적', path: '/sales-performance?tab=list' },
+                { label: '수주 실적', path: '/sales-performance?tab=order' },
+                { label: '판매점별 매출 분석', path: '/sales-performance?tab=analysis' },
+                { label: '매출 인사이트 대시보드', path: '/sales-performance?tab=model' },
+                { label: '업체별 매출 분석', path: '/sales-performance?tab=detail' },
+                { label: '2026 매출 예측', path: '/sales-performance?tab=forecast' }
+            ]
+        },
         {
             icon: ClipboardList,
             label: '재고 현황',
@@ -108,19 +125,21 @@ export default function DashboardLayout() {
             label: '제품 정보',
             path: '/products',
             children: [
-                { label: '제품 카탈로그', path: '/products/catalog' },
-                { label: '제품 도면', path: '/products/drawings' }
+                { label: '제품 도면', path: '/products/drawings' },
+                { label: '마케팅 자료실', path: '/products/marketing' }
             ]
         },
         { icon: Gauge, label: '진공 이송 시트', path: '/vacuum-transfer' },
         { icon: Layers, label: '패드 선정 가이드', path: '/pad-selection' },
+        { icon: BarChart2, label: '치환 가이드', path: '/cross-reference' },
         {
             icon: Users,
             label: '고객 정보',
             path: '/accounts',
             children: [
                 { label: '업체명 정보', path: '/accounts/companies' },
-                { label: '담당자명 정보', path: '/accounts/contacts' }
+                { label: '담당자명 정보', path: '/accounts/contacts' },
+                { label: 'Sales Map', path: '/sales-map' }
             ]
         },
     ];

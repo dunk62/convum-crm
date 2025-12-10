@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, RefreshCw, Mail, Phone, Building2, Loader2, AlertCircle, ChevronLeft, ChevronRight, PhoneCall, MessageSquare, X, ChevronDown, Plus, Trash2, Send, ArrowUpDown } from 'lucide-react';
+import { Search, RefreshCw, Mail, Phone, Building2, Loader2, AlertCircle, ChevronLeft, ChevronRight, PhoneCall, MessageSquare, X, ChevronDown, Plus, Trash2, Send, ArrowUpDown, Edit2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { cn } from '../lib/utils';
 
@@ -46,6 +46,10 @@ export default function ContactInfo() {
         department: '', position: '', contactName: '', grade: '', note: ''
     });
     const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null);
+
+    // Edit Modal State
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [editingContact, setEditingContact] = useState<Partial<Contact>>({});
 
     const itemsPerPage = 10;
 
@@ -221,6 +225,81 @@ export default function ContactInfo() {
         }
     };
 
+    // Delete contacts handler
+    const handleDeleteContacts = async (id?: string) => {
+        const idsToDelete = id ? [id] : Array.from(selectedContactIds);
+        if (idsToDelete.length === 0) {
+            alert('삭제할 항목을 선택해주세요.');
+            return;
+        }
+        if (!confirm(`${idsToDelete.length}개의 담당자 정보를 삭제하시겠습니까?`)) return;
+
+        try {
+            const { error } = await supabase
+                .from('contacts')
+                .delete()
+                .in('id', idsToDelete);
+
+            if (error) throw error;
+            await fetchContacts();
+            setSelectedContactIds(new Set());
+            setIsMenuOpen(false);
+            alert('삭제되었습니다.');
+        } catch (err: any) {
+            console.error('Error deleting contacts:', err);
+            alert('삭제 중 오류가 발생했습니다: ' + err.message);
+        }
+    };
+
+    // Edit contact handler
+    const handleEditContact = (contact?: Contact) => {
+        if (contact) {
+            setEditingContact(contact);
+        } else if (selectedContactIds.size === 1) {
+            const id = Array.from(selectedContactIds)[0];
+            const found = contacts.find(c => c.id === id);
+            if (found) setEditingContact(found);
+        } else {
+            alert('수정할 항목을 하나만 선택해주세요.');
+            return;
+        }
+        setIsEditModalOpen(true);
+        setIsMenuOpen(false);
+    };
+
+    const handleSaveContact = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!editingContact.id) return;
+
+        try {
+            const payload = {
+                name: editingContact.name,
+                department: editingContact.department,
+                position: editingContact.position,
+                phone: editingContact.phone,
+                email: editingContact.email,
+                sales_rep: editingContact.sales_rep,
+                status: editingContact.status,
+                memo: editingContact.memo,
+            };
+
+            const { error } = await supabase
+                .from('contacts')
+                .update(payload)
+                .eq('id', editingContact.id);
+
+            if (error) throw error;
+
+            await fetchContacts();
+            setIsEditModalOpen(false);
+            setEditingContact({});
+            alert('저장되었습니다.');
+        } catch (err: any) {
+            console.error('Error updating contact:', err);
+            alert('저장 중 오류가 발생했습니다: ' + err.message);
+        }
+    };
+
     const filteredContacts = contacts.filter(contact => {
         const term = searchTerm.toLowerCase();
         const matchesSearch = (
@@ -319,10 +398,14 @@ export default function ContactInfo() {
                                     새로 만들기
                                 </button>
                                 <button
-                                    onClick={() => {
-                                        alert('준비 중인 기능입니다.');
-                                        setIsMenuOpen(false);
-                                    }}
+                                    onClick={() => handleEditContact()}
+                                    className="flex items-center gap-2 w-full px-4 py-2 text-sm text-muted-foreground hover:bg-secondary/30"
+                                >
+                                    <Edit2 size={16} />
+                                    수정
+                                </button>
+                                <button
+                                    onClick={() => handleDeleteContacts()}
                                     className="flex items-center gap-2 w-full px-4 py-2 text-sm text-danger hover:bg-danger/10"
                                 >
                                     <Trash2 size={16} />
@@ -392,11 +475,12 @@ export default function ContactInfo() {
                                         <ArrowUpDown size={14} className="text-muted-foreground" />
                                     </div>
                                 </th>
+                                <th className="px-6 py-3 w-20"></th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
                             {paginatedContacts.map((contact) => (
-                                <tr key={contact.id} className="hover:bg-secondary/30 transition-colors">
+                                <tr key={contact.id} className="hover:bg-secondary/30 transition-colors group">
                                     <td className="px-6 py-4 font-medium text-white">
                                         <div className="flex items-center gap-4">
                                             <input
@@ -485,6 +569,24 @@ export default function ContactInfo() {
                                         )}>
                                             {contact.intro_mail_status || '미발송'}
                                         </span>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <button
+                                                onClick={() => handleEditContact(contact)}
+                                                className="p-1.5 text-muted-foreground hover:text-cyan-400 hover:bg-cyan-500/10 rounded"
+                                                title="수정"
+                                            >
+                                                <Edit2 size={14} />
+                                            </button>
+                                            <button
+                                                onClick={() => handleDeleteContacts(contact.id)}
+                                                className="p-1.5 text-muted-foreground hover:text-red-400 hover:bg-red-500/10 rounded"
+                                                title="삭제"
+                                            >
+                                                <Trash2 size={14} />
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))}
@@ -703,6 +805,127 @@ export default function ContactInfo() {
                                 <button
                                     type="submit"
                                     className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
+                                >
+                                    저장
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Edit Contact Modal */}
+            {isEditModalOpen && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-card rounded-xl shadow-xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200">
+                        <div className="flex items-center justify-between p-6 border-b border-border">
+                            <h2 className="text-xl font-semibold text-white">담당자 정보 수정</h2>
+                            <button
+                                onClick={() => setIsEditModalOpen(false)}
+                                className="text-muted-foreground hover:text-white transition-colors"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleSaveContact}>
+                            <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[70vh] overflow-y-auto">
+                                <div className="space-y-1">
+                                    <label className="text-xs font-medium text-muted-foreground uppercase">담당자명</label>
+                                    <input
+                                        type="text"
+                                        required
+                                        className="w-full p-2 bg-secondary text-white border border-border rounded text-sm"
+                                        value={editingContact.name || ''}
+                                        onChange={e => setEditingContact({ ...editingContact, name: e.target.value })}
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-xs font-medium text-muted-foreground uppercase">업체명</label>
+                                    <input
+                                        type="text"
+                                        disabled
+                                        className="w-full p-2 bg-secondary/50 text-muted-foreground border border-border rounded text-sm cursor-not-allowed"
+                                        value={editingContact.accounts?.name || ''}
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-xs font-medium text-muted-foreground uppercase">부서</label>
+                                    <input
+                                        type="text"
+                                        className="w-full p-2 bg-secondary text-white border border-border rounded text-sm"
+                                        value={editingContact.department || ''}
+                                        onChange={e => setEditingContact({ ...editingContact, department: e.target.value })}
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-xs font-medium text-muted-foreground uppercase">직급</label>
+                                    <input
+                                        type="text"
+                                        className="w-full p-2 bg-secondary text-white border border-border rounded text-sm"
+                                        value={editingContact.position || ''}
+                                        onChange={e => setEditingContact({ ...editingContact, position: e.target.value })}
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-xs font-medium text-muted-foreground uppercase">휴대전화</label>
+                                    <input
+                                        type="text"
+                                        className="w-full p-2 bg-secondary text-white border border-border rounded text-sm"
+                                        value={editingContact.phone || ''}
+                                        onChange={e => setEditingContact({ ...editingContact, phone: e.target.value })}
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-xs font-medium text-muted-foreground uppercase">이메일</label>
+                                    <input
+                                        type="email"
+                                        className="w-full p-2 bg-secondary text-white border border-border rounded text-sm"
+                                        value={editingContact.email || ''}
+                                        onChange={e => setEditingContact({ ...editingContact, email: e.target.value })}
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-xs font-medium text-muted-foreground uppercase">영업 담당자</label>
+                                    <input
+                                        type="text"
+                                        className="w-full p-2 bg-secondary text-white border border-border rounded text-sm"
+                                        value={editingContact.sales_rep || ''}
+                                        onChange={e => setEditingContact({ ...editingContact, sales_rep: e.target.value })}
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-xs font-medium text-muted-foreground uppercase">거래상태</label>
+                                    <select
+                                        className="w-full p-2 bg-secondary text-white border border-border rounded text-sm"
+                                        value={editingContact.status || ''}
+                                        onChange={e => setEditingContact({ ...editingContact, status: e.target.value })}
+                                    >
+                                        <option value="Active">Active</option>
+                                        <option value="Inactive">Inactive</option>
+                                    </select>
+                                </div>
+                                <div className="space-y-1 sm:col-span-2">
+                                    <label className="text-xs font-medium text-muted-foreground uppercase">메모</label>
+                                    <textarea
+                                        className="w-full p-2 bg-secondary text-white border border-border rounded text-sm"
+                                        rows={2}
+                                        value={editingContact.memo || ''}
+                                        onChange={e => setEditingContact({ ...editingContact, memo: e.target.value })}
+                                    />
+                                </div>
+                            </div>
+                            <div className="p-4 bg-secondary/30 border-t border-border flex justify-end gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsEditModalOpen(false)}
+                                    className="px-4 py-2 bg-card border border-border rounded-lg text-sm font-medium text-muted-foreground hover:bg-secondary/30 transition-colors"
+                                >
+                                    취소
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-500 transition-colors"
                                 >
                                     저장
                                 </button>
