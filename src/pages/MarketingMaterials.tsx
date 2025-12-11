@@ -410,15 +410,22 @@ interface MaterialsEmailModalProps {
 
 function MaterialsEmailModal({ selectedMaterials, onClose, onSuccess }: MaterialsEmailModalProps) {
     const [recipientEmail, setRecipientEmail] = useState('');
-    const [emailSubject, setEmailSubject] = useState('요청하신 자료 링크 안내');
-    const [additionalMessage, setAdditionalMessage] = useState('안녕하세요,\n\n요청하신 자료 링크를 보내드립니다.\n아래 링크를 클릭하시면 바로 열람하실 수 있습니다.');
+    // Generate dynamic subject based on first selected material
+    const getDefaultSubject = () => {
+        if (selectedMaterials.length > 0) {
+            return `[${selectedMaterials[0].cleanName}] 제품 카탈로그 자료 안내`;
+        }
+        return '제품 카탈로그 자료 안내';
+    };
+    const [emailSubject, setEmailSubject] = useState(getDefaultSubject());
+    const [additionalMessage, setAdditionalMessage] = useState('안녕하세요,\n\n카탈로그 자료 링크를 보내드립니다.\n아래 링크를 클릭하시면 바로 열람하실 수 있습니다.');
     const [isSending, setIsSending] = useState(false);
 
     // Generate email body
     const generateEmailBody = () => {
         let body = additionalMessage + '\n\n';
         body += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
-        body += `📚 마케팅 자료 (${selectedMaterials.length}건)\n`;
+        body += `📚 카탈로그 자료 (${selectedMaterials.length}건)\n`;
         body += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
 
         selectedMaterials.forEach((material) => {
