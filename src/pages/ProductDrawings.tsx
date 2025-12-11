@@ -820,15 +820,29 @@ function ThreeDViewer({ file }: ThreeDViewerProps) {
 
                 viewerRef.current = viewer;
 
-                // Include filename in URL for online-3d-viewer to detect file type
-                const encodedFilename = encodeURIComponent(file.name);
-                const proxyUrl = `/api/fetch-drive-file?fileId=${file.fileId}&filename=${encodedFilename}`;
+                // Fetch file from proxy and create File object for proper extension detection
+                const proxyUrl = `/api/fetch-drive-file?fileId=${file.fileId}`;
+                const response = await fetch(proxyUrl);
 
-                (viewer as any).LoadModelFromUrlList([proxyUrl]);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch file: ${response.statusText}`);
+                }
+
+                const blob = await response.blob();
+
+                // Create File object with proper filename for extension detection
+                const fileObject = new File([blob], file.name, { type: blob.type });
+
+                // Create blob URL for cleanup later
+                const blobUrl = URL.createObjectURL(fileObject);
+
+                // Use LoadModelFromFileList with actual File object
+                (viewer as any).LoadModelFromFileList([fileObject]);
 
                 const checkLoaded = setInterval(() => {
                     if (!mounted) {
                         clearInterval(checkLoaded);
+                        URL.revokeObjectURL(blobUrl);
                         return;
                     }
                     const viewerElement = parentDiv.querySelector('canvas');
@@ -840,6 +854,7 @@ function ThreeDViewer({ file }: ThreeDViewerProps) {
 
                 setTimeout(() => {
                     clearInterval(checkLoaded);
+                    URL.revokeObjectURL(blobUrl);
                     if (mounted) {
                         setIsLoading(false);
                     }
