@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { Search, FileText, Send, Download, Loader2, CheckCircle, X, Mail, ExternalLink, FileImage, Box, AlertCircle } from 'lucide-react';
 
 // Drawing file interface
@@ -706,8 +706,7 @@ function PreviewPanel({ file }: PreviewPanelProps) {
         );
     }
 
-    // TYPE B: 3D Model Viewer (STEP, STP, IGS)
-    // CORS 제한으로 직접 렌더링 불가 - 외부 3D 뷰어 서비스 안내
+    // TYPE B: 3D Model Viewer (STEP, STP, IGS) - Using Proxy API
     if (viewerType === '3d') {
         return (
             <div className="h-full flex flex-col min-h-[500px]">
@@ -718,56 +717,22 @@ function PreviewPanel({ file }: PreviewPanelProps) {
                         <span className="text-sm font-medium text-white truncate max-w-[300px]">{file.name}</span>
                         <span className="text-xs px-2 py-0.5 rounded bg-green-500/20 text-green-400 border border-green-500/30">3D</span>
                     </div>
-                    <a
-                        href={file.downloadUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="px-3 py-1.5 text-sm bg-green-500/20 text-green-400 rounded-lg hover:bg-green-500/30 transition-colors flex items-center gap-2"
-                    >
-                        <Download size={14} />
-                        다운로드
-                    </a>
-                </div>
-
-                {/* 3D Viewer - External Service Guide */}
-                <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-gradient-to-br from-green-900/20 to-slate-900">
-                    <div className="w-24 h-24 rounded-2xl bg-green-500/20 flex items-center justify-center mb-6">
-                        <Box size={48} className="text-green-400" />
-                    </div>
-                    <h3 className="text-xl font-medium text-white mb-2">3D 모델 파일</h3>
-                    <p className="text-sm text-muted-foreground mb-6 max-w-sm">
-                        보안 정책으로 웹에서 직접 미리보기가 제한됩니다.<br />
-                        아래 방법으로 3D 모델을 확인하세요.
-                    </p>
-
-                    <div className="flex flex-col gap-3 w-full max-w-xs">
-                        {/* Download Button */}
+                    <div className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground">마우스로 회전/확대 가능</span>
                         <a
                             href={file.downloadUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="px-6 py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl hover:from-green-600 hover:to-emerald-700 transition-all shadow-lg flex items-center justify-center gap-3"
+                            className="px-3 py-1.5 text-sm bg-green-500/20 text-green-400 rounded-lg hover:bg-green-500/30 transition-colors flex items-center gap-2"
                         >
-                            <Download size={20} />
-                            <span className="font-medium">파일 다운로드</span>
-                        </a>
-
-                        {/* External 3D Viewer Link */}
-                        <a
-                            href="https://3dviewer.net"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="px-6 py-4 bg-blue-500/20 text-blue-400 rounded-xl hover:bg-blue-500/30 transition-all flex items-center justify-center gap-3 border border-blue-500/30"
-                        >
-                            <ExternalLink size={18} />
-                            <span>온라인 3D 뷰어에서 열기</span>
+                            <Download size={14} />
+                            다운로드
                         </a>
                     </div>
-
-                    <p className="text-xs text-muted-foreground mt-6">
-                        💡 다운로드 후 3dviewer.net에 업로드하면 확인 가능합니다.
-                    </p>
                 </div>
+
+                {/* 3D Viewer with Proxy */}
+                <ThreeDViewer file={file} />
             </div>
         );
     }
@@ -811,3 +776,136 @@ function PreviewPanel({ file }: PreviewPanelProps) {
     );
 }
 
+
+// 3D Viewer Component using online-3d-viewer with Proxy API
+interface ThreeDViewerProps {
+    file: DrawingFile;
+}
+
+function ThreeDViewer({ file }: ThreeDViewerProps) {
+    const viewerContainerRef = useRef<HTMLDivElement>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const viewerRef = useRef<any>(null);
+
+    useEffect(() => {
+        let mounted = true;
+        
+        const loadViewer = async () => {
+            if (!viewerContainerRef.current) return;
+            
+            try {
+                setIsLoading(true);
+                setError(null);
+                
+                if (viewerRef.current) {
+                    viewerContainerRef.current.innerHTML = '';
+                    viewerRef.current = null;
+                }
+
+                const OV = await import('online-3d-viewer');
+                
+                if (!mounted) return;
+
+                const parentDiv = viewerContainerRef.current;
+                parentDiv.innerHTML = '';
+                
+                const bgColor = new OV.RGBAColor(30, 41, 59, 255);
+                
+                const viewer = new OV.EmbeddedViewer(parentDiv, {
+                    backgroundColor: bgColor,
+                    defaultColor: new OV.RGBColor(200, 200, 200),
+                    edgeSettings: new OV.EdgeSettings(false, new OV.RGBColor(0, 0, 0), 1)
+                });
+                
+                viewerRef.current = viewer;
+
+                const proxyUrl = `/api/fetch-drive-file?fileId=${file.fileId}`;
+                
+                (viewer as any).LoadModelFromUrlList([proxyUrl]);
+
+                const checkLoaded = setInterval(() => {
+                    if (!mounted) {
+                        clearInterval(checkLoaded);
+                        return;
+                    }
+                    const viewerElement = parentDiv.querySelector('canvas');
+                    if (viewerElement) {
+                        setIsLoading(false);
+                        clearInterval(checkLoaded);
+                    }
+                }, 500);
+
+                setTimeout(() => {
+                    clearInterval(checkLoaded);
+                    if (mounted) {
+                        setIsLoading(false);
+                    }
+                }, 20000);
+                
+            } catch (err) {
+                console.error('Viewer initialization error:', err);
+                if (mounted) {
+                    setError('3D 뷰어 초기화에 실패했습니다.');
+                    setIsLoading(false);
+                }
+            }
+        };
+
+        loadViewer();
+
+        return () => {
+            mounted = false;
+            if (viewerRef.current && viewerContainerRef.current) {
+                viewerContainerRef.current.innerHTML = '';
+                viewerRef.current = null;
+            }
+        };
+    }, [file.id, file.fileId]);
+
+    return (
+        <div className="flex-1 relative bg-slate-800 min-h-[400px]">
+            {isLoading && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-800 z-20">
+                    <div className="relative">
+                        <div className="w-16 h-16 border-4 border-green-500/30 border-t-green-500 rounded-full animate-spin" />
+                        <Box size={24} className="text-green-400 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-4">⏳ 3D 모델링 로딩 중...</p>
+                    <p className="text-xs text-muted-foreground mt-1">파일 크기에 따라 시간이 소요될 수 있습니다.</p>
+                </div>
+            )}
+
+            {error && !isLoading && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-800 p-8 text-center z-20">
+                    <div className="w-16 h-16 rounded-2xl bg-amber-500/20 flex items-center justify-center mb-4">
+                        <AlertCircle size={32} className="text-amber-400" />
+                    </div>
+                    <h3 className="text-lg font-medium text-white mb-2">로딩 실패</h3>
+                    <p className="text-sm text-muted-foreground mb-4 max-w-sm">{error}</p>
+                    <a
+                        href={file.downloadUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all shadow-lg flex items-center gap-2"
+                    >
+                        <Download size={18} />
+                        파일 다운로드
+                    </a>
+                </div>
+            )}
+
+            <div 
+                ref={viewerContainerRef} 
+                className="w-full h-full min-h-[400px]"
+                style={{ touchAction: 'none' }}
+            />
+
+            {!isLoading && !error && (
+                <div className="absolute bottom-4 left-4 bg-black/50 backdrop-blur-sm rounded-lg px-3 py-2 text-xs text-white/70">
+                    <span>🖱️ 드래그: 회전 | 스크롤: 확대/축소 | Shift+드래그: 이동</span>
+                </div>
+            )}
+        </div>
+    );
+}
