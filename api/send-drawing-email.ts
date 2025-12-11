@@ -31,11 +31,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             return res.status(500).json({ error: 'Email configuration not set' });
         }
 
-        // Create transporter for Gmail with explicit SMTP settings
+        // Create transporter for company SMTP server
         const transporter = nodemailer.createTransport({
-            host: 'smtp.gmail.com',
-            port: 587,
-            secure: false, // use STARTTLS
+            host: 'smtp.zioyou.com',
+            port: 465,
+            secure: true, // SSL for port 465
             auth: {
                 user: emailUser,
                 pass: emailPassword,
