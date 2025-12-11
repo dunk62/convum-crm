@@ -22,11 +22,14 @@ import {
     Search,
     Clock,
     Package,
-    Minus
+    Minus,
+    Building2,
+    BarChart3
 } from 'lucide-react';
 
 interface SalesRecord {
     distributor_name: string;
+    company_name: string;
     shipment_date: string;
     sales_amount: number;
     sales_rep: string;
@@ -47,6 +50,15 @@ interface PartnerStats {
     growth_signal: 'up' | 'stable' | 'down';
     tier: 'Platinum' | 'Gold' | 'Silver' | 'Bronze';
     total_12_months: number;
+}
+
+interface CompanyStats {
+    company_name: string;
+    sales_2025: number;
+    sales_2024: number;
+    yoy_growth: number;
+    is_new: boolean;
+    is_risk: boolean;
 }
 
 // 부서별 담당자 그룹
@@ -79,6 +91,11 @@ export default function PartnerGrowthDashboard() {
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
     const [searchQuery, setSearchQuery] = useState<string>('');
 
+    // Company analysis tab states
+    const [activeDetailTab, setActiveDetailTab] = useState<'summary' | 'companies'>('summary');
+    const [companyStats, setCompanyStats] = useState<CompanyStats[]>([]);
+    const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
+
     // Fetch sales data
     const fetchData = useCallback(async () => {
         try {
@@ -91,7 +108,7 @@ export default function PartnerGrowthDashboard() {
             while (hasMore) {
                 const { data, error } = await supabase
                     .from('sales_performance')
-                    .select('distributor_name, shipment_date, sales_amount, sales_rep, product_name, model_number, quantity')
+                    .select('distributor_name, company_name, shipment_date, sales_amount, sales_rep, product_name, model_number, quantity')
                     .gte('shipment_date', '2024-01-01')
                     .range(page * pageSize, (page + 1) * pageSize - 1);
 
@@ -555,141 +572,281 @@ export default function PartnerGrowthDashboard() {
                                 </div>
                             </div>
 
-                            {/* Content */}
-                            <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                                {/* Sales Trend Chart */}
-                                <div className="bg-secondary/30 rounded-xl p-4">
-                                    <h4 className="font-bold text-white mb-3 flex items-center gap-2">
-                                        <TrendingUp size={16} className="text-accent" />
-                                        성장 추세 비교 (금년 vs 작년)
-                                    </h4>
-                                    <div className="h-[200px]">
-                                        <ResponsiveContainer width="100%" height="100%">
-                                            <LineChart data={selectedPartnerData.monthlyData}>
-                                                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                                                <XAxis dataKey="month" tick={{ fill: '#9ca3af', fontSize: 11 }} />
-                                                <YAxis
-                                                    tick={{ fill: '#9ca3af', fontSize: 11 }}
-                                                    tickFormatter={(v) => formatCompactCurrency(v)}
-                                                />
-                                                <Tooltip
-                                                    formatter={(value: number) => [formatCurrency(value), '']}
-                                                    contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '8px' }}
-                                                    labelStyle={{ color: '#fff' }}
-                                                    itemStyle={{ color: '#fff' }}
-                                                />
-                                                <Legend />
-                                                <Line
-                                                    type="monotone"
-                                                    dataKey="sales_2025"
-                                                    name="2025년"
-                                                    stroke="#8b5cf6"
-                                                    strokeWidth={2}
-                                                    dot={{ fill: '#8b5cf6', r: 3 }}
-                                                />
-                                                <Line
-                                                    type="monotone"
-                                                    dataKey="sales_2024"
-                                                    name="2024년"
-                                                    stroke="#6b7280"
-                                                    strokeWidth={2}
-                                                    strokeDasharray="5 5"
-                                                    dot={{ fill: '#6b7280', r: 3 }}
-                                                />
-                                            </LineChart>
-                                        </ResponsiveContainer>
+                            {/* Tab Navigation */}
+                            <div className="px-4 py-2 border-b border-border bg-secondary/20">
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={() => setActiveDetailTab('summary')}
+                                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${activeDetailTab === 'summary'
+                                            ? 'bg-accent text-white'
+                                            : 'text-muted-foreground hover:text-white hover:bg-secondary'
+                                            }`}
+                                    >
+                                        <BarChart3 size={14} />
+                                        요약
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setActiveDetailTab('companies');
+                                            // Calculate company stats for this partner
+                                            const now = new Date();
+                                            const currentYear = now.getFullYear();
+                                            const lastYear = currentYear - 1;
+                                            const currentMonth = now.getMonth();
+
+                                            const partnerData = salesData.filter(d => d.distributor_name === selectedPartner);
+                                            const companyAgg: Record<string, { sales_2025: number; sales_2024: number }> = {};
+
+                                            partnerData.forEach(record => {
+                                                const date = new Date(record.shipment_date);
+                                                const year = date.getFullYear();
+                                                const month = date.getMonth();
+                                                const company = record.company_name || 'Unknown';
+
+                                                if (!companyAgg[company]) {
+                                                    companyAgg[company] = { sales_2025: 0, sales_2024: 0 };
+                                                }
+
+                                                if (year === currentYear && month <= currentMonth) {
+                                                    companyAgg[company].sales_2025 += record.sales_amount;
+                                                } else if (year === lastYear && month <= currentMonth) {
+                                                    companyAgg[company].sales_2024 += record.sales_amount;
+                                                }
+                                            });
+
+                                            const companies: CompanyStats[] = Object.entries(companyAgg)
+                                                .map(([name, data]) => {
+                                                    const yoy = data.sales_2024 > 0
+                                                        ? ((data.sales_2025 - data.sales_2024) / data.sales_2024) * 100
+                                                        : 0;
+                                                    return {
+                                                        company_name: name,
+                                                        sales_2025: data.sales_2025,
+                                                        sales_2024: data.sales_2024,
+                                                        yoy_growth: yoy,
+                                                        is_new: data.sales_2024 === 0 && data.sales_2025 > 0,
+                                                        is_risk: yoy <= -30 && data.sales_2024 > 0
+                                                    };
+                                                })
+                                                .filter(c => c.sales_2025 > 0 || c.sales_2024 > 0)
+                                                .sort((a, b) => {
+                                                    if (a.is_risk && !b.is_risk) return -1;
+                                                    if (!a.is_risk && b.is_risk) return 1;
+                                                    return a.yoy_growth - b.yoy_growth;
+                                                });
+
+                                            setCompanyStats(companies);
+                                            if (companies.length > 0) setSelectedCompany(companies[0].company_name);
+                                        }}
+                                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${activeDetailTab === 'companies'
+                                            ? 'bg-accent text-white'
+                                            : 'text-muted-foreground hover:text-white hover:bg-secondary'
+                                            }`}
+                                    >
+                                        <Building2 size={14} />
+                                        관리 업체
+                                        {companyStats.filter(c => c.is_risk).length > 0 && (
+                                            <span className="ml-1 px-1.5 py-0.5 bg-red-500 text-white text-xs rounded-full">
+                                                {companyStats.filter(c => c.is_risk).length}
+                                            </span>
+                                        )}
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Tab Content */}
+                            {activeDetailTab === 'summary' ? (
+                                <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                                    {/* Sales Trend Chart */}
+                                    <div className="bg-secondary/30 rounded-xl p-4">
+                                        <h4 className="font-bold text-white mb-3 flex items-center gap-2">
+                                            <TrendingUp size={16} className="text-accent" />
+                                            성장 추세 비교 (금년 vs 작년)
+                                        </h4>
+                                        <div className="h-[200px]">
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <LineChart data={selectedPartnerData.monthlyData}>
+                                                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                                                    <XAxis dataKey="month" tick={{ fill: '#9ca3af', fontSize: 11 }} />
+                                                    <YAxis
+                                                        tick={{ fill: '#9ca3af', fontSize: 11 }}
+                                                        tickFormatter={(v) => formatCompactCurrency(v)}
+                                                    />
+                                                    <Tooltip
+                                                        formatter={(value: number) => [formatCurrency(value), '']}
+                                                        contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '8px' }}
+                                                        labelStyle={{ color: '#fff' }}
+                                                        itemStyle={{ color: '#fff' }}
+                                                    />
+                                                    <Legend />
+                                                    <Line
+                                                        type="monotone"
+                                                        dataKey="sales_2025"
+                                                        name="2025년"
+                                                        stroke="#8b5cf6"
+                                                        strokeWidth={2}
+                                                        dot={{ fill: '#8b5cf6', r: 3 }}
+                                                    />
+                                                    <Line
+                                                        type="monotone"
+                                                        dataKey="sales_2024"
+                                                        name="2024년"
+                                                        stroke="#6b7280"
+                                                        strokeWidth={2}
+                                                        strokeDasharray="5 5"
+                                                        dot={{ fill: '#6b7280', r: 3 }}
+                                                    />
+                                                </LineChart>
+                                            </ResponsiveContainer>
+                                        </div>
+                                    </div>
+
+                                    {/* Bottom Row */}
+                                    <div className="grid grid-cols-2 gap-4">
+                                        {/* White Space Analysis */}
+                                        <div className="bg-secondary/30 rounded-xl p-4">
+                                            <h4 className="font-bold text-white mb-3 flex items-center gap-2">
+                                                <Package size={16} className="text-accent" />
+                                                White Space 분석 (상품군)
+                                            </h4>
+                                            <div className="space-y-2">
+                                                {selectedPartnerData.whiteSpaceData.map(item => (
+                                                    <div key={item.category} className="flex items-center gap-2">
+                                                        <div className={`w-4 h-4 rounded ${item.purchased ? 'bg-blue-500' : 'bg-gray-600'}`} />
+                                                        <span className={`text-sm flex-1 ${item.purchased ? 'text-white' : 'text-gray-500'}`}>
+                                                            {item.category}
+                                                        </span>
+                                                        {item.purchased && (
+                                                            <span className="text-xs text-accent">{formatCompactCurrency(item.sales)}</span>
+                                                        )}
+                                                        {!item.purchased && (
+                                                            <span className="text-xs text-gray-500">미취급</span>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {/* Order Timeline */}
+                                        <div className="bg-secondary/30 rounded-xl p-4">
+                                            <h4 className="font-bold text-white mb-3 flex items-center gap-2">
+                                                <Clock size={16} className="text-accent" />
+                                                최근 6개월 주문 현황
+                                            </h4>
+
+                                            {/* Summary Stats */}
+                                            <div className="grid grid-cols-3 gap-2 mb-4">
+                                                <div className="bg-secondary/50 rounded-lg p-2 text-center">
+                                                    <div className="text-lg font-bold text-accent">{selectedPartnerData.timelineData.totalOrders}</div>
+                                                    <div className="text-xs text-muted-foreground">총 주문일</div>
+                                                </div>
+                                                <div className="bg-secondary/50 rounded-lg p-2 text-center">
+                                                    <div className="text-lg font-bold text-white">
+                                                        {selectedPartnerData.timelineData.lastOrderDate
+                                                            ? new Date(selectedPartnerData.timelineData.lastOrderDate).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })
+                                                            : '-'}
+                                                    </div>
+                                                    <div className="text-xs text-muted-foreground">마지막 주문</div>
+                                                </div>
+                                                <div className="bg-secondary/50 rounded-lg p-2 text-center">
+                                                    <div className={`text-lg font-bold ${selectedPartnerData.timelineData.avgGap > 30 ? 'text-amber-400' : 'text-emerald-400'}`}>
+                                                        {selectedPartnerData.timelineData.avgGap || '-'}일
+                                                    </div>
+                                                    <div className="text-xs text-muted-foreground">최근 간격</div>
+                                                </div>
+                                            </div>
+
+                                            {/* Monthly Bar Chart */}
+                                            <div className="space-y-2">
+                                                {selectedPartnerData.timelineData.monthlyOrderCounts.map((monthData, idx) => {
+                                                    const maxCount = Math.max(...selectedPartnerData.timelineData.monthlyOrderCounts.map(m => m.count), 1);
+                                                    const barWidth = (monthData.count / maxCount) * 100;
+                                                    const isCurrentMonth = idx === selectedPartnerData.timelineData.monthlyOrderCounts.length - 1;
+
+                                                    return (
+                                                        <div key={monthData.month} className="flex items-center gap-2">
+                                                            <span className={`w-8 text-xs text-right ${isCurrentMonth ? 'text-white font-medium' : 'text-muted-foreground'}`}>
+                                                                {monthData.month}
+                                                            </span>
+                                                            <div className="flex-1 h-5 bg-secondary/50 rounded-full overflow-hidden">
+                                                                <div
+                                                                    className={`h-full rounded-full transition-all ${monthData.count > 0 ? 'bg-gradient-to-r from-accent to-accent/60' : ''}`}
+                                                                    style={{ width: `${barWidth}%` }}
+                                                                />
+                                                            </div>
+                                                            <span className={`w-8 text-xs ${monthData.count > 0 ? 'text-white' : 'text-muted-foreground'}`}>
+                                                                {monthData.count > 0 ? `${monthData.count}회` : '-'}
+                                                            </span>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+
+                                            {selectedPartnerData.timelineData.monthlyOrderCounts.every(m => m.count === 0) && (
+                                                <div className="text-center text-muted-foreground text-sm mt-4">
+                                                    최근 6개월 주문 없음
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
-
-                                {/* Bottom Row */}
-                                <div className="grid grid-cols-2 gap-4">
-                                    {/* White Space Analysis */}
-                                    <div className="bg-secondary/30 rounded-xl p-4">
-                                        <h4 className="font-bold text-white mb-3 flex items-center gap-2">
-                                            <Package size={16} className="text-accent" />
-                                            White Space 분석 (상품군)
-                                        </h4>
-                                        <div className="space-y-2">
-                                            {selectedPartnerData.whiteSpaceData.map(item => (
-                                                <div key={item.category} className="flex items-center gap-2">
-                                                    <div className={`w-4 h-4 rounded ${item.purchased ? 'bg-blue-500' : 'bg-gray-600'}`} />
-                                                    <span className={`text-sm flex-1 ${item.purchased ? 'text-white' : 'text-gray-500'}`}>
-                                                        {item.category}
-                                                    </span>
-                                                    {item.purchased && (
-                                                        <span className="text-xs text-accent">{formatCompactCurrency(item.sales)}</span>
-                                                    )}
-                                                    {!item.purchased && (
-                                                        <span className="text-xs text-gray-500">미취급</span>
-                                                    )}
-                                                </div>
-                                            ))}
-                                        </div>
+                            ) : (
+                                /* Companies Tab Content */
+                                <div className="flex-1 overflow-hidden flex flex-col p-4">
+                                    <div className="text-xs text-muted-foreground pb-2 flex items-center gap-1 border-b border-border mb-2">
+                                        <AlertTriangle size={12} className="text-amber-400" />
+                                        기본 정렬: 매출 급락순 (Risk First) | 총 {companyStats.length}개 업체
                                     </div>
-
-                                    {/* Order Timeline */}
-                                    <div className="bg-secondary/30 rounded-xl p-4">
-                                        <h4 className="font-bold text-white mb-3 flex items-center gap-2">
-                                            <Clock size={16} className="text-accent" />
-                                            최근 6개월 주문 현황
-                                        </h4>
-
-                                        {/* Summary Stats */}
-                                        <div className="grid grid-cols-3 gap-2 mb-4">
-                                            <div className="bg-secondary/50 rounded-lg p-2 text-center">
-                                                <div className="text-lg font-bold text-accent">{selectedPartnerData.timelineData.totalOrders}</div>
-                                                <div className="text-xs text-muted-foreground">총 주문일</div>
-                                            </div>
-                                            <div className="bg-secondary/50 rounded-lg p-2 text-center">
-                                                <div className="text-lg font-bold text-white">
-                                                    {selectedPartnerData.timelineData.lastOrderDate
-                                                        ? new Date(selectedPartnerData.timelineData.lastOrderDate).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })
-                                                        : '-'}
-                                                </div>
-                                                <div className="text-xs text-muted-foreground">마지막 주문</div>
-                                            </div>
-                                            <div className="bg-secondary/50 rounded-lg p-2 text-center">
-                                                <div className={`text-lg font-bold ${selectedPartnerData.timelineData.avgGap > 30 ? 'text-amber-400' : 'text-emerald-400'}`}>
-                                                    {selectedPartnerData.timelineData.avgGap || '-'}일
-                                                </div>
-                                                <div className="text-xs text-muted-foreground">최근 간격</div>
-                                            </div>
-                                        </div>
-
-                                        {/* Monthly Bar Chart */}
-                                        <div className="space-y-2">
-                                            {selectedPartnerData.timelineData.monthlyOrderCounts.map((monthData, idx) => {
-                                                const maxCount = Math.max(...selectedPartnerData.timelineData.monthlyOrderCounts.map(m => m.count), 1);
-                                                const barWidth = (monthData.count / maxCount) * 100;
-                                                const isCurrentMonth = idx === selectedPartnerData.timelineData.monthlyOrderCounts.length - 1;
-
-                                                return (
-                                                    <div key={monthData.month} className="flex items-center gap-2">
-                                                        <span className={`w-8 text-xs text-right ${isCurrentMonth ? 'text-white font-medium' : 'text-muted-foreground'}`}>
-                                                            {monthData.month}
+                                    <div className="flex-1 overflow-y-auto space-y-1">
+                                        {companyStats.map((company) => (
+                                            <div
+                                                key={company.company_name}
+                                                onClick={() => setSelectedCompany(company.company_name)}
+                                                className={`p-3 rounded-lg cursor-pointer transition-all ${selectedCompany === company.company_name
+                                                    ? 'bg-accent/20 border border-accent'
+                                                    : company.is_risk
+                                                        ? 'bg-red-500/10 border border-red-500/30 hover:bg-red-500/20'
+                                                        : 'bg-secondary/30 hover:bg-secondary/50 border border-transparent'
+                                                    }`}
+                                            >
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-2">
+                                                        {company.is_risk && <AlertTriangle size={14} className="text-red-400" />}
+                                                        <span className="font-medium text-sm text-white truncate max-w-[200px]">
+                                                            {company.company_name}
                                                         </span>
-                                                        <div className="flex-1 h-5 bg-secondary/50 rounded-full overflow-hidden">
-                                                            <div
-                                                                className={`h-full rounded-full transition-all ${monthData.count > 0 ? 'bg-gradient-to-r from-accent to-accent/60' : ''}`}
-                                                                style={{ width: `${barWidth}%` }}
-                                                            />
-                                                        </div>
-                                                        <span className={`w-8 text-xs ${monthData.count > 0 ? 'text-white' : 'text-muted-foreground'}`}>
-                                                            {monthData.count > 0 ? `${monthData.count}회` : '-'}
-                                                        </span>
+                                                        {company.is_new && (
+                                                            <span className="px-1.5 py-0.5 bg-green-500/20 text-green-400 text-xs rounded">✨New</span>
+                                                        )}
                                                     </div>
-                                                );
-                                            })}
-                                        </div>
-
-                                        {selectedPartnerData.timelineData.monthlyOrderCounts.every(m => m.count === 0) && (
-                                            <div className="text-center text-muted-foreground text-sm mt-4">
-                                                최근 6개월 주문 없음
+                                                    <div className="text-right flex items-center gap-4">
+                                                        <div className="text-sm text-muted-foreground">
+                                                            {formatCompactCurrency(company.sales_2025)}
+                                                        </div>
+                                                        <div className={`text-sm font-medium flex items-center gap-1 min-w-[60px] justify-end ${company.is_new ? 'text-green-400' :
+                                                            company.yoy_growth >= 0 ? 'text-green-400' : 'text-red-400'
+                                                            }`}>
+                                                            {company.is_new ? (
+                                                                'New'
+                                                            ) : (
+                                                                <>
+                                                                    {company.yoy_growth >= 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
+                                                                    {company.yoy_growth.toFixed(1)}%
+                                                                </>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                        {companyStats.length === 0 && (
+                                            <div className="flex-1 flex items-center justify-center h-40 text-muted-foreground">
+                                                <p>업체 데이터가 없습니다.</p>
                                             </div>
                                         )}
                                     </div>
                                 </div>
-                            </div>
+                            )}
                         </>
                     ) : (
                         <div className="flex-1 flex items-center justify-center text-muted-foreground">
