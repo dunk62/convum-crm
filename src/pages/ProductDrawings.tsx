@@ -429,7 +429,20 @@ function DrawingEmailModal({ modelNo, selectedFiles, onClose }: DrawingEmailModa
         }
 
         body += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
-        body += '문의사항이 있으시면 언제든 연락주세요.\n감사합니다.';
+        body += '문의사항이 있으시면 언제든 연락주세요.\n\n';
+        body += '컨범 코리아\n';
+        body += '남부전략영업소\n';
+        body += '탁현호 배상\n\n';
+        body += '**************************************************\n';
+        body += 'CONVUM KOREA CO., LTD.\n';
+        body += 'Southern Strategic Sales Office / 남부전략영업소 탁현호 (TAK HYEON HO) 소장\n';
+        body += '〒46721 부산광역시 강서구 유통단지1로 41 (대저2동) 부산티플렉스 128동 208호\n';
+        body += 'FAX) 051-987-2352\n';
+        body += 'H.P) 010-4981-8390\n';
+        body += 'E-mail : thh0222@convum.co.kr\n';
+        body += 'Home page : http://www.convum.co.kr\n';
+        body += 'CONVUM은 CONVUM Ltd.의 브랜드명입니다.\n';
+        body += '**************************************************';
 
         return body;
     };
