@@ -595,7 +595,11 @@ export default function PartnerGrowthDashboard() {
                                             const currentMonth = now.getMonth();
 
                                             const partnerData = salesData.filter(d => d.distributor_name === selectedPartner);
-                                            const companyAgg: Record<string, { sales_2025: number; sales_2024: number }> = {};
+                                            const companyAgg: Record<string, {
+                                                sales_2025: number;
+                                                sales_2024: number;
+                                                has_historical_sales: boolean; // 2022-2024 이력 여부
+                                            }> = {};
 
                                             partnerData.forEach(record => {
                                                 const date = new Date(record.shipment_date);
@@ -604,7 +608,12 @@ export default function PartnerGrowthDashboard() {
                                                 const company = record.company_name || 'Unknown';
 
                                                 if (!companyAgg[company]) {
-                                                    companyAgg[company] = { sales_2025: 0, sales_2024: 0 };
+                                                    companyAgg[company] = { sales_2025: 0, sales_2024: 0, has_historical_sales: false };
+                                                }
+
+                                                // 2022~2024년 이력 확인 (New 업체 판정용)
+                                                if (year >= 2022 && year <= 2024) {
+                                                    companyAgg[company].has_historical_sales = true;
                                                 }
 
                                                 if (year === currentYear && month <= currentMonth) {
@@ -624,7 +633,8 @@ export default function PartnerGrowthDashboard() {
                                                         sales_2025: data.sales_2025,
                                                         sales_2024: data.sales_2024,
                                                         yoy_growth: yoy,
-                                                        is_new: data.sales_2024 === 0 && data.sales_2025 > 0,
+                                                        // New: 2022-2024 이력이 없고 2025년 매출만 있는 경우
+                                                        is_new: !data.has_historical_sales && data.sales_2025 > 0,
                                                         is_risk: yoy <= -30 && data.sales_2024 > 0
                                                     };
                                                 })
