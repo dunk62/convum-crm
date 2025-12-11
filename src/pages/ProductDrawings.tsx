@@ -24,6 +24,7 @@ export default function ProductDrawings() {
     const [searchError, setSearchError] = useState<string | null>(null);
     const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
     const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+    const [previewFile, setPreviewFile] = useState<DrawingFile | null>(null);
 
     // Determine file type based on extension
     const getFileType = (filename: string): DrawingFile['type'] => {
@@ -249,7 +250,7 @@ export default function ProductDrawings() {
                 </p>
             </div>
 
-            {/* Search Results */}
+            {/* Search Results - Split Layout */}
             {hasSearched && (
                 <div className="bg-card/80 backdrop-blur-sm rounded-xl border border-border overflow-hidden">
                     {/* Results Header */}
@@ -282,79 +283,84 @@ export default function ProductDrawings() {
                         )}
                     </div>
 
-                    {/* Results Content */}
-                    <div className="p-4">
-                        {searchError ? (
-                            <div className="text-center py-8">
-                                <AlertCircle className="mx-auto text-red-400 mb-3" size={40} />
-                                <p className="text-red-400">{searchError}</p>
-                            </div>
-                        ) : drawings.length === 0 ? (
-                            <div className="text-center py-8">
-                                <FileText className="mx-auto text-muted-foreground/30 mb-3" size={48} />
-                                <p className="text-muted-foreground">'{searchQuery}'에 해당하는 도면 파일이 없습니다.</p>
-                                <p className="text-sm text-muted-foreground mt-1">다른 형번으로 검색해 보세요.</p>
-                            </div>
-                        ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                                {drawings.map((drawing) => (
-                                    <div
-                                        key={drawing.id}
-                                        onClick={() => toggleFileSelection(drawing.id)}
-                                        className={`p-4 rounded-xl border cursor-pointer transition-all ${selectedFiles.has(drawing.id)
-                                            ? 'bg-blue-500/10 border-blue-500 ring-2 ring-blue-500/30'
-                                            : 'bg-secondary/30 border-border hover:border-blue-500/50'
-                                            }`}
-                                    >
-                                        <div className="flex items-start gap-3">
-                                            {/* Checkbox */}
-                                            <div className={`w-5 h-5 rounded flex items-center justify-center flex-shrink-0 mt-0.5 ${selectedFiles.has(drawing.id)
-                                                ? 'bg-blue-500 text-white'
-                                                : 'bg-secondary/50 border border-border'
-                                                }`}>
+                    {/* Split Layout: File List (40%) + Preview (60%) */}
+                    <div className="flex flex-col lg:flex-row min-h-[500px]">
+                        {/* Left: File List (40%) */}
+                        <div className="w-full lg:w-[40%] border-b lg:border-b-0 lg:border-r border-border overflow-y-auto max-h-[600px]">
+                            {searchError ? (
+                                <div className="text-center py-8">
+                                    <AlertCircle className="mx-auto text-red-400 mb-3" size={40} />
+                                    <p className="text-red-400">{searchError}</p>
+                                </div>
+                            ) : drawings.length === 0 ? (
+                                <div className="text-center py-8">
+                                    <FileText className="mx-auto text-muted-foreground/30 mb-3" size={48} />
+                                    <p className="text-muted-foreground">'{searchQuery}'에 해당하는 도면 파일이 없습니다.</p>
+                                </div>
+                            ) : (
+                                <div className="divide-y divide-border">
+                                    {drawings.map((drawing) => (
+                                        <div
+                                            key={drawing.id}
+                                            onClick={() => setPreviewFile(drawing)}
+                                            className={`p-3 cursor-pointer transition-all flex items-center gap-3 ${previewFile?.id === drawing.id
+                                                ? 'bg-blue-500/20 border-l-4 border-l-blue-500'
+                                                : 'hover:bg-secondary/50'
+                                                }`}
+                                        >
+                                            {/* Selection Checkbox */}
+                                            <div
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    toggleFileSelection(drawing.id);
+                                                }}
+                                                className={`w-5 h-5 rounded flex items-center justify-center flex-shrink-0 ${selectedFiles.has(drawing.id)
+                                                    ? 'bg-blue-500 text-white'
+                                                    : 'bg-secondary/50 border border-border hover:border-blue-400'
+                                                    }`}
+                                            >
                                                 {selectedFiles.has(drawing.id) && <CheckCircle size={14} />}
+                                            </div>
+
+                                            {/* File Icon */}
+                                            <div className="flex-shrink-0">
+                                                {getFileIcon(drawing.type)}
                                             </div>
 
                                             {/* File Info */}
                                             <div className="flex-1 min-w-0">
-                                                <div className="flex items-center gap-2 mb-2">
-                                                    {getFileIcon(drawing.type)}
-                                                    <span className={`text-xs px-2 py-0.5 rounded-full border ${getTypeBadgeColor(drawing.type)}`}>
+                                                <p className="text-sm text-white font-medium truncate">{drawing.name}</p>
+                                                <div className="flex items-center gap-2 mt-1">
+                                                    <span className={`text-xs px-1.5 py-0.5 rounded border ${getTypeBadgeColor(drawing.type)}`}>
                                                         {drawing.type}
                                                     </span>
-                                                </div>
-                                                <p className="text-sm text-white font-medium truncate">{drawing.name}</p>
-                                                <p className="text-xs text-muted-foreground mt-1">.{drawing.extension}</p>
-
-                                                {/* Actions */}
-                                                <div className="flex items-center gap-2 mt-3">
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            window.open(drawing.viewUrl, '_blank');
-                                                        }}
-                                                        className="p-1.5 text-muted-foreground hover:text-blue-400 hover:bg-blue-500/10 rounded transition-colors"
-                                                        title="보기"
-                                                    >
-                                                        <ExternalLink size={14} />
-                                                    </button>
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            window.open(drawing.downloadUrl, '_blank');
-                                                        }}
-                                                        className="p-1.5 text-muted-foreground hover:text-green-400 hover:bg-green-500/10 rounded transition-colors"
-                                                        title="다운로드"
-                                                    >
-                                                        <Download size={14} />
-                                                    </button>
+                                                    <span className="text-xs text-muted-foreground">.{drawing.extension}</span>
                                                 </div>
                                             </div>
+
+                                            {/* Quick Actions */}
+                                            <div className="flex items-center gap-1">
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        window.open(drawing.downloadUrl, '_blank');
+                                                    }}
+                                                    className="p-1.5 text-muted-foreground hover:text-green-400 hover:bg-green-500/10 rounded transition-colors"
+                                                    title="다운로드"
+                                                >
+                                                    <Download size={14} />
+                                                </button>
+                                            </div>
                                         </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Right: Preview Panel (60%) */}
+                        <div className="w-full lg:w-[60%] bg-slate-900/50">
+                            <PreviewPanel file={previewFile} />
+                        </div>
                     </div>
                 </div>
             )}
@@ -611,4 +617,185 @@ function getFileIcon(type: DrawingFile['type']) {
         case '3D': return <Box className="text-green-400" size={16} />;
         default: return <FileText className="text-gray-400" size={16} />;
     }
+}
+
+// Preview Panel Component
+interface PreviewPanelProps {
+    file: DrawingFile | null;
+}
+
+function PreviewPanel({ file }: PreviewPanelProps) {
+    const [isLoading, setIsLoading] = useState(true);
+
+    // Determine viewer type based on extension
+    const getViewerType = (extension: string): 'document' | '3d' | 'unsupported' => {
+        const ext = extension.toLowerCase();
+        if (['pdf', 'png', 'jpg', 'jpeg', 'gif', 'webp'].includes(ext)) return 'document';
+        if (['stp', 'step', 'igs', 'iges', 'stl'].includes(ext)) return '3d';
+        return 'unsupported';
+    };
+
+    if (!file) {
+        return (
+            <div className="h-full flex flex-col items-center justify-center p-8 text-center min-h-[400px]">
+                <div className="w-20 h-20 rounded-2xl bg-slate-800/50 flex items-center justify-center mb-4">
+                    <FileText size={40} className="text-muted-foreground/30" />
+                </div>
+                <h3 className="text-lg font-medium text-white mb-2">파일을 선택하세요</h3>
+                <p className="text-sm text-muted-foreground">
+                    좌측 목록에서 파일을 클릭하면<br />미리보기가 표시됩니다.
+                </p>
+            </div>
+        );
+    }
+
+    const viewerType = getViewerType(file.extension);
+
+    // TYPE A: Document/Image Viewer (PDF, PNG, JPG)
+    if (viewerType === 'document') {
+        const embedUrl = `https://drive.google.com/file/d/${file.fileId}/preview`;
+
+        return (
+            <div className="h-full flex flex-col min-h-[500px]">
+                {/* Preview Header */}
+                <div className="p-3 border-b border-border flex items-center justify-between bg-slate-900/80">
+                    <div className="flex items-center gap-2">
+                        <FileText size={18} className="text-red-400" />
+                        <span className="text-sm font-medium text-white truncate max-w-[300px]">{file.name}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <a
+                            href={file.viewUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-2 text-muted-foreground hover:text-blue-400 hover:bg-blue-500/10 rounded transition-colors"
+                            title="새 탭에서 열기"
+                        >
+                            <ExternalLink size={16} />
+                        </a>
+                        <a
+                            href={file.downloadUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-2 text-muted-foreground hover:text-green-400 hover:bg-green-500/10 rounded transition-colors"
+                            title="다운로드"
+                        >
+                            <Download size={16} />
+                        </a>
+                    </div>
+                </div>
+
+                {/* Document Viewer */}
+                <div className="flex-1 relative">
+                    {isLoading && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-slate-900/50 z-10">
+                            <div className="text-center">
+                                <Loader2 className="animate-spin mx-auto text-blue-400 mb-2" size={32} />
+                                <p className="text-sm text-muted-foreground">문서 로딩 중...</p>
+                            </div>
+                        </div>
+                    )}
+                    <iframe
+                        src={embedUrl}
+                        className="w-full h-full min-h-[450px] border-0"
+                        onLoad={() => setIsLoading(false)}
+                        title={file.name}
+                    />
+                </div>
+            </div>
+        );
+    }
+
+    // TYPE B: 3D Model Viewer (STEP, STP, IGS)
+    if (viewerType === '3d') {
+        return (
+            <div className="h-full flex flex-col min-h-[500px]">
+                {/* Preview Header */}
+                <div className="p-3 border-b border-border flex items-center justify-between bg-slate-900/80">
+                    <div className="flex items-center gap-2">
+                        <Box size={18} className="text-green-400" />
+                        <span className="text-sm font-medium text-white truncate max-w-[300px]">{file.name}</span>
+                        <span className="text-xs px-2 py-0.5 rounded bg-green-500/20 text-green-400 border border-green-500/30">3D</span>
+                    </div>
+                    <a
+                        href={file.downloadUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-3 py-1.5 text-sm bg-green-500/20 text-green-400 rounded-lg hover:bg-green-500/30 transition-colors flex items-center gap-2"
+                    >
+                        <Download size={14} />
+                        다운로드
+                    </a>
+                </div>
+
+                {/* 3D Viewer Placeholder - CORS 제한으로 외부 뷰어 안내 */}
+                <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-gradient-to-br from-green-900/20 to-slate-900">
+                    <div className="w-24 h-24 rounded-2xl bg-green-500/20 flex items-center justify-center mb-4">
+                        <Box size={48} className="text-green-400" />
+                    </div>
+                    <h3 className="text-lg font-medium text-white mb-2">3D 모델 파일</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                        이 파일(.{file.extension})은 전용 CAD 뷰어에서 열어야 합니다.
+                    </p>
+                    <div className="flex flex-col gap-2">
+                        <a
+                            href={file.downloadUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all shadow-lg flex items-center gap-2"
+                        >
+                            <Download size={18} />
+                            파일 다운로드
+                        </a>
+                        <a
+                            href="https://www.autodesk.com/viewers"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm text-blue-400 hover:underline"
+                        >
+                            온라인 3D 뷰어 열기 →
+                        </a>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // TYPE C: Unsupported Format (DWG, DXF)
+    return (
+        <div className="h-full flex flex-col min-h-[500px]">
+            {/* Preview Header */}
+            <div className="p-3 border-b border-border flex items-center justify-between bg-slate-900/80">
+                <div className="flex items-center gap-2">
+                    <FileImage size={18} className="text-blue-400" />
+                    <span className="text-sm font-medium text-white truncate max-w-[300px]">{file.name}</span>
+                    <span className="text-xs px-2 py-0.5 rounded bg-blue-500/20 text-blue-400 border border-blue-500/30">2D CAD</span>
+                </div>
+            </div>
+
+            {/* Unsupported Format Message */}
+            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-gradient-to-br from-blue-900/20 to-slate-900">
+                <div className="w-24 h-24 rounded-2xl bg-amber-500/20 flex items-center justify-center mb-4">
+                    <AlertCircle size={48} className="text-amber-400" />
+                </div>
+                <h3 className="text-lg font-medium text-white mb-2">미리보기를 지원하지 않는 형식입니다</h3>
+                <p className="text-sm text-muted-foreground mb-6">
+                    이 파일 형식(.{file.extension})은 웹 브라우저에서<br />
+                    직접 미리보기가 불가능합니다.
+                </p>
+                <a
+                    href={file.downloadUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-8 py-4 bg-gradient-to-r from-blue-500 to-cyan-600 text-white rounded-xl hover:from-blue-600 hover:to-cyan-700 transition-all shadow-lg flex items-center gap-3 text-lg"
+                >
+                    <Download size={24} />
+                    파일 다운로드
+                </a>
+                <p className="text-xs text-muted-foreground mt-4">
+                    AutoCAD 또는 호환 프로그램에서 열어주세요.
+                </p>
+            </div>
+        </div>
+    );
 }
