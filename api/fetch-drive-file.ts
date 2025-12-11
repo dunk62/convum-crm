@@ -24,10 +24,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
 
         // Get Google API Key from environment
-        const apiKey = process.env.VITE_GOOGLE_API_KEY;
+        // Note: Vercel serverless functions cannot access VITE_ prefixed vars
+        const apiKey = process.env.GOOGLE_API_KEY || process.env.VITE_GOOGLE_API_KEY;
 
         if (!apiKey) {
-            return res.status(500).json({ error: 'Google API Key not configured' });
+            return res.status(500).json({ error: 'Google API Key not configured. Please add GOOGLE_API_KEY to Vercel environment variables.' });
         }
 
         // Fetch file metadata first to get the file name
