@@ -1,77 +1,125 @@
+#!/usr/bin/env python3
 """
-상품군이 BLUE/RED로 잘못 들어간 레코드를 동일 형번의 올바른 상품군 값으로 수정하는 스크립트
+상품군이 RED, BLUE, NO LOGO인 레코드를 동일 형번의 올바른 상품군으로 업데이트
 """
+
 import os
-from dotenv import load_dotenv
 from supabase import create_client
 
-load_dotenv()
+# Supabase 연결
+SUPABASE_URL = 'https://ezdsffsgtwgeevnmaccx.supabase.co'
+SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV6ZHNmZnNndHdnZWV2bm1hY2N4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDcwMzAwNTIsImV4cCI6MjA2MjYwNjA1Mn0.kSKkJz5n2_nD2l0BbBTbH5dlPWRJQ3p2OAEE0rkF9iI'
 
-url = os.environ.get("VITE_SUPABASE_URL")
-key = os.environ.get("VITE_SUPABASE_SERVICE_ROLE_KEY") or os.environ.get("VITE_SUPABASE_ANON_KEY")
-supabase = create_client(url, key)
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+INVALID_PRODUCT_NAMES = ['RED', 'BLUE', 'NO LOGO']
 
 def fix_product_names():
-    # 1. 잘못된 상품군 (BLUE, RED) 레코드 조회
-    print("1. 잘못된 상품군(BLUE, RED) 레코드 조회 중...")
+    print("=" * 60)
+    print("상품군 정규화 시작 (RED, BLUE, NO LOGO → 올바른 상품군)")
+    print("=" * 60)
     
-    # BLUE 레코드
-    blue_records = supabase.table('sales_performance').select('id, model_number, product_name').eq('product_name', 'BLUE').execute()
-    red_records = supabase.table('sales_performance').select('id, model_number, product_name').eq('product_name', 'RED').execute()
+    # 1. 올바른 형번-상품군 매핑 조회
+    print("\n[1단계] 형번-상품군 매핑 조회 중...")
     
-    bad_records = blue_records.data + red_records.data
-    print(f"   발견된 잘못된 레코드 수: {len(bad_records)}")
+    # 전체 조회 (페이지네이션 필요할 수 있음)
+    all_records = []
+    page = 0
+    page_size = 1000
     
-    if not bad_records:
-        print("   수정할 레코드가 없습니다.")
-        return
-    
-    # 2. 잘못된 형번 목록 추출
-    bad_model_numbers = list(set([r['model_number'] for r in bad_records]))
-    print(f"   잘못된 형번 수: {len(bad_model_numbers)}")
-    print(f"   형번 목록: {bad_model_numbers[:10]}...")
-    
-    # 3. 각 형번에 대해 올바른 상품군 찾기
-    print("\n2. 각 형번에 대해 올바른 상품군 찾기...")
-    correct_product_names = {}
-    
-    for model_number in bad_model_numbers:
-        # 동일 형번에서 BLUE/RED가 아닌 상품군 찾기
-        result = supabase.table('sales_performance').select('product_name').eq('model_number', model_number).not_.in_('product_name', ['BLUE', 'RED', None, '']).limit(1).execute()
+    while True:
+        response = supabase.table('sales_performance')\
+            .select('model_number, product_name')\
+            .range(page * page_size, (page + 1) * page_size - 1)\
+            .execute()
         
-        if result.data and result.data[0].get('product_name'):
-            correct_product_names[model_number] = result.data[0]['product_name']
-            print(f"   {model_number}: {result.data[0]['product_name']}")
-        else:
-            print(f"   {model_number}: 올바른 상품군을 찾을 수 없음 (수동 확인 필요)")
+        if not response.data:
+            break
+        all_records.extend(response.data)
+        if len(response.data) < page_size:
+            break
+        page += 1
     
-    # 4. 레코드 업데이트
-    print("\n3. Supabase 레코드 업데이트 중...")
-    updated_count = 0
-    skipped_count = 0
-    
-    for record in bad_records:
-        model_number = record['model_number']
-        record_id = record['id']
+    model_to_product = {}
+    for record in all_records:
+        product_name = (record.get('product_name') or '').strip()
+        model_number = (record.get('model_number') or '').strip()
         
-        if model_number in correct_product_names:
-            new_product_name = correct_product_names[model_number]
-            result = supabase.table('sales_performance').update({'product_name': new_product_name}).eq('id', record_id).execute()
-            updated_count += 1
-        else:
-            skipped_count += 1
+        # 유효한 상품군만 매핑에 저장
+        if model_number and product_name and product_name.upper() not in INVALID_PRODUCT_NAMES:
+            model_to_product[model_number] = product_name
     
-    print(f"\n=== 완료 ===")
-    print(f"업데이트된 레코드: {updated_count}개")
-    print(f"스킵된 레코드 (올바른 상품군 없음): {skipped_count}개")
+    print(f"   → {len(model_to_product)}개 형번 매핑 완료")
     
-    # 5. 결과 확인
-    print("\n4. 업데이트 결과 확인...")
-    remaining_blue = supabase.table('sales_performance').select('id', count='exact').eq('product_name', 'BLUE').execute()
-    remaining_red = supabase.table('sales_performance').select('id', count='exact').eq('product_name', 'RED').execute()
+    # 2. sales_performance에서 잘못된 상품군 조회 및 업데이트
+    print("\n[2단계] sales_performance 테이블 업데이트 중...")
     
-    print(f"   남은 BLUE 레코드: {remaining_blue.count}")
-    print(f"   남은 RED 레코드: {remaining_red.count}")
+    for invalid_name in INVALID_PRODUCT_NAMES:
+        sales_invalid = supabase.table('sales_performance')\
+            .select('id, model_number, product_name')\
+            .eq('product_name', invalid_name)\
+            .execute()
+        
+        updated_count = 0
+        for record in sales_invalid.data:
+            model_number = (record.get('model_number') or '').strip()
+            if model_number and model_number in model_to_product:
+                correct_product_name = model_to_product[model_number]
+                supabase.table('sales_performance')\
+                    .update({'product_name': correct_product_name})\
+                    .eq('id', record['id'])\
+                    .execute()
+                updated_count += 1
+        
+        print(f"   → '{invalid_name}': {len(sales_invalid.data)}건 중 {updated_count}건 업데이트")
+    
+    # 3. order_performance에서 잘못된 상품군 조회 및 업데이트
+    print("\n[3단계] order_performance 테이블 업데이트 중...")
+    
+    for invalid_name in INVALID_PRODUCT_NAMES:
+        order_invalid = supabase.table('order_performance')\
+            .select('id, model_number, product_name')\
+            .eq('product_name', invalid_name)\
+            .execute()
+        
+        updated_count = 0
+        for record in order_invalid.data:
+            model_number = (record.get('model_number') or '').strip()
+            if model_number and model_number in model_to_product:
+                correct_product_name = model_to_product[model_number]
+                supabase.table('order_performance')\
+                    .update({'product_name': correct_product_name})\
+                    .eq('id', record['id'])\
+                    .execute()
+                updated_count += 1
+        
+        print(f"   → '{invalid_name}': {len(order_invalid.data)}건 중 {updated_count}건 업데이트")
+    
+    # 4. 결과 확인
+    print("\n[4단계] 결과 확인...")
+    
+    remaining_sales = 0
+    remaining_order = 0
+    
+    for invalid_name in INVALID_PRODUCT_NAMES:
+        sales_check = supabase.table('sales_performance')\
+            .select('id')\
+            .eq('product_name', invalid_name)\
+            .execute()
+        remaining_sales += len(sales_check.data)
+        
+        order_check = supabase.table('order_performance')\
+            .select('id')\
+            .eq('product_name', invalid_name)\
+            .execute()
+        remaining_order += len(order_check.data)
+    
+    print(f"   → sales_performance 남은 건수: {remaining_sales}")
+    print(f"   → order_performance 남은 건수: {remaining_order}")
+    
+    print("\n" + "=" * 60)
+    print("상품군 정규화 완료!")
+    print("=" * 60)
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     fix_product_names()

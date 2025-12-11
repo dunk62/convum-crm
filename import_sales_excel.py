@@ -259,6 +259,83 @@ def import_file(file_id, file_name='downloaded_sales_data.xlsx', mime_type=None)
             all_order_records.extend(order_records)
             print(f"Found {len(order_records)} order records in {sheet_name}")
 
+        # Normalize product names (RED, BLUE, NO LOGO -> 올바른 상품군)
+        INVALID_PRODUCT_NAMES = ['RED', 'BLUE', 'NO LOGO']
+        
+        def normalize_product_names(records):
+            if not records:
+                return records
+            
+            # 1. 영구 매핑 테이블에서 형번-상품군 매핑 조회
+            print("Fetching model-product mapping from model_product_mapping table...")
+            model_to_product = {}
+            page = 0
+            page_size = 1000
+            
+            while True:
+                response = supabase.table('model_product_mapping')\
+                    .select('model_number, product_name')\
+                    .range(page * page_size, (page + 1) * page_size - 1)\
+                    .execute()
+                
+                if not response.data:
+                    break
+                    
+                for row in response.data:
+                    pn = (row.get('product_name') or '').strip()
+                    mn = (row.get('model_number') or '').strip()
+                    if mn and pn:
+                        model_to_product[mn] = pn
+                        
+                if len(response.data) < page_size:
+                    break
+                page += 1
+            
+            print(f"Loaded {len(model_to_product)} model-product mappings")
+            
+            # 2. 새로운 유효 매핑 수집 (import 데이터에서 유효한 상품군 발견 시)
+            new_mappings = []
+            for record in records:
+                pn = (record.get('product_name') or '').strip()
+                mn = (record.get('model_number') or '').strip()
+                
+                if mn and pn and pn.upper() not in INVALID_PRODUCT_NAMES:
+                    if mn not in model_to_product:
+                        model_to_product[mn] = pn
+                        new_mappings.append({'model_number': mn, 'product_name': pn})
+            
+            # 3. 새 매핑을 테이블에 저장
+            if new_mappings:
+                print(f"Saving {len(new_mappings)} new mappings to model_product_mapping table...")
+                try:
+                    supabase.table('model_product_mapping').upsert(
+                        new_mappings, 
+                        on_conflict='model_number'
+                    ).execute()
+                except Exception as e:
+                    print(f"Warning: Could not save new mappings: {e}")
+            
+            # 4. 잘못된 상품군 정규화
+            normalized_count = 0
+            for record in records:
+                pn = (record.get('product_name') or '').strip()
+                mn = (record.get('model_number') or '').strip()
+                
+                if pn.upper() in INVALID_PRODUCT_NAMES and mn:
+                    valid_pn = model_to_product.get(mn)
+                    if valid_pn:
+                        record['product_name'] = valid_pn
+                        normalized_count += 1
+            
+            print(f"Normalized {normalized_count} product names")
+            return records
+        
+        # Apply normalization
+        if all_sales_records:
+            all_sales_records = normalize_product_names(all_sales_records)
+        if all_order_records:
+            all_order_records = normalize_product_names(all_order_records)
+
         # Import Sales Data
         if all_sales_records:
             print("Deleting existing sales records for processed dates...")

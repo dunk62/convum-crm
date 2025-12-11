@@ -17,6 +17,7 @@ import PadSelectionGuide from './pages/PadSelectionGuide';
 import CrossReferenceGuide from './pages/CrossReferenceGuide';
 import SalesMap from './pages/SalesMap';
 import MarketingMaterials from './pages/MarketingMaterials';
+import SpecialQuotation from './pages/SpecialQuotation';
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
 
@@ -43,6 +44,7 @@ function App() {
               <Route path="pad-selection" element={<PadSelectionGuide />} />
               <Route path="cross-reference" element={<CrossReferenceGuide />} />
               <Route path="sales-map" element={<SalesMap />} />
+              <Route path="special-quotation" element={<SpecialQuotation />} />
             </Route>
           </Route>
         </Routes>

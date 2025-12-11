@@ -24,7 +24,8 @@ import {
     Building2,
     Package,
     ChevronRight,
-    Search
+    Search,
+    ShoppingCart
 } from 'lucide-react';
 
 interface SalesRecord {
@@ -35,6 +36,7 @@ interface SalesRecord {
     product_name: string;
     model_number: string;
     quantity: number;
+    unit_price?: number;
 }
 
 interface CompanyStats {
@@ -77,6 +79,7 @@ export default function CompanySalesControlDashboard() {
     const [sortBy, setSortBy] = useState<'sales' | 'yoy' | 'days'>('sales');
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
     const [searchQuery, setSearchQuery] = useState<string>('');
+    const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
 
     // Fetch sales data
     const fetchData = useCallback(async () => {
@@ -90,7 +93,7 @@ export default function CompanySalesControlDashboard() {
             while (hasMore) {
                 const { data, error } = await supabase
                     .from('sales_performance')
-                    .select('company_name, shipment_date, sales_amount, sales_rep, product_name, model_number, quantity')
+                    .select('company_name, shipment_date, sales_amount, sales_rep, product_name, model_number, quantity, unit_price')
                     .gte('shipment_date', '2024-01-01')
                     .range(page * pageSize, (page + 1) * pageSize - 1);
 
@@ -514,7 +517,14 @@ export default function CompanySalesControlDashboard() {
                                     </h4>
                                     <div className="h-[280px]">
                                         <ResponsiveContainer width="100%" height="100%">
-                                            <LineChart data={selectedCompanyData.monthlyData}>
+                                            <LineChart
+                                                data={selectedCompanyData.monthlyData}
+                                                onClick={(state: any) => {
+                                                    if (state && state.activeLabel) {
+                                                        setSelectedMonth(state.activeLabel);
+                                                    }
+                                                }}
+                                            >
                                                 <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                                                 <XAxis dataKey="month" tick={{ fill: '#9ca3af', fontSize: 11 }} />
                                                 <YAxis
@@ -641,6 +651,96 @@ export default function CompanySalesControlDashboard() {
                                         </div>
                                     </div>
                                 </div>
+
+                                {/* Monthly Sales Detail Table */}
+                                {selectedMonth && (
+                                    <div className="bg-secondary/30 rounded-xl p-4">
+                                        <div className="flex items-center justify-between mb-3">
+                                            <h4 className="font-bold text-white flex items-center gap-2">
+                                                <ShoppingCart size={16} className="text-accent" />
+                                                {selectedMonth} 판매 상세 내역
+                                            </h4>
+                                            <button
+                                                onClick={() => setSelectedMonth(null)}
+                                                className="text-xs text-muted-foreground hover:text-white"
+                                            >
+                                                ✕ 닫기
+                                            </button>
+                                        </div>
+                                        <div className="overflow-x-auto max-h-[200px] overflow-y-auto">
+                                            <table className="w-full text-sm">
+                                                <thead className="sticky top-0 bg-secondary">
+                                                    <tr className="text-muted-foreground text-xs">
+                                                        <th className="text-left py-2 px-2">형번</th>
+                                                        <th className="text-left py-2 px-2">품목</th>
+                                                        <th className="text-right py-2 px-2">수량</th>
+                                                        <th className="text-right py-2 px-2">단가</th>
+                                                        <th className="text-right py-2 px-2">판매금액</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {(() => {
+                                                        const monthNum = selectedMonth.replace('월', '').padStart(2, '0');
+                                                        const monthRecords = filteredData
+                                                            .filter(r =>
+                                                                r.company_name === selectedCompany &&
+                                                                r.shipment_date.startsWith(`2025-${monthNum}`)
+                                                            )
+                                                            .sort((a, b) => b.sales_amount - a.sales_amount);
+
+                                                        if (monthRecords.length === 0) {
+                                                            return (
+                                                                <tr>
+                                                                    <td colSpan={5} className="py-4 text-center text-muted-foreground">
+                                                                        {selectedMonth} 판매 데이터가 없습니다.
+                                                                    </td>
+                                                                </tr>
+                                                            );
+                                                        }
+
+                                                        return monthRecords.map((record, idx) => (
+                                                            <tr key={`${record.model_number}-${idx}`} className="border-t border-border/50 hover:bg-secondary/50">
+                                                                <td className="py-2 px-2 text-white font-medium truncate max-w-[120px]">
+                                                                    {record.model_number || '-'}
+                                                                </td>
+                                                                <td className="py-2 px-2 text-muted-foreground truncate max-w-[100px]">
+                                                                    {record.product_name || '-'}
+                                                                </td>
+                                                                <td className="py-2 px-2 text-right text-white">
+                                                                    {(record.quantity || 0).toLocaleString()}
+                                                                </td>
+                                                                <td className="py-2 px-2 text-right text-muted-foreground">
+                                                                    {record.unit_price ? formatCurrency(record.unit_price) : '-'}
+                                                                </td>
+                                                                <td className="py-2 px-2 text-right text-accent font-medium">
+                                                                    {formatCurrency(record.sales_amount || 0)}
+                                                                </td>
+                                                            </tr>
+                                                        ));
+                                                    })()}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        <div className="mt-2 pt-2 border-t border-border flex justify-between text-xs text-muted-foreground">
+                                            <span>
+                                                총 {filteredData.filter(r =>
+                                                    r.company_name === selectedCompany &&
+                                                    r.shipment_date.startsWith(`2025-${selectedMonth.replace('월', '').padStart(2, '0')}`)
+                                                ).length}건
+                                            </span>
+                                            <span className="text-accent font-medium">
+                                                합계: {formatCurrency(
+                                                    filteredData
+                                                        .filter(r =>
+                                                            r.company_name === selectedCompany &&
+                                                            r.shipment_date.startsWith(`2025-${selectedMonth.replace('월', '').padStart(2, '0')}`)
+                                                        )
+                                                        .reduce((sum, r) => sum + (r.sales_amount || 0), 0)
+                                                )}
+                                            </span>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </>
                     ) : (

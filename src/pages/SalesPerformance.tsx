@@ -23,6 +23,31 @@ interface SalesRecord {
     total_amount?: number;
 }
 
+// 상품군이 RED, BLUE, NO LOGO인 경우 전역 매핑을 사용하여 올바른 상품군으로 대체
+const INVALID_PRODUCT_NAMES = ['RED', 'BLUE', 'NO LOGO'];
+
+const normalizeProductNames = (
+    records: SalesRecord[],
+    globalMapping: Record<string, string>
+): SalesRecord[] => {
+    if (!records || records.length === 0) return records;
+
+    return records.map(record => {
+        const productName = (record.product_name || '').toUpperCase().trim();
+        const modelNumber = (record.model_number || '').trim();
+
+        // 상품군이 RED, BLUE, NO LOGO인 경우 전역 매핑에서 올바른 상품군 조회
+        if (INVALID_PRODUCT_NAMES.includes(productName) && modelNumber) {
+            const validProductName = globalMapping[modelNumber];
+            if (validProductName) {
+                return { ...record, product_name: validProductName };
+            }
+        }
+
+        return record;
+    });
+};
+
 export default function SalesPerformance() {
     const [searchParams] = useSearchParams();
 
@@ -53,6 +78,7 @@ export default function SalesPerformance() {
     const [salesReps, setSalesReps] = useState<string[]>([]);
     const [distributorNames, setDistributorNames] = useState<string[]>([]);
     const [productNames, setProductNames] = useState<string[]>([]);
+    const [modelToProductMap, setModelToProductMap] = useState<Record<string, string>>({});
 
     const [filters, setFilters] = useState({
         year: '2025',
@@ -68,6 +94,34 @@ export default function SalesPerformance() {
     useEffect(() => {
         setActiveTab(getTabFromUrl());
     }, [searchParams]);
+
+    // 형번-상품군 매핑 조회 (한 번만 실행)
+    useEffect(() => {
+        const fetchModelToProductMapping = async () => {
+            try {
+                // 전체 데이터에서 유효한 상품군 매핑 조회
+                const { data, error } = await supabase
+                    .from('sales_performance')
+                    .select('model_number, product_name')
+                    .not('product_name', 'in', '("RED","BLUE","NO LOGO")')
+                    .not('model_number', 'is', null);
+
+                if (error) throw error;
+
+                const mapping: Record<string, string> = {};
+                (data || []).forEach((record: { model_number: string; product_name: string }) => {
+                    if (record.model_number && record.product_name) {
+                        mapping[record.model_number] = record.product_name;
+                    }
+                });
+                setModelToProductMap(mapping);
+            } catch (err) {
+                console.error('Error fetching model-product mapping:', err);
+            }
+        };
+
+        fetchModelToProductMapping();
+    }, []);
 
     useEffect(() => {
         const fetchFilterOptions = async () => {
@@ -168,7 +222,7 @@ export default function SalesPerformance() {
             const { data, error } = await queryBuilder;
 
             if (error) throw error;
-            setOrderData(data || []);
+            setOrderData(normalizeProductNames(data || [], modelToProductMap));
             setCurrentPage(1);
         } catch (err: any) {
             console.error('Error fetching order data:', err);
@@ -213,7 +267,7 @@ export default function SalesPerformance() {
             const { data, error } = await queryBuilder;
 
             if (error) throw error;
-            setSalesData(data || []);
+            setSalesData(normalizeProductNames(data || [], modelToProductMap));
             setCurrentPage(1);
         } catch (err: any) {
             console.error('Error fetching sales data:', err);
