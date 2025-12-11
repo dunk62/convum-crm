@@ -17,7 +17,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     try {
-        const { fileId } = req.query;
+        const { fileId, filename } = req.query;
 
         if (!fileId || typeof fileId !== 'string') {
             return res.status(400).json({ error: 'Missing fileId parameter' });

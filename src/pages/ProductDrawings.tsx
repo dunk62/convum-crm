@@ -790,38 +790,40 @@ function ThreeDViewer({ file }: ThreeDViewerProps) {
 
     useEffect(() => {
         let mounted = true;
-        
+
         const loadViewer = async () => {
             if (!viewerContainerRef.current) return;
-            
+
             try {
                 setIsLoading(true);
                 setError(null);
-                
+
                 if (viewerRef.current) {
                     viewerContainerRef.current.innerHTML = '';
                     viewerRef.current = null;
                 }
 
                 const OV = await import('online-3d-viewer');
-                
+
                 if (!mounted) return;
 
                 const parentDiv = viewerContainerRef.current;
                 parentDiv.innerHTML = '';
-                
+
                 const bgColor = new OV.RGBAColor(30, 41, 59, 255);
-                
+
                 const viewer = new OV.EmbeddedViewer(parentDiv, {
                     backgroundColor: bgColor,
                     defaultColor: new OV.RGBColor(200, 200, 200),
                     edgeSettings: new OV.EdgeSettings(false, new OV.RGBColor(0, 0, 0), 1)
                 });
-                
+
                 viewerRef.current = viewer;
 
-                const proxyUrl = `/api/fetch-drive-file?fileId=${file.fileId}`;
-                
+                // Include filename in URL for online-3d-viewer to detect file type
+                const encodedFilename = encodeURIComponent(file.name);
+                const proxyUrl = `/api/fetch-drive-file?fileId=${file.fileId}&filename=${encodedFilename}`;
+
                 (viewer as any).LoadModelFromUrlList([proxyUrl]);
 
                 const checkLoaded = setInterval(() => {
@@ -842,7 +844,7 @@ function ThreeDViewer({ file }: ThreeDViewerProps) {
                         setIsLoading(false);
                     }
                 }, 20000);
-                
+
             } catch (err) {
                 console.error('Viewer initialization error:', err);
                 if (mounted) {
@@ -895,8 +897,8 @@ function ThreeDViewer({ file }: ThreeDViewerProps) {
                 </div>
             )}
 
-            <div 
-                ref={viewerContainerRef} 
+            <div
+                ref={viewerContainerRef}
                 className="w-full h-full min-h-[400px]"
                 style={{ touchAction: 'none' }}
             />
