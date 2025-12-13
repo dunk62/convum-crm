@@ -104,8 +104,8 @@ export default function SpecialQuotation() {
     const [emailSubject, setEmailSubject] = useState('');
     const [emailBody, setEmailBody] = useState('');
     const [isSendingEmail, setIsSendingEmail] = useState(false);
-    const [quoteLink, setQuoteLink] = useState<string | null>(null);
-    const [isUploadingPDF, setIsUploadingPDF] = useState(false);
+    const [_quoteLink, setQuoteLink] = useState<string | null>(null);
+    const [_isUploadingPDF, setIsUploadingPDF] = useState(false);
 
     // 품목 추가
     const addItem = useCallback(() => {
@@ -256,8 +256,9 @@ export default function SpecialQuotation() {
         }
     };
 
-    // 엑셀 출력
-    const handleExportExcel = async () => {
+    // 엑셀 출력 (현재 사용 안함, 나중에 사용 예정)
+    // @ts-expect-error - Function reserved for future use
+    const _handleExportExcel = async () => {
         if (!header.storeName) {
             alert('수신처를 입력해주세요.');
             return;
@@ -624,7 +625,7 @@ export default function SpecialQuotation() {
             const fileName = `${quoteNumber.replace(/-/g, '')}_${safeRecipient}_${Date.now()}.pdf`;
 
             // Supabase Storage에 업로드
-            const { data: uploadData, error: uploadError } = await supabase.storage
+            const { data: _uploadData, error: uploadError } = await supabase.storage
                 .from('quotes')
                 .upload(fileName, pdfBlob, {
                     contentType: 'application/pdf',

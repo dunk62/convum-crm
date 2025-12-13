@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { MessageCircle, Send, X, RefreshCw, Loader2, Bot, User, Minimize2, Maximize2, GripVertical, Expand, Shrink } from 'lucide-react';
+import { Send, X, RefreshCw, Loader2, Bot, User, Minimize2, Maximize2, Expand, Shrink } from 'lucide-react';
 import { getChatService, resetChatService } from '../lib/chatService';
 
 // 채팅 메시지 타입 (로컬 정의)

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { FileText, Search, Eye, ExternalLink, ChevronDown, ChevronUp, Calendar, Building2, User, Calculator, Link2, Download } from 'lucide-react';
+import { FileText, Search, Eye, ChevronDown, ChevronUp, Calendar, Building2, User, Calculator, Link2, Download } from 'lucide-react';
 
 interface QuoteHistory {
     id: string;

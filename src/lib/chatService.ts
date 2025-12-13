@@ -11,6 +11,7 @@ export interface ChatMessage {
     content: string;
     timestamp: Date;
 }
+import { SchemaType } from '@google/generative-ai';
 
 // execute_sql 도구 정의
 const tools = [
@@ -20,10 +21,10 @@ const tools = [
                 name: 'execute_sql',
                 description: 'PostgreSQL SELECT 쿼리를 실행하여 데이터베이스에서 데이터를 조회합니다. INSERT, UPDATE, DELETE 등 수정 쿼리는 허용되지 않습니다.',
                 parameters: {
-                    type: 'OBJECT' as const,
+                    type: SchemaType.OBJECT,
                     properties: {
                         sql_query: {
-                            type: 'STRING' as const,
+                            type: SchemaType.STRING,
                             description: '실행할 PostgreSQL SELECT 쿼리'
                         }
                     },
@@ -116,7 +117,7 @@ class ChatService {
             this.model = genAI.getGenerativeModel({
                 model: 'gemini-2.0-flash',
                 systemInstruction: getSystemPrompt(),
-                tools: tools
+                tools: tools as any
             });
             this.chat = this.model.startChat();
         } catch (error) {
