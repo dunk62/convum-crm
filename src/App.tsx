@@ -18,6 +18,8 @@ import CrossReferenceGuide from './pages/CrossReferenceGuide';
 import SalesMap from './pages/SalesMap';
 import MarketingMaterials from './pages/MarketingMaterials';
 import SpecialQuotation from './pages/SpecialQuotation';
+import QuoteRedirect from './pages/QuoteRedirect';
+import QuoteHistory from './pages/QuoteHistory';
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
 
@@ -28,6 +30,8 @@ function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          {/* 공개 견적서 링크 - 인증 불필요 */}
+          <Route path="/q/:shortCode" element={<QuoteRedirect />} />
 
           <Route element={<ProtectedRoute />}>
             <Route path="/" element={<DashboardLayout />}>
@@ -45,6 +49,7 @@ function App() {
               <Route path="cross-reference" element={<CrossReferenceGuide />} />
               <Route path="sales-map" element={<SalesMap />} />
               <Route path="special-quotation" element={<SpecialQuotation />} />
+              <Route path="quote-history" element={<QuoteHistory />} />
             </Route>
           </Route>
         </Routes>

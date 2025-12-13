@@ -247,11 +247,24 @@ export default function SalesMap() {
             const position = new window.kakao.maps.LatLng(account.latitude, account.longitude);
             const status = statusConfig[account.customer_status] || statusConfig.existing;
 
-            // Custom marker image based on status
+            // Custom SVG marker with status color
+            const markerSvg = `
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="40" viewBox="0 0 32 40">
+                    <defs>
+                        <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+                            <feDropShadow dx="0" dy="2" stdDeviation="2" flood-opacity="0.3"/>
+                        </filter>
+                    </defs>
+                    <path fill="${status.color}" filter="url(%23shadow)" d="M16 0C7.16 0 0 7.16 0 16c0 12 16 24 16 24s16-12 16-24C32 7.16 24.84 0 16 0z"/>
+                    <circle cx="16" cy="14" r="6" fill="white"/>
+                </svg>
+            `;
+            const encodedSvg = encodeURIComponent(markerSvg);
+
             const markerImage = new window.kakao.maps.MarkerImage(
-                `https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/marker_${status.markerColor === 'green' ? 'red' : status.markerColor === 'red' ? 'red' : 'blue'}.png`,
-                new window.kakao.maps.Size(29, 42),
-                { offset: new window.kakao.maps.Point(14, 42) }
+                `data:image/svg+xml,${encodedSvg}`,
+                new window.kakao.maps.Size(32, 40),
+                { offset: new window.kakao.maps.Point(16, 40) }
             );
 
             const marker = new window.kakao.maps.Marker({
@@ -259,23 +272,55 @@ export default function SalesMap() {
                 image: markerImage,
             });
 
-            // Click event for info window
+            // Click event for info window - compact and semi-transparent
             window.kakao.maps.event.addListener(marker, 'click', () => {
                 const content = `
-                    <div style="padding: 15px; min-width: 250px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
-                            <span style="width: 10px; height: 10px; border-radius: 50%; background: ${status.color};"></span>
-                            <span style="font-size: 11px; color: ${status.color}; font-weight: 600;">${status.label}</span>
+                    <div style="
+                        padding: 0;
+                        min-width: 220px;
+                        max-width: 250px;
+                        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                        background: rgba(15, 23, 42, 0.45);
+                        backdrop-filter: blur(16px);
+                        -webkit-backdrop-filter: blur(16px);
+                        border-radius: 12px;
+                        border: 1px solid rgba(255,255,255,0.2);
+                        box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+                        overflow: hidden;
+                    ">
+                        <div style="
+                            padding: 10px 12px;
+                            background: rgba(${status.color === '#22c55e' ? '34,197,94' : status.color === '#ef4444' ? '239,68,68' : '234,179,8'}, 0.2);
+                            border-bottom: 1px solid rgba(255,255,255,0.1);
+                        ">
+                            <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+                                <span style="width: 8px; height: 8px; border-radius: 50%; background: ${status.color}; box-shadow: 0 0 6px ${status.color};"></span>
+                                <span style="font-size: 10px; color: ${status.color}; font-weight: 700; text-shadow: 0 1px 2px rgba(0,0,0,0.5);">${status.label}</span>
+                            </div>
+                            <h3 style="margin: 0; font-size: 14px; font-weight: 800; color: #ffffff; text-shadow: 0 1px 3px rgba(0,0,0,0.6);">${account.name}</h3>
                         </div>
-                        <h3 style="margin: 0 0 8px 0; font-size: 16px; font-weight: 700; color: #1f2937;">${account.name}</h3>
-                        <p style="margin: 0 0 5px 0; font-size: 12px; color: #6b7280;">
-                            <span style="display: inline-block; padding: 2px 6px; background: #f3f4f6; border-radius: 4px; margin-right: 5px;">${account.industry || '미분류'}</span>
-                        </p>
-                        <p style="margin: 0 0 10px 0; font-size: 13px; color: #4b5563;">${account.address || '-'}</p>
-                        <p style="margin: 0 0 12px 0; font-size: 13px; color: #4b5563;">📞 ${account.mainPhone || '-'}</p>
-                        <div style="display: flex; gap: 8px;">
-                            <a href="tel:${account.mainPhone}" style="flex: 1; padding: 8px; background: #3b82f6; color: white; text-align: center; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: 500;">전화 걸기</a>
-                            <a href="https://map.kakao.com/link/to/${encodeURIComponent(account.name)},${account.latitude},${account.longitude}" target="_blank" style="flex: 1; padding: 8px; background: #10b981; color: white; text-align: center; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: 500;">길찾기</a>
+                        <div style="padding: 10px 12px;">
+                            <div style="margin-bottom: 8px;">
+                                <span style="display: inline-block; padding: 2px 8px; background: rgba(59,130,246,0.4); border-radius: 12px; font-size: 10px; color: white; font-weight: 600; text-shadow: 0 1px 2px rgba(0,0,0,0.4);">${account.industry || '미분류'}</span>
+                            </div>
+                            <p style="margin: 0 0 6px 0; font-size: 11px; color: #ffffff; font-weight: 500; line-height: 1.3; text-shadow: 0 1px 2px rgba(0,0,0,0.5);">📍 ${account.address || '-'}</p>
+                            <p style="margin: 0 0 10px 0; font-size: 12px; color: #93c5fd; font-weight: 600; text-shadow: 0 1px 2px rgba(0,0,0,0.4);">📞 ${account.mainPhone || '-'}</p>
+                            <div style="display: flex; gap: 6px;">
+                                <a href="tel:${account.mainPhone}" style="
+                                    flex: 1; padding: 8px; 
+                                    background: rgba(59, 130, 246, 0.9);
+                                    color: white; text-align: center; border-radius: 8px; 
+                                    text-decoration: none; font-size: 11px; font-weight: 700;
+                                    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+                                ">📱 전화</a>
+                                <a href="https://map.kakao.com/link/to/${encodeURIComponent(account.name)},${account.latitude},${account.longitude}" target="_blank" style="
+                                    flex: 1; padding: 8px; 
+                                    background: rgba(16, 185, 129, 0.9);
+                                    color: white; text-align: center; border-radius: 8px; 
+                                    text-decoration: none; font-size: 11px; font-weight: 700;
+                                    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+                                ">🚗 길찾기</a>
+                            </div>
                         </div>
                     </div>
                 `;

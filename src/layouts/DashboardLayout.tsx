@@ -3,6 +3,7 @@ import { Outlet, NavLink, useNavigate, Link } from 'react-router-dom';
 import { LayoutDashboard, Users, Briefcase, BarChart2, LogOut, Package, ChevronDown, ClipboardList, Database, Gauge, Layers } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { cn } from '../lib/utils';
+import AIChatbot from '../components/AIChatbot';
 
 const NavItem = ({ item }: { item: any }) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -103,7 +104,8 @@ export default function DashboardLayout() {
             path: '/opportunities',
             children: [
                 { label: '영업 기회 관리', path: '/opportunities' },
-                { label: '특가 견적', path: '/special-quotation' }
+                { label: '특가 견적', path: '/special-quotation' },
+                { label: '견적서 이력', path: '/quote-history' }
             ]
         },
         {
@@ -194,6 +196,9 @@ export default function DashboardLayout() {
             <main className="flex-1 w-full px-4 sm:px-6 lg:px-8 py-8">
                 <Outlet />
             </main>
+
+            {/* AI 챗봇 */}
+            <AIChatbot />
         </div>
     );
 }
