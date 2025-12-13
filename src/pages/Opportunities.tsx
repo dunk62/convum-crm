@@ -160,6 +160,7 @@ export default function Opportunities() {
         contact_name: string;
         success_probability?: number;
         meeting_date?: string;
+        account_id?: string;
     }>({
         title: '',
         company: '',
@@ -183,6 +184,7 @@ export default function Opportunities() {
         contact_name: string;
         success_probability?: number;
         meeting_date?: string;
+        account_id?: string;
     } | null>(null);
 
 
@@ -1916,7 +1918,7 @@ ${content}
                                                                 <button
                                                                     key={account.id}
                                                                     type="button"
-                                                                    onClick={() => handleSelectCompany(account.name, account.address, account.id)}
+                                                                    onClick={() => handleSelectCompany(account.name, account.address, String(account.id))}
                                                                     className="w-full px-4 py-2 text-left text-sm hover:bg-secondary/30 focus:outline-none focus:bg-secondary/30"
                                                                 >
                                                                     {account.name}
@@ -2093,7 +2095,7 @@ ${content}
                                                                     <button
                                                                         key={account.id}
                                                                         type="button"
-                                                                        onClick={() => handleSelectCompany(account.name, account.address, account.id)}
+                                                                        onClick={() => handleSelectCompany(account.name, account.address, String(account.id))}
                                                                         className="w-full text-left px-4 py-2 hover:bg-secondary/30 text-sm"
                                                                     >
                                                                         <div className="font-medium">{account.name}</div>
