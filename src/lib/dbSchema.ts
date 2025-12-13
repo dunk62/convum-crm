@@ -183,9 +183,27 @@ export const DB_SCHEMA = `
   - next_action: object (nullable)
   - recording_link: string (nullable)
   - analysis_metadata: object (nullable)
+
+테이블: opportunity_memos
+컬럼:
+  - id: string (nullable)
+  - opportunity_id: number (nullable) - opportunities 테이블의 id 참조
+  - content: string (nullable) - 메모 내용
+  - parent_id: string (nullable) - 댓글인 경우 부모 메모 ID
+  - author: string (nullable) - 작성자 (예: 'AI Assistant')
+  - created_at: string (nullable)
+  - updated_at: string (nullable)
+
+테이블: accounts
+컬럼:
+  - id: string (nullable)
+  - name: string (nullable) - 업체명
+  - address: string (nullable) - 주소
+  - industry: string (nullable)
+  - created_at: string (nullable)
 `;
 
 export const SCHEMA_METADATA = {
-    generatedAt: '2025-12-13T02:41:08.222Z',
-    tableCount: 14
+  generatedAt: '2025-12-13T02:41:08.222Z',
+  tableCount: 14
 };

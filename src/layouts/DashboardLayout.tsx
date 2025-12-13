@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Outlet, NavLink, useNavigate, Link } from 'react-router-dom';
-import { LayoutDashboard, Users, Briefcase, BarChart2, LogOut, Package, ChevronDown, ClipboardList, Database, Gauge, Layers } from 'lucide-react';
+import { LayoutDashboard, Users, Briefcase, BarChart2, LogOut, Package, ChevronDown, ClipboardList, Database, Gauge, Layers, Home } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { cn } from '../lib/utils';
 import AIChatbot from '../components/AIChatbot';
@@ -31,11 +31,12 @@ const NavItem = ({ item }: { item: any }) => {
             >
                 <button
                     className={cn(
-                        "flex items-center gap-2 px-3 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-0",
-                        isOpen ? "text-white" : "text-white/80 hover:text-white"
+                        "flex items-center gap-2 px-3 py-2 text-sm font-bold transition-colors focus:outline-none focus:ring-0",
+                        isOpen ? "text-white" : "text-white/90 hover:text-white"
                     )}
+                    style={{ textShadow: '0 1px 2px rgba(0, 0, 0, 0.5), 0 0px 8px rgba(0, 0, 0, 0.3)' }}
                 >
-                    <item.icon size={18} />
+                    <item.icon size={18} style={{ filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4))' }} />
                     {item.label}
                     <ChevronDown size={14} className={cn("transition-transform", isOpen && "rotate-180")} />
                 </button>
@@ -68,12 +69,13 @@ const NavItem = ({ item }: { item: any }) => {
             to={item.path}
             className={({ isActive }) =>
                 cn(
-                    "flex items-center gap-2 px-3 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-0",
-                    isActive ? "text-white" : "text-white/80 hover:text-white"
+                    "flex items-center gap-2 px-3 py-2 text-sm font-bold transition-colors focus:outline-none focus:ring-0",
+                    isActive ? "text-white" : "text-white/90 hover:text-white"
                 )
             }
+            style={{ textShadow: '0 1px 2px rgba(0, 0, 0, 0.5), 0 0px 8px rgba(0, 0, 0, 0.3)' }}
         >
-            <item.icon size={18} />
+            <item.icon size={18} style={{ filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4))' }} />
             {item.label}
         </NavLink>
     );
@@ -97,6 +99,7 @@ export default function DashboardLayout() {
     };
 
     const navItems = [
+        { icon: Home, label: '홈', path: '/home' },
         { icon: LayoutDashboard, label: '대시보드', path: '/dashboard' },
         {
             icon: Briefcase,
@@ -105,7 +108,8 @@ export default function DashboardLayout() {
             children: [
                 { label: '영업 기회 관리', path: '/opportunities' },
                 { label: '특가 견적', path: '/special-quotation' },
-                { label: '견적서 이력', path: '/quote-history' }
+                { label: '견적서 이력', path: '/quote-history' },
+                { label: '데이터 관리', path: '/data-management' }
             ]
         },
         {
@@ -129,19 +133,25 @@ export default function DashboardLayout() {
                 { label: '남부전략영업소 영업용 재고', path: '/inventory/southern-sales' }
             ]
         },
-        { icon: Database, label: '데이터 관리', path: '/data-management' },
         {
             icon: Package,
             label: '제품 정보',
             path: '/products',
             children: [
                 { label: '제품 도면', path: '/products/drawings' },
-                { label: '마케팅 자료실', path: '/products/marketing' }
+                { label: '마케팅 자료실', path: '/products/marketing' },
+                { label: '치환 가이드', path: '/cross-reference' }
             ]
         },
-        { icon: Gauge, label: '진공 이송 시트', path: '/vacuum-transfer' },
-        { icon: Layers, label: '패드 선정 가이드', path: '/pad-selection' },
-        { icon: BarChart2, label: '치환 가이드', path: '/cross-reference' },
+        {
+            icon: Gauge,
+            label: '진공 이송 시트',
+            path: '/vacuum-transfer',
+            children: [
+                { label: '진공 이송 시트', path: '/vacuum-transfer' },
+                { label: '패드 선정 가이드', path: '/pad-selection' }
+            ]
+        },
         {
             icon: Users,
             label: '고객 정보',

@@ -38,8 +38,12 @@ const tools = [
 // SQL 쿼리 실행 함수
 async function executeSqlQuery(sqlQuery: string): Promise<string> {
     try {
-        // 끝에 있는 세미콜론 제거 (query_data RPC에서 오류 발생 방지)
-        const cleanQuery = sqlQuery.replace(/;\s*$/, '').trim();
+        // 쿼리 정규화: 줄바꿈/탭/여러 공백을 단일 공백으로 변환, 세미콜론 제거
+        const cleanQuery = sqlQuery
+            .replace(/[\r\n\t]+/g, ' ')  // 줄바꿈, 탭을 공백으로
+            .replace(/\s+/g, ' ')         // 여러 공백을 단일 공백으로
+            .replace(/;\s*$/, '')         // 끝 세미콜론 제거
+            .trim();
         console.log('🔍 SQL 쿼리 실행:', cleanQuery);
 
         const { data, error } = await supabase.rpc('query_data', {
@@ -104,6 +108,20 @@ ${DB_SCHEMA}
 ## 예시 질문과 응답
 - "고객 목록 보여줘" → 고객 목록을 조회하고 결과를 표로 정리해서 보여줌
 - "이은실 대화내용" → data_records에서 title, content, contact_name 전체에서 검색
+- "삼성전자 메모 내용" → opportunity_memos와 opportunities를 JOIN해서 해당 업체 메모 조회
+- "최근 영업 메모" → opportunity_memos에서 최근 메모 조회
+- "OO업체 영업 기회 현황" → opportunities에서 해당 업체 조회 후 관련 메모도 함께 조회
+- "25년 12월 총 매출 실적" → sales_performance 테이블에서 해당 월의 매출 합계 조회
+- "이번달 매출" → sales_performance 테이블에서 현재 월의 매출 합계 조회
+
+## 매출 실적 조회 쿼리 예시 (sales_performance 테이블 사용)
+- 특정 월 총 매출: SELECT SUM(sales_amount) as total_sales FROM sales_performance WHERE shipment_date >= '2025-12-01' AND shipment_date <= '2025-12-31'
+- 담당자별 매출: SELECT sales_rep, SUM(sales_amount) as total_sales FROM sales_performance WHERE shipment_date >= '2025-12-01' AND shipment_date <= '2025-12-31' GROUP BY sales_rep ORDER BY total_sales DESC
+- 상품군별 매출: SELECT product_name, SUM(sales_amount) as total_sales FROM sales_performance WHERE shipment_date >= '2025-12-01' AND shipment_date <= '2025-12-31' GROUP BY product_name ORDER BY total_sales DESC
+
+## 메모 조회 쿼리 예시
+- 특정 업체 메모: SELECT m.content, m.created_at, o.title, o.company FROM opportunity_memos m JOIN opportunities o ON m.opportunity_id = o.id WHERE o.company LIKE '%업체명%' ORDER BY m.created_at DESC
+- 최근 메모: SELECT m.content, m.created_at, o.company FROM opportunity_memos m JOIN opportunities o ON m.opportunity_id = o.id ORDER BY m.created_at DESC LIMIT 10
 `;
 }
 

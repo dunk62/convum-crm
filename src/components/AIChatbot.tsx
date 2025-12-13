@@ -30,6 +30,7 @@ export default function AIChatbot() {
     // 드래그 관련 상태
     const [position, setPosition] = useState({ x: 0, y: 0 });
     const [isDragging, setIsDragging] = useState(false);
+    const [hasDragged, setHasDragged] = useState(false);
     const dragRef = useRef<{ startX: number; startY: number; initialX: number; initialY: number } | null>(null);
 
     // 메시지 영역 자동 스크롤
@@ -40,6 +41,7 @@ export default function AIChatbot() {
     // 드래그 핸들러
     const handleMouseDown = (e: React.MouseEvent) => {
         setIsDragging(true);
+        setHasDragged(false);
         dragRef.current = {
             startX: e.clientX,
             startY: e.clientY,
@@ -53,6 +55,10 @@ export default function AIChatbot() {
             if (!isDragging || !dragRef.current) return;
             const deltaX = e.clientX - dragRef.current.startX;
             const deltaY = e.clientY - dragRef.current.startY;
+            // 5px 이상 이동하면 드래그로 간주
+            if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
+                setHasDragged(true);
+            }
             setPosition({
                 x: dragRef.current.initialX + deltaX,
                 y: dragRef.current.initialY + deltaY
@@ -149,8 +155,15 @@ export default function AIChatbot() {
             {/* 플로팅 버튼 - 컨범 AI 브랜딩 */}
             {!isOpen && (
                 <button
-                    onClick={() => setIsOpen(true)}
-                    className="fixed bottom-6 right-6 group z-50"
+                    onMouseDown={handleMouseDown}
+                    onClick={() => {
+                        // 드래그 후에는 클릭 이벤트 무시
+                        if (!hasDragged) {
+                            setIsOpen(true);
+                        }
+                    }}
+                    style={{ right: 24 - position.x, bottom: 24 - position.y }}
+                    className={`fixed group z-50 ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
                 >
                     {/* 글로우 효과 */}
                     <div className="absolute inset-0 rounded-full bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 blur-lg opacity-70 group-hover:opacity-100 transition-opacity animate-pulse"></div>

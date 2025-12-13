@@ -20,6 +20,7 @@ import MarketingMaterials from './pages/MarketingMaterials';
 import SpecialQuotation from './pages/SpecialQuotation';
 import QuoteRedirect from './pages/QuoteRedirect';
 import QuoteHistory from './pages/QuoteHistory';
+import HomePage from './pages/HomePage';
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
 
@@ -35,6 +36,7 @@ function App() {
 
           <Route element={<ProtectedRoute />}>
             <Route path="/" element={<DashboardLayout />}>
+              <Route path="home" element={<HomePage />} />
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="opportunities" element={<Opportunities />} />
               <Route path="sales-performance" element={<SalesPerformance />} />

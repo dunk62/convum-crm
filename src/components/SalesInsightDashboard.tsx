@@ -356,13 +356,19 @@ export default function SalesInsightDashboard() {
         return analysisArray;
     }, [filteredByRep]);
 
-    // Rep ranking data (for "전체" mode)
+    // Rep ranking data (for "전체" mode) - filtered by category
     const repRankingData = useMemo((): RepRanking[] => {
         if (selectedDept !== '전체') return [];
 
+        // Apply category filter to the data for ranking
+        let dataForRanking = backfilledData;
+        if (selectedCategory !== '전체') {
+            dataForRanking = dataForRanking.filter(d => d.product_name === selectedCategory);
+        }
+
         const repMap = new Map<string, { total_sales: number; total_quantity: number; models: Set<string> }>();
 
-        backfilledData.forEach(record => {
+        dataForRanking.forEach(record => {
             if (!record.sales_rep) return;
             const existing = repMap.get(record.sales_rep);
             if (existing) {
@@ -386,7 +392,7 @@ export default function SalesInsightDashboard() {
                 model_count: data.models.size,
             }))
             .sort((a, b) => b.total_sales - a.total_sales);
-    }, [backfilledData, selectedDept]);
+    }, [backfilledData, selectedDept, selectedCategory]);
 
     // Scatter plot data
     const scatterData = useMemo(() => {

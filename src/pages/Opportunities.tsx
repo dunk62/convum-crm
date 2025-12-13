@@ -33,6 +33,7 @@ interface Opportunity {
     success_probability?: number;
     meeting_date?: string;
     created_at?: string;
+    account_id?: string; // FK to accounts table
 }
 
 interface Memo {
@@ -415,10 +416,10 @@ export default function Opportunities() {
 
     const [selectedAccountAddress, setSelectedAccountAddress] = useState<string>('');
 
-    const handleSelectCompany = async (companyName: string, address?: string) => {
-        setNewOpportunity(prev => ({ ...prev, company: companyName }));
+    const handleSelectCompany = async (companyName: string, address?: string, accountId?: string) => {
+        setNewOpportunity(prev => ({ ...prev, company: companyName, account_id: accountId }));
         if (editingOpportunity) {
-            setEditingOpportunity(prev => prev ? { ...prev, company: companyName } : null);
+            setEditingOpportunity(prev => prev ? { ...prev, company: companyName, account_id: accountId } : null);
         }
         setAccountSearchQuery(companyName);
         setIsAccountDropdownOpen(false);
@@ -470,7 +471,7 @@ export default function Opportunities() {
     const saveOpportunityData = async () => {
         if (!editingOpportunity) return false;
 
-        const updatedItem = {
+        const updatedItem: Record<string, any> = {
             title: editingOpportunity.title,
             company: editingOpportunity.company,
             value: editingOpportunity.value === '' ? 0 : Number(editingOpportunity.value),
@@ -481,6 +482,11 @@ export default function Opportunities() {
             success_probability: Number(String(editingOpportunity.success_probability).replace('%', '')),
             meeting_date: editingOpportunity.meeting_date || null
         };
+
+        // Add account_id if present
+        if (editingOpportunity.account_id) {
+            updatedItem.account_id = editingOpportunity.account_id;
+        }
 
         try {
             const { data, error } = await supabase
@@ -1001,7 +1007,8 @@ ${content}
             owner: op.owner,
             contact_name: op.contact_name || '',
             success_probability: op.success_probability || 10,
-            meeting_date: op.meeting_date ? op.meeting_date.slice(0, 16) : ''
+            meeting_date: op.meeting_date ? op.meeting_date.slice(0, 16) : '',
+            account_id: op.account_id || undefined
         });
         fetchMemos(String(op.id));
         setNewMemo(''); // Reset memo input
@@ -1909,7 +1916,7 @@ ${content}
                                                                 <button
                                                                     key={account.id}
                                                                     type="button"
-                                                                    onClick={() => handleSelectCompany(account.name, account.address)}
+                                                                    onClick={() => handleSelectCompany(account.name, account.address, account.id)}
                                                                     className="w-full px-4 py-2 text-left text-sm hover:bg-secondary/30 focus:outline-none focus:bg-secondary/30"
                                                                 >
                                                                     {account.name}
@@ -2086,7 +2093,7 @@ ${content}
                                                                     <button
                                                                         key={account.id}
                                                                         type="button"
-                                                                        onClick={() => handleSelectCompany(account.name, account.address)}
+                                                                        onClick={() => handleSelectCompany(account.name, account.address, account.id)}
                                                                         className="w-full text-left px-4 py-2 hover:bg-secondary/30 text-sm"
                                                                     >
                                                                         <div className="font-medium">{account.name}</div>
